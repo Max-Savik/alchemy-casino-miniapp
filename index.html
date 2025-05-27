@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NFT Alchemy Casino — Котел</title>
+
+    <!-- === внешние библиотеки === -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Forum&family=Cinzel:wght@600;800&family=Uncial+Antiqua&display=swap"
+        rel="stylesheet" />
+
+    <!-- === наши стили / логика === -->
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+</head>
+
+<body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
+    <!-- ========== HEADER ========== -->
+    <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <a href="#" class="text-3xl font-extrabold glow-text flex items-center gap-1">
+                <span class="font-['Uncial Antiqua']">☿</span>Alchemy&nbsp;Casino
+            </a>
+
+            <nav class="flex gap-6 text-lg font-semibold">
+                <button id="navGame" class="nav-link">Котел</button>
+                <button id="navProfile" class="nav-link">Профиль</button>
+            </nav>
+
+            <button id="connectWallet"
+                class="w-full sm:w-auto bg-gradient-to-br from-amber-500 to-amber-700 hover:brightness-110 text-gray-900 font-semibold py-2 px-5 rounded-xl shadow-lg">
+                🔗 Wallet
+            </button>
+        </div>
+    </header>
+
+    <!-- ========== MAIN ========== -->
+    <main class="flex-grow">
+
+        <!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
+        <section id="gameSection" class="flex flex-col items-center px-4 py-10 sm:py-14 gap-10">
+            <h1 class="text-4xl sm:text-6xl text-center mb-4 glow-text font-['Forum'] tracking-wider">
+                Алхимический&nbsp;Котел</h1>
+            <p class="mb-8 sm:mb-12 text-center text-lg sm:text-2xl max-w-3xl font-['Forum']">
+                Вносите «ингредиенты»-NFT в кипящий котел судьбы. Чем выше <span class="text-amber-300">стоимость</span>
+                вклада, тем выше шанс победы!
+            </p>
+
+            <div class="flex flex-col sm:flex-row sm:flex-wrap gap-8 sm:gap-12 justify-center w-full max-w-7xl">
+                <!-- ===== CAULDRON & SPIN ===== -->
+                <div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
+                    <div id="wheelWrapper" class="relative">
+                        <div id="cauldron">
+                            <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
+                            <div id="steam"></div>
+                        </div>
+                        <div class="pointer"></div>
+                    </div>
+
+                    <button id="spin"
+                        class="w-full bg-gradient-to-br from-amber-600 to-amber-800 hover:brightness-110 text-gray-200 font-bold py-4 rounded-xl text-xl transition disabled:opacity-40 shadow-lg hover:shadow-amber-500/60">
+                        Вращать котел
+                    </button>
+
+                    <p id="result" class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+                </div>
+
+                <!-- ===== BET / PICKER ===== -->
+                <div class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
+                    <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Сделать ставку</h2>
+
+                    <div class="space-y-5 sm:space-y-6">
+                        <div>
+                            <label class="block mb-1">Ник</label>
+                            <input id="playerName" type="text" placeholder="Аурифабр"
+                                class="w-full p-3 rounded-lg bg-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                        </div>
+
+                        <div>
+                            <label class="block mb-2">Выберите NFT (можно несколько)</label>
+                            <div id="nftPicker" class="flex flex-wrap gap-3"></div>
+                        </div>
+
+                        <button id="placeBet" class="alch-btn w-full">🜃 Бросить ингредиент</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PLAYERS LIST ===== -->
+            <div
+                class="glass border-ornate alch-rounded mt-12 p-6 sm:p-10 w-full max-w-4xl shadow-[0_0_60px_rgba(0,0,0,0.85)]">
+                <h3 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Участники</h3>
+                <ul id="players" class="space-y-4 sm:space-y-5 text-base sm:text-lg"></ul>
+
+                <div class="mt-6 text-right text-2xl font-extrabold glow-text">
+                    Общий котел: <span id="pot">$0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ▸▸▸ PROFILE ▸▸▸ -->
+        <section id="profileSection" class="hidden px-4 py-10 sm:py-14">
+            <h2 class="text-3xl mb-6 glow-text font-['Forum']">Мои NFT</h2>
+            <div id="profileGrid" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
+        </section>
+
+    </main>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="text-center py-6 text-xs sm:text-sm opacity-60">
+        © 2025 Alchemy Casino.
+    </footer>
+</body>
+
+</html>

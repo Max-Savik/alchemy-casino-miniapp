@@ -1,0 +1,384 @@
+/* ───────────────────────────────────
+   ALCHEMY CASINO • MAIN STYLESHEET
+   ─ Fixes: rounded ornate frame +
+            smoother alchemy button
+   ─────────────────────────────────── */
+
+/* ===== VARIABLES ===== */
+:root {
+    --alchemy-gold-1: #c7a457;
+    --alchemy-gold-2: #8f6f28;
+    --alchemy-radius: 2rem;
+    /* единый радиус для всех «окон» */
+}
+
+/* ===== BASE LAYOUT ===== */
+html,
+body {
+    min-height: 100%;
+    margin: 0;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Cinzel', serif;
+    color: #f1e9d2;
+    background: #1e1b19 url('https://www.transparenttextures.com/patterns/asfalt-light.png');
+    background-attachment: fixed;
+    box-shadow: inset 0 0 160px 60px rgba(0, 0, 0, .85);
+}
+
+/* мягкая «зернистость», слегка движущаяся */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url('https://www.transparenttextures.com/patterns/diagmonds.png');
+    opacity: .12;
+    z-index: -1;
+    background-size: 600px 600px;
+    animation: alchemy 30s ease-in-out infinite;
+}
+
+@keyframes alchemy {
+    0% {
+        background-position: 0 0
+    }
+
+    50% {
+        background-position: 100% 100%
+    }
+
+    100% {
+        background-position: 0 0
+    }
+}
+
+/* ===== FROSTED-GLASS PANELS ===== */
+.glass {
+    background: rgba(22, 14, 6, .55);
+    backdrop-filter: blur(8px) saturate(120%);
+}
+
+/* ===== GOLDEN ORNATE FRAME (с радиусом) ===== */
+.border-ornate {
+    position: relative;
+    border-radius: var(--alchemy-radius);
+}
+
+.border-ornate::before {
+    /* Градиентная обводка 2 px, не обрезается уголками
+       благодаря маске «content-box vs. border-box»          */
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    /* толщина рамки */
+    border-radius: inherit;
+    background: linear-gradient(45deg,
+            var(--alchemy-gold-1),
+            var(--alchemy-gold-2));
+    /* «Вычерпываем» середину, оставляя только рамку */
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    filter: drop-shadow(0 0 6px rgba(199, 164, 87, .45)) drop-shadow(0 0 10px rgba(199, 164, 87, .25));
+}
+
+/* удобный хелпер используется в разметке */
+.alch-rounded {
+    border-radius: var(--alchemy-radius)
+}
+
+/* ===== NAV LINKS ===== */
+nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+}
+
+nav li {
+    list-style: none
+}
+
+.nav-link {
+    position: relative;
+    color: #d6b76d;
+    padding: .25rem .5rem;
+    border-radius: .25rem;
+    transition: .3s;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    height: 2px;
+    width: 0;
+    background: #d6b76d;
+    transition: .3s;
+}
+
+.nav-link:hover {
+    color: #f9e6a4
+}
+
+.nav-link:hover::after {
+    width: 100%
+}
+
+/* ──────────────────────────────────
+     ALCHEMY MAGIC BUTTON
+     ────────────────────────────────── */
+.alch-btn {
+    --grad-from: #f9d468;
+    --grad-via: #e1aa34;
+    --grad-to: #b87400;
+    --glint: rgba(255, 255, 255, .45);
+
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    padding: 1rem 0;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-align: center;
+    color: #1b1405;
+    background: linear-gradient(135deg,
+            var(--grad-from) 0%,
+            var(--grad-via) 40%,
+            var(--grad-to) 100%);
+    background-size: 200% 200%;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, .35),
+        0 0 10px 2px rgba(249, 212, 104, .50);
+    filter: brightness(1);
+    transition:
+        transform .25s cubic-bezier(.4, 0, .2, 1),
+        filter .45s cubic-bezier(.4, 0, .2, 1);
+    overflow: hidden;
+}
+
+/* плавная «всплывающая» реакция */
+.alch-btn:hover {
+    transform: translateY(-2px) scale(1.04);
+    filter: brightness(1.12);
+}
+
+/* «расплавленный» фон внутри кнопки */
+.alch-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    /* тот же градиент */
+    background-size: inherit;
+    z-index: -1;
+    filter: blur(12px) brightness(1.4);
+    animation: molten 8s linear infinite;
+}
+
+/* пробегающий блик */
+.alch-btn::after {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: -45%;
+    width: 40%;
+    height: 250%;
+    background: linear-gradient(45deg,
+            transparent 0%,
+            var(--glint) 45%,
+            var(--glint) 55%,
+            transparent 100%);
+    transform: rotate(25deg);
+    opacity: 0;
+    transition: opacity .3s;
+}
+
+.alch-btn:hover::after {
+    opacity: 1;
+    animation: glint 1.2s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+/* анимации */
+@keyframes molten {
+    0% {
+        background-position: 0% 50%
+    }
+
+    50% {
+        background-position: 100% 50%
+    }
+
+    100% {
+        background-position: 0% 50%
+    }
+}
+
+@keyframes glint {
+    0% {
+        transform: translateX(-60%) rotate(25deg)
+    }
+
+    100% {
+        transform: translateX(220%) rotate(25deg)
+    }
+}
+
+/* ===== CAULDRON / WHEEL (без изменений) ===== */
+#wheelWrapper {
+    position: relative;
+    width: min(340px, 90vw);
+    height: min(340px, 90vw)
+}
+
+#cauldron {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50% 50% 45% 45%;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 30%,
+            #3e2200 0%, #1e1000 60%, #0d0500 100%);
+    border: 8px solid #4e2c00;
+    box-shadow:
+        0 0 28px rgba(255, 140, 0, .35),
+        inset 0 0 40px rgba(0, 0, 0, .6);
+}
+
+#cauldron::before,
+#cauldron::after {
+    content: '';
+    position: absolute;
+    bottom: -5%;
+    width: 20%;
+    height: 8%;
+    border-radius: 50% 50% 0 0;
+    background: #4e2c00;
+    box-shadow: 0 0 8px rgba(0, 0, 0, .6);
+}
+
+#cauldron::before {
+    left: 15%;
+    transform: rotate(-8deg)
+}
+
+#cauldron::after {
+    right: 15%;
+    transform: rotate(8deg)
+}
+
+/* пузырьки */
+.bubble {
+    position: absolute;
+    bottom: 12%;
+    width: 14px;
+    height: 14px;
+    background: rgba(149, 214, 255, .65);
+    border-radius: 50%;
+    filter: blur(.4px);
+}
+
+@keyframes rise {
+    0% {
+        transform: translateY(0) scale(.6);
+        opacity: .8
+    }
+
+    100% {
+        transform: translateY(-260px) scale(1.2);
+        opacity: 0
+    }
+}
+
+/* пар */
+#steam {
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle,
+            rgba(255, 255, 255, .35) 0%,
+            rgba(255, 255, 255, 0) 60%);
+    filter: blur(14px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* стрелка-показатель */
+#wheelSvg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 18px rgba(214, 176, 77, .70));
+}
+
+.pointer {
+    position: absolute;
+    left: 50%;
+    top: -6%;
+    transform: translateX(-50%);
+    border-left: 16px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 36px solid #d4af37;
+    filter: drop-shadow(0 0 6px rgba(212, 175, 55, .85));
+}
+
+@media(min-width:500px) {
+    .pointer {
+        border-left: 18px solid transparent;
+        border-right: 18px solid transparent;
+        border-top: 36px solid #d4af37;
+    }
+}
+
+/* ===== GLOW TEXT & SCROLLBAR ===== */
+.glow-text {
+    color: #d6b76d;
+    text-shadow:
+        0 0 8px rgba(214, 183, 109, .85),
+        0 0 16px rgba(214, 183, 109, .55);
+}
+
+::-webkit-scrollbar {
+    width: 6px
+}
+
+::-webkit-scrollbar-thumb {
+    background: #8f6f28;
+    border-radius: 3px;
+}
+
+/* ===== NFT cards ===== */
+.nft-card {
+    @apply bg-gray-800 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer transition ring-2 ring-transparent hover:ring-amber-400;
+}
+
+.nft-card.selected {
+    @apply ring-amber-500;
+}
+
+.nft-card.staked {
+    @apply opacity-40 pointer-events-none;
+}
+
+.nft-card img {
+    @apply w-24 h-24 object-cover rounded-lg mb-2;
+}
+
+/* простой helper чтобы прятать/показывать секции */
+.hidden {
+    display: none
+}
