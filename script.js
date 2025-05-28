@@ -1,4 +1,4 @@
-const socket = io("http://localhost:3000"); // пока локально
+const socket = io("https://alchemy-casino-miniapp.onrender.com"); // пока локально
 
 /* ================= SAMPLE INVENTORY ================= */
 const inventory = [
