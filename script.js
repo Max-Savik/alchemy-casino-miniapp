@@ -6,27 +6,6 @@ const inventory = [
   { id:'elixir1', name:'🧪 Эликсир Манны #155',price:5,  img:'https://picsum.photos/seed/elixir/200',staked:false },
   { id:'cryst66', name:'🌑 Тёмный Кристалл #666',price:45,img:'https://picsum.photos/seed/cryst/200', staked:false },
 ];
-// ===  Telegram Mini-App bootstrap  ===
-const tg = window.Telegram?.WebApp;
-
-if (tg) {
-  tg.ready();          // сообщаем Telegram, что UI построен
-  tg.expand();         // разворачиваемся на весь экран
-
-  /* 1. Адаптируем тему -------------------------------------------------- */
-  if (tg.colorScheme === 'dark') {
-    document.body.classList.add('dark');          // Tailwind dark-mode
-  }
-
-  /* 2. Прячем лишнее в Telegram ----------------------------------------- */
-  document.getElementById('connectWallet')?.classList.add('hidden');
-
-  tg.MainButton.setText('🜃 Бросить ингредиент');
-  tg.MainButton.onClick(placeBet);   // без "()", просто ссылка
-
-  /* спрячем дублирующую HTML-кнопку */
-  document.getElementById('placeBet')?.classList.add('hidden');
-}
 
 /* ================= SVG helpers (как раньше) ================= */
 function polar(cx,cy,r,deg){const rad=(deg-90)*Math.PI/180;return{x:cx+r*Math.cos(rad),y:cy+r*Math.sin(rad)}}
@@ -57,7 +36,6 @@ function renderPicker(){
   inventory.filter(n=>!n.staked).forEach(n=>{
     picker.insertAdjacentHTML('beforeend', cardHTML(n, selected.has(n.id)?'selected':''));
   });
-  updateMainButton();
 }
 function renderProfile(){
   grid.innerHTML='';
@@ -96,32 +74,20 @@ picker.addEventListener('click',e=>{
 });
 
 /* ================= PLACE BET ================= */
-function placeBet() {
-  if (!selected.size) { alert('Выберите хотя бы один NFT'); return; }
-
-  const name = document.getElementById('playerName').value.trim() || 'Безымянный';
-  let p = players.find(x => x.name === name);
-  if (!p) {
-    p = { name, value: 0, color: palette[players.length % palette.length] };
-    players.push(p);
-  }
-
-  let added = 0;
-  selected.forEach(id => {
-    const nft = inventory.find(n => n.id === id);
-    if (!nft || nft.staked) return;
-    nft.staked = true;
-    added += nft.price;
+document.getElementById('placeBet').addEventListener('click',()=>{
+  if(!selected.size){alert('Выберите хотя бы один NFT'); return;}
+  const name=document.getElementById('playerName').value.trim()||'Безымянный';
+  let p=players.find(x=>x.name===name);
+  if(!p){p={name,value:0,color:palette[players.length%palette.length]}; players.push(p);}
+  let added=0;
+  selected.forEach(id=>{
+    const nft=inventory.find(n=>n.id===id);
+    if(!nft||nft.staked) return;
+    nft.staked=true; added+=nft.price;
   });
-
-  p.value += added;
-  totalUSD += added;
-  selected.clear();
-  refreshUI();
-  updateMainButton();           // <--- NEW
-}
-
-document.getElementById('placeBet').addEventListener('click', placeBet);
+  p.value+=added; totalUSD+=added;
+  selected.clear(); refreshUI();
+});
 
 /* ================= SPIN ================= */
 function weightedPick(){
@@ -167,4 +133,4 @@ function spawnBubble(){const b=document.createElement('span');b.className='bubbl
 gsap.fromTo('#steam',{scale:.6,opacity:0},{scale:1.4,opacity:.55,y:-90,duration:5,repeat:-1,ease:'power1.out',repeatDelay:1.2});
 
 /* ================= INIT ================= */
-show('game'); refreshUI(); updateMainButton(); 
+show('game'); refreshUI();
