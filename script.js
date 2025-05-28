@@ -1,4 +1,4 @@
-js<br>const socket = io("http://localhost:3000"); // пока локально
+const socket = io("http://localhost:3000"); // пока локально
 
 /* ================= SAMPLE INVENTORY ================= */
 const inventory = [
