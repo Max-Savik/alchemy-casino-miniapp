@@ -1,5 +1,4 @@
-let countdownStarted = false;
-let countdownInterval = null;
+js<br>const socket = io("http://localhost:3000"); // пока локально
 
 /* ================= SAMPLE INVENTORY ================= */
 const inventory = [
@@ -17,7 +16,9 @@ function arc(cx,cy,r,start,end,color){const s=polar(cx,cy,r,end),e=polar(cx,cy,r
 
 /* ================= STATE ================= */
 const palette=['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
-let players=[], totalUSD=0, selected=new Set();
+let players = [];
+let totalUSD = 0;
+const selected = new Set();     // остаётся локально
 
 /* ================= ELEMENTS ================= */
 const svg=document.getElementById('wheelSvg');
@@ -63,75 +64,91 @@ function refreshUI(){
       · <span class="text-emerald-400">${((p.value/totalUSD)*100).toFixed(1)}%</span>`;
     list.appendChild(li);
   });
-  pot.textContent='$'+totalUSD.toFixed(2);
+  pot.textContent = '$'+totalUSD.toFixed(2);
   drawWheel(); renderPicker(); renderProfile();
-    // Запускаем таймер при достижении 2+ игроков
-  if (players.length >= 2 && !countdownStarted) {
-    startCountdown();
+}
+/* === полная снимка === */
+socket.on("state", s => {
+  players  = s.players;
+  totalUSD = s.totalUSD;
+
+  // ⬇️ новый раунд: сбрасываем всё в исходное положение
+  if (players.length === 0) {
+    inventory.forEach(n => n.staked = false);       // вернули NFT
+    gsap.set('#wheelSvg', { rotation: 0 });          // колесо в ноль
+    document.getElementById('result').textContent = '';
+    updateCountdown(0);                              // убираем «Раунд начинается!»
+    lockBets(false);
   }
-}
 
-// Функция старта 60-секундного таймера
-function startCountdown(){
-  countdownStarted = true;
-  let timeLeft = 60;
-  const countdownEl = document.getElementById('countdown');
-  countdownEl.textContent = `Таймер: ${timeLeft} сек`;
+  refreshUI();
 
-  // Запретить добавлять повторно запуск
-  countdownInterval = setInterval(() => {
-    timeLeft--;
-    if (timeLeft > 0) {
-      countdownEl.textContent = `Таймер: ${timeLeft} сек`;
-    } else {
-      clearInterval(countdownInterval);
-      countdownEl.textContent = 'Раунд начинается!';
-      // Запускаем автоматическое вращение
-      autoSpin();
-    }
-  }, 1000);
-}
+  if (s.phase === "countdown") {
+    const secLeft = Math.ceil((s.endsAt - Date.now()) / 1000);
+    runLocalCountdown(secLeft);                      // покажем остаток времени
+  }
+});
 
-// Автоматический спин
-function autoSpin() {
-  // Запретить новые ставки
-  document.getElementById('placeBet').disabled = true;
 
-  const winner = weightedPick();
-  // ту же логику вычисления target
-  let start = -90, mid = 0;
-  players.forEach(p => {
+/* === начало спина === */
+socket.on("spinStart", ({ players: list, winner }) => {
+  players  = list;
+  totalUSD = list.reduce((a,b)=>a+b.value,0);
+  runSpinAnimation(winner);          // ⬅️ реализация ниже
+});
+
+/* === конец спина === */
+socket.on("spinEnd", ({ winner, total }) => {
+  showResult(winner, total);
+  lockBets(false);           // новый раунд → снова можно ставить
+});
+
+/* ---- визуальная анимация ---- */
+function runSpinAnimation(winner){
+  const idx = players.indexOf(winner);
+  let start=-90, mid=0;
+  players.forEach((p,i)=>{
     const sweep = (p.value/totalUSD)*360;
-    if (p === winner) mid = start + sweep/2;
+    if (i===idx) mid = start + sweep/2;
     start += sweep;
   });
   const spins = 6 + Math.floor(Math.random()*4);
   const target = 360*spins + (360 - mid);
+  gsap.to('#wheelSvg',{ duration:6, rotation:target, ease:'power4.out' });
+}
 
-  gsap.to('#wheelSvg', {
-    duration: 6,
-    rotation: target,
-    ease: 'power4.out',
-    onComplete: () => {
-      document.getElementById('result').textContent = 
-        `${winner.name} получает котёл на $${totalUSD.toFixed(2)}!`;
-      setTimeout(resetRound, 11000);
+function showResult(winner,total){
+  document.getElementById('result').textContent =
+    `${winner.name} получает котёл на $${total.toFixed(2)}!`;
+}
+/* ===== управление кнопкой ставки ===== */
+function lockBets(lock){
+  document.getElementById("placeBet").disabled = lock;
+}
+
+/* ===== локальный обратный отсчёт ===== */
+let cdTimer;
+
+function runLocalCountdown(sec){
+  clearInterval(cdTimer);
+  updateCountdown(sec);
+  lockBets(true);                       // пока тикает – ставки запрещены
+  cdTimer = setInterval(()=>{
+    sec--;
+    if (sec <= 0){
+      clearInterval(cdTimer);
+      updateCountdown(0);
+    } else {
+      updateCountdown(sec);
     }
-  });
+  }, 1000);
 }
 
-// Сброс после раунда
-function resetRound(){
-  players = [];
-  totalUSD = 0;
-  inventory.forEach(n=>n.staked = false);
-  document.getElementById('result').textContent = '';
-  document.getElementById('countdown').textContent = 'Ожидание игроков...';
-  document.getElementById('placeBet').disabled = false;
-  gsap.set('#wheelSvg', {rotation:0});
-  countdownStarted = false;
-  refreshUI();
+function updateCountdown(sec){
+  const el = document.getElementById("countdown");    // <-- элемент из разметки
+  el.textContent = sec > 0 ? `Таймер: ${sec} сек` : "Раунд начинается!";
 }
+
 
 /* ================= PICKER EVENTS ================= */
 picker.addEventListener('click',e=>{
@@ -142,20 +159,23 @@ picker.addEventListener('click',e=>{
 });
 
 /* ================= PLACE BET ================= */
-document.getElementById('placeBet').addEventListener('click',()=>{
-  if(!selected.size){alert('Выберите хотя бы один NFT'); return;}
-  const name=document.getElementById('playerName').value.trim()||'Безымянный';
-  let p=players.find(x=>x.name===name);
-  if(!p){p={name,value:0,color:palette[players.length%palette.length]}; players.push(p);}
-  let added=0;
-  selected.forEach(id=>{
-    const nft=inventory.find(n=>n.id===id);
-    if(!nft||nft.staked) return;
-    nft.staked=true; added+=nft.price;
+document.getElementById("placeBet").addEventListener("click", () => {
+  if (!selected.size) { alert("Выберите хотя бы один NFT"); return; }
+
+  const name = document.getElementById("playerName").value.trim() || "Безымянный";
+  const nfts = Array.from(selected).map(id => {
+    const n = inventory.find(x => x.id === id);
+    return { id: n.id, price: n.price };
   });
-  p.value+=added; totalUSD+=added;
-  selected.clear(); refreshUI();
+
+  // локально помечаем NFT стейкнутыми, чтобы сразу погасить карточки
+  nfts.forEach(({ id }) => { inventory.find(x => x.id === id).staked = true; });
+  selected.clear();
+  renderPicker();
+
+  socket.emit("placeBet", { name, nfts });     // ⬅️ ушло на сервер
 });
+
 
 /* ================= SPIN ================= */
 function weightedPick(){
