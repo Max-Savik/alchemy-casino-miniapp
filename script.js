@@ -1,3 +1,6 @@
+let countdownStarted = false;
+let countdownInterval = null;
+
 /* ================= SAMPLE INVENTORY ================= */
 const inventory = [
   { id:'orb001',  name:'🔥 Огненный Орб #001', price:10, img:'https://picsum.photos/seed/orb/200', staked:false },
@@ -61,8 +64,73 @@ function refreshUI(){
     list.appendChild(li);
   });
   pot.textContent='$'+totalUSD.toFixed(2);
-  document.getElementById('spin').disabled=players.length<2;
   drawWheel(); renderPicker(); renderProfile();
+    // Запускаем таймер при достижении 2+ игроков
+  if (players.length >= 2 && !countdownStarted) {
+    startCountdown();
+  }
+}
+
+// Функция старта 60-секундного таймера
+function startCountdown(){
+  countdownStarted = true;
+  let timeLeft = 60;
+  const countdownEl = document.getElementById('countdown');
+  countdownEl.textContent = `Таймер: ${timeLeft} сек`;
+
+  // Запретить добавлять повторно запуск
+  countdownInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft > 0) {
+      countdownEl.textContent = `Таймер: ${timeLeft} сек`;
+    } else {
+      clearInterval(countdownInterval);
+      countdownEl.textContent = 'Раунд начинается!';
+      // Запускаем автоматическое вращение
+      autoSpin();
+    }
+  }, 1000);
+}
+
+// Автоматический спин
+function autoSpin() {
+  // Запретить новые ставки
+  document.getElementById('placeBet').disabled = true;
+
+  const winner = weightedPick();
+  // ту же логику вычисления target
+  let start = -90, mid = 0;
+  players.forEach(p => {
+    const sweep = (p.value/totalUSD)*360;
+    if (p === winner) mid = start + sweep/2;
+    start += sweep;
+  });
+  const spins = 6 + Math.floor(Math.random()*4);
+  const target = 360*spins + (360 - mid);
+
+  gsap.to('#wheelSvg', {
+    duration: 6,
+    rotation: target,
+    ease: 'power4.out',
+    onComplete: () => {
+      document.getElementById('result').textContent = 
+        `${winner.name} получает котёл на $${totalUSD.toFixed(2)}!`;
+      setTimeout(resetRound, 11000);
+    }
+  });
+}
+
+// Сброс после раунда
+function resetRound(){
+  players = [];
+  totalUSD = 0;
+  inventory.forEach(n=>n.staked = false);
+  document.getElementById('result').textContent = '';
+  document.getElementById('countdown').textContent = 'Ожидание игроков...';
+  document.getElementById('placeBet').disabled = false;
+  gsap.set('#wheelSvg', {rotation:0});
+  countdownStarted = false;
+  refreshUI();
 }
 
 /* ================= PICKER EVENTS ================= */
@@ -95,26 +163,7 @@ function weightedPick(){
   for(const p of players){acc+=p.value;if(ticket<=acc)return p;}
   return players[players.length-1];
 }
-document.getElementById('spin').addEventListener('click',()=>{
-  const winner=weightedPick();
-  let start=-90, mid=0;
-  players.forEach(p=>{
-    const sweep=(p.value/totalUSD)*360;
-    if(p===winner) mid=start+sweep/2; start+=sweep;
-  });
-  const spins=6+Math.floor(Math.random()*4);
-  const target=360*spins+(360-mid);
-  gsap.to('#wheelSvg',{duration:6,rotation:target,ease:'power4.out',onComplete:()=>{
-    document.getElementById('result').textContent=`${winner.name} получает котёл на $${totalUSD.toFixed(2)}!`;
-    setTimeout(resetRound,11000);
-  }});
-});
-function resetRound(){
-  players=[]; totalUSD=0;
-  inventory.forEach(n=>n.staked=false);
-  document.getElementById('result').textContent='';
-  gsap.set('#wheelSvg',{rotation:0}); refreshUI();
-}
+
 
 /* ================= SIMPLE NAV ================= */
 document.getElementById('navGame').addEventListener('click',()=>show('game'));
