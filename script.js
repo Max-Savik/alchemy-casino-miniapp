@@ -210,14 +210,6 @@ document.getElementById("placeBet").addEventListener("click", () => {
 });
 
 
-/* ================= SPIN ================= */
-function weightedPick(){
-  let ticket=Math.random()*totalUSD, acc=0;
-  for(const p of players){acc+=p.value;if(ticket<=acc)return p;}
-  return players[players.length-1];
-}
-
-
 /* ================= SIMPLE NAV ================= */
 document.getElementById('navGame').addEventListener('click',()=>show('game'));
 document.getElementById('navProfile').addEventListener('click',()=>show('profile'));
