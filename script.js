@@ -1,5 +1,12 @@
 const socket = io("https://alchemy-casino-miniapp.onrender.com"); // пока локально
 
+/* === имя текущего пользователя из Telegram === */
+const tgUser   = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
+const myName = tgUser.username
+           || [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
+           || "Игрок";
+
+
 /* ================= SAMPLE INVENTORY ================= */
 const inventory = [
   { id:'orb001',  name:'🔥 Огненный Орб #001', price:10, img:'https://picsum.photos/seed/orb/200', staked:false },
@@ -48,14 +55,31 @@ function renderProfile(){
   });
 }
 function drawWheel(){
-  svg.innerHTML=''; if(!totalUSD)return;
+  svg.innerHTML='';
+  if(!totalUSD) return;
   let start=-90;
   players.forEach(p=>{
     const sweep=(p.value/totalUSD)*360, end=start+sweep;
-    svg.insertAdjacentHTML('beforeend', arc(200,200,190,start,end,p.color));
+
+    /* секторы */
+    svg.insertAdjacentHTML('beforeend',
+      arc(200,200,190,start,end,p.color));
+
+    /* подписи */
+    const mid = start + sweep/2;
+    const pos = polar(200,200,120,mid);      // точка для текста
+    const angle = mid + 90;                  // чтобы текст «по радиусу»
+    svg.insertAdjacentHTML('beforeend',`
+      <text x="${pos.x}" y="${pos.y}"
+            transform="rotate(${angle} ${pos.x} ${pos.y})"
+            font-size="12" fill="#000" text-anchor="middle">
+        ${p.name}
+      </text>`);
+
     start=end;
   });
 }
+
 function refreshUI(){
   list.innerHTML='';
   players.forEach(p=>{
@@ -94,6 +118,7 @@ socket.on("state", s => {
 socket.on("spinStart", ({ players: list, winner }) => {
   players  = list;
   totalUSD = list.reduce((a,b)=>a+b.value,0);
+  lockBets(true);
   runSpinAnimation(winner);          // ⬅️ реализация ниже
 });
 
@@ -132,7 +157,6 @@ let cdTimer;
 function runLocalCountdown(sec){
   clearInterval(cdTimer);
   updateCountdown(sec);
-  lockBets(true);                       // пока тикает – ставки запрещены
   cdTimer = setInterval(()=>{
     sec--;
     if (sec <= 0){
@@ -162,7 +186,7 @@ picker.addEventListener('click',e=>{
 document.getElementById("placeBet").addEventListener("click", () => {
   if (!selected.size) { alert("Выберите хотя бы один NFT"); return; }
 
-  const name = document.getElementById("playerName").value.trim() || "Безымянный";
+  const name = myName;
   const nfts = Array.from(selected).map(id => {
     const n = inventory.find(x => x.id === id);
     return { id: n.id, price: n.price };
