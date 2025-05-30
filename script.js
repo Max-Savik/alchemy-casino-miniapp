@@ -64,9 +64,17 @@ function drawWheel(){
   players.forEach(p=>{
     const sweep=(p.value/totalUSD)*360, end=start+sweep;
 
-    /* секторы */
-    svg.insertAdjacentHTML('beforeend',
-      arc(200,200,190,start,end,p.color));
+    /* сектор (обычный случай) */
+    if (players.length > 1) {
+      svg.insertAdjacentHTML('beforeend',
+        arc(200,200,190,start,end,p.color)
+          .replace('<path ','<path data-player="'+p.name+'" '));
+    } else {
+      /* 1 игрок → рисуем полный круг <circle> */
+      svg.insertAdjacentHTML('beforeend',
+        `<circle cx="200" cy="200" r="190" fill="${p.color}"
+                 data-player="${p.name}"></circle>`);
+    }
 
     /* подписи */
     const mid = start + sweep/2;
@@ -76,7 +84,7 @@ function drawWheel(){
       <text x="${pos.x}" y="${pos.y}"
             transform="rotate(${angle} ${pos.x} ${pos.y})"
             font-size="15" fill="#000" text-anchor="middle">
-        ${p.name}
+        ${(p.name || "?").length > 14 ? p.name.slice(0,12) + "…" : p.name}
       </text>`);
 
     start=end;
@@ -134,6 +142,7 @@ socket.on("countdownStart", ({ endsAt }) => {
 socket.on("spinStart", ({ players: list, winner }) => {
   players  = list;
   totalUSD = list.reduce((a,b)=>a+b.value,0);
+  phase    = "spinning";   
   lockBets(true);
   updateStatus();                    // «Игра началась!»
   runSpinAnimation(winner);
@@ -148,6 +157,15 @@ socket.on("spinEnd", ({ winner, total }) => {
 });
 
 /* ---- визуальная анимация ---- */
+function highlightWinner(winner){
+  const slice = svg.querySelectorAll(`[data-player="${winner.name}"]`);
+  slice.forEach(el => {
+    gsap.fromTo(el,
+      { filter: 'brightness(1)' },
+      { filter: 'brightness(2.2)', duration: .4, yoyo:true, repeat:5 });
+  });
+}
+
 function runSpinAnimation(winner){
   const idx = players.indexOf(winner);
   let start=-90, mid=0;
@@ -158,7 +176,12 @@ function runSpinAnimation(winner){
   });
   const spins = 6 + Math.floor(Math.random()*4);
   const target = 360*spins + (360 - mid);
-  gsap.to('#wheelSvg',{ duration:6, rotation:target, ease:'power4.out' });
+  gsap.to('#wheelSvg',{
+      duration: 6,
+      rotation: target,
+      ease: 'power4.out',
+      onComplete: () => highlightWinner(winner)
+  });
 }
 
 function showResult(winner,total){
