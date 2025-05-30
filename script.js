@@ -1,10 +1,11 @@
-const socket = io("https://alchemy-casino-miniapp.onrender.com"); // пока локально
+const socket = io("https://alchemy-casino-miniapp.onrender.com"); 
 
 /* === имя текущего пользователя из Telegram === */
-const tgUser   = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
-const myName = tgUser.username
-           || [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
-           || "Игрок";
+const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
+const myName =
+      tgUser.username
+   || [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
+   || "Гость";
 
 
 /* ================= SAMPLE INVENTORY ================= */
@@ -26,6 +27,7 @@ const palette=['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79
 let players = [];
 let totalUSD = 0;
 const selected = new Set();     // остаётся локально
+let phase = "waiting";        // waiting | countdown | spinning
 
 /* ================= ELEMENTS ================= */
 const svg=document.getElementById('wheelSvg');
@@ -33,6 +35,7 @@ const list=document.getElementById('players');
 const pot=document.getElementById('pot');
 const picker=document.getElementById('nftPicker');
 const grid=document.getElementById('profileGrid');
+const statusEl=document.getElementById('countdown'); 
 
 /* ================= RENDER HELPERS ================= */
 function cardHTML(nft,extra=''){return`
@@ -65,16 +68,23 @@ function drawWheel(){
     svg.insertAdjacentHTML('beforeend',
       arc(200,200,190,start,end,p.color));
 
-    /* подписи */
-    const mid = start + sweep/2;
-    const pos = polar(200,200,120,mid);      // точка для текста
-    const angle = mid + 90;                  // чтобы текст «по радиусу»
-    svg.insertAdjacentHTML('beforeend',`
-      <text x="${pos.x}" y="${pos.y}"
-            transform="rotate(${angle} ${pos.x} ${pos.y})"
-            font-size="12" fill="#000" text-anchor="middle">
-        ${p.name}
-      </text>`);
+   /* подпись */
+   const mid   = start + sweep/2;
+   const pos   = polar(200,200,122,mid);
+   const angle = mid + 90;
+   const safeName = p.name || "?";
+   const label = safeName.length > 14 ? safeName.slice(0,12) + "…" : safeName;
+   svg.insertAdjacentHTML('beforeend', `
+     <text x="${pos.x}" y="${pos.y}"
+           transform="rotate(${angle} ${pos.x} ${pos.y})"
+           font-family="'Cinzel', serif"
+           font-size="12"
+           fill="#1b1405"
+           stroke="#f1e9d2"
+           stroke-width="0.6"
+           text-anchor="middle">
+       ${label}
+     </text>`);
 
     start=end;
   });
@@ -95,23 +105,34 @@ function refreshUI(){
 socket.on("state", s => {
   players  = s.players;
   totalUSD = s.totalUSD;
+  phase    = s.phase;      
 
   // ⬇️ новый раунд: сбрасываем всё в исходное положение
   if (players.length === 0) {
     inventory.forEach(n => n.staked = false);       // вернули NFT
     gsap.set('#wheelSvg', { rotation: 0 });          // колесо в ноль
     document.getElementById('result').textContent = '';
-    updateCountdown(0);                              // убираем «Раунд начинается!»
     lockBets(false);
+    updateStatus();   
   }
 
   refreshUI();
 
   if (s.phase === "countdown") {
-    const secLeft = Math.ceil((s.endsAt - Date.now()) / 1000);
-    runLocalCountdown(secLeft);                      // покажем остаток времени
-  }
+updateStatus(Math.ceil((s.endsAt - Date.now()) / 1000));
+  } else {
+    updateStatus();
+   }
 });
+
+socket.on("countdownStart", ({ endsAt }) => {
+  phase = "countdown";
+  updateStatus(Math.ceil((endsAt - Date.now()) / 1000));
+ });
+ socket.on("countdownTick", ({ remaining }) => {
+  phase = "countdown";
+  updateStatus(Math.ceil(remaining / 1000));
+ });
 
 
 /* === начало спина === */
@@ -119,13 +140,16 @@ socket.on("spinStart", ({ players: list, winner }) => {
   players  = list;
   totalUSD = list.reduce((a,b)=>a+b.value,0);
   lockBets(true);
-  runSpinAnimation(winner);          // ⬅️ реализация ниже
+  updateStatus();                    // «Игра началась!»
+  runSpinAnimation(winner);
 });
 
 /* === конец спина === */
 socket.on("spinEnd", ({ winner, total }) => {
   showResult(winner, total);
   lockBets(false);           // новый раунд → снова можно ставить
+  phase = "waiting";
+  updateStatus();                    // вернули «Ожидание игроков…»
 });
 
 /* ---- визуальная анимация ---- */
@@ -144,35 +168,25 @@ function runSpinAnimation(winner){
 
 function showResult(winner,total){
   document.getElementById('result').textContent =
-    `${winner.name} получает котёл на $${total.toFixed(2)}!`;
+      `${winner.name} выигрывает $${total.toFixed(2)}!`;
 }
 /* ===== управление кнопкой ставки ===== */
 function lockBets(lock){
   document.getElementById("placeBet").disabled = lock;
 }
 
-/* ===== локальный обратный отсчёт ===== */
-let cdTimer;
 
-function runLocalCountdown(sec){
-  clearInterval(cdTimer);
-  updateCountdown(sec);
-  cdTimer = setInterval(()=>{
-    sec--;
-    if (sec <= 0){
-      clearInterval(cdTimer);
-      updateCountdown(0);
-    } else {
-      updateCountdown(sec);
-    }
-  }, 1000);
+function updateStatus(sec = null){
+  if (phase === "waiting"){
+    statusEl.textContent = "Ожидание игроков...";
+  } else if (phase === "countdown"){
+    statusEl.textContent = sec && sec > 0
+        ? `Таймер: ${sec} сек`
+        : "Раунд начинается!";
+  } else if (phase === "spinning"){
+    statusEl.textContent = "Игра началась!";
+  }
 }
-
-function updateCountdown(sec){
-  const el = document.getElementById("countdown");    // <-- элемент из разметки
-  el.textContent = sec > 0 ? `Таймер: ${sec} сек` : "Раунд начинается!";
-}
-
 
 /* ================= PICKER EVENTS ================= */
 picker.addEventListener('click',e=>{
@@ -197,7 +211,7 @@ document.getElementById("placeBet").addEventListener("click", () => {
   selected.clear();
   renderPicker();
 
-  socket.emit("placeBet", { name, nfts });     // ⬅️ ушло на сервер
+  socket.emit("placeBet", { name: myName, nfts });
 });
 
 
