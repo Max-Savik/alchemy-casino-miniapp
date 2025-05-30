@@ -57,38 +57,73 @@ function renderProfile(){
     const extra=n.staked?'staked':''; grid.insertAdjacentHTML('beforeend',cardHTML(n,extra));
   });
 }
-function drawWheel(){
-  svg.innerHTML='';
-  if(!totalUSD) return;
-  let start=-90;
-  players.forEach(p=>{
-    const sweep=(p.value/totalUSD)*360, end=start+sweep;
+function drawWheel() {
+  svg.innerHTML = '';
+  if (!totalUSD) return;
 
-    /* секторы */
-    svg.insertAdjacentHTML('beforeend',
-      arc(200,200,190,start,end,p.color));
+  /* ---------- декоративные элементы ---------- */
+  //  1) один раз кладём градиент и тень прямо внутрь <svg>
+  svg.insertAdjacentHTML(
+    'beforeend',
+    `
+    <defs>
+      <!-- мягкое золото → светлая слоновая кость -->
+      <linearGradient id="nameGradient" gradientTransform="rotate(90)">
+        <stop offset="0%"  stop-color="#ffd700"/>
+        <stop offset="100%" stop-color="#fff8de"/>
+      </linearGradient>
 
-   /* подпись */
-   const mid   = start + sweep/2;
-   const pos   = polar(200,200,122,mid);
-   const angle = mid + 90;
-   const safeName = p.name || "?";
-   const label = safeName.length > 14 ? safeName.slice(0,12) + "…" : safeName;
-   svg.insertAdjacentHTML('beforeend', `
-     <text x="${pos.x}" y="${pos.y}"
-           transform="rotate(${angle} ${pos.x} ${pos.y})"
-           font-family="'Cinzel', serif"
-           font-size="12"
-           fill="#1b1405"
-           stroke="#f1e9d2"
-           stroke-width="0.6"
-           text-anchor="middle">
-       ${label}
-     </text>`);
+      <!-- лёгкое свечение + обводка -->
+      <filter id="nameShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="0" stdDeviation="1.5"
+                      flood-color="#1b1405" flood-opacity="0.9"/>
+      </filter>
+    </defs>
+    `
+  );
 
-    start=end;
+  let start = -90;
+
+  players.forEach((p) => {
+    const sweep = (p.value / totalUSD) * 360;
+    const end = start + sweep;
+
+    /* сектор */
+    svg.insertAdjacentHTML(
+      'beforeend',
+      arc(200, 200, 190, start, end, p.color)
+    );
+
+    /* подпись */
+    const mid = start + sweep / 2;
+    const pos = polar(200, 200, 122, mid);
+    const angle = mid + 90;
+    const safe = (p.name || '?').toUpperCase();
+    const label = safe.length > 14 ? safe.slice(0, 12) + '…' : safe;
+
+    svg.insertAdjacentHTML(
+      'beforeend',
+      `
+        <text
+          x="${pos.x}"
+          y="${pos.y}"
+          transform="rotate(${angle} ${pos.x} ${pos.y})"
+          fill="url(#nameGradient)"
+          font-family="'Cinzel', serif"
+          font-size="14"
+          font-weight="bold"
+          letter-spacing=".3px"
+          filter="url(#nameShadow)"
+          text-anchor="middle"
+        >
+          ${label}
+        </text>`
+    );
+
+    start = end;
   });
 }
+
 
 function refreshUI(){
   list.innerHTML='';
