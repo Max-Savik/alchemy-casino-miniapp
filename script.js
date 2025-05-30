@@ -57,72 +57,32 @@ function renderProfile(){
     const extra=n.staked?'staked':''; grid.insertAdjacentHTML('beforeend',cardHTML(n,extra));
   });
 }
-function drawWheel() {
-  svg.innerHTML = '';
-  if (!totalUSD) return;
+function drawWheel(){
+  svg.innerHTML='';
+  if(!totalUSD) return;
+  let start=-90;
+  players.forEach(p=>{
+    const sweep=(p.value/totalUSD)*360, end=start+sweep;
 
-  /* ---------- декоративные элементы ---------- */
-  //  1) один раз кладём градиент и тень прямо внутрь <svg>
-  svg.insertAdjacentHTML(
-    'beforeend',
-    `
-    <defs>
-      <!-- мягкое золото → светлая слоновая кость -->
-      <linearGradient id="nameGradient" gradientTransform="rotate(90)">
-        <stop offset="0%"  stop-color="#ffd700"/>
-        <stop offset="100%" stop-color="#fff8de"/>
-      </linearGradient>
+    /* секторы */
+    svg.insertAdjacentHTML('beforeend',
+      arc(200,200,190,start,end,p.color));
 
-      <!-- лёгкое свечение + обводка -->
-      <filter id="nameShadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.5"
-                      flood-color="#1b1405" flood-opacity="0.9"/>
-      </filter>
-    </defs>
-    `
-  );
+    /* подписи */
+    const mid = start + sweep/2;
+    const pos = polar(200,200,120,mid);      // точка для текста
+    const angle = mid + 90;                  // чтобы текст «по радиусу»
+    svg.insertAdjacentHTML('beforeend',`
+      <text x="${pos.x}" y="${pos.y}"
+            transform="rotate(${angle} ${pos.x} ${pos.y})"
+            font-size="15" fill="#000" text-anchor="middle">
+        ${p.name}
+      </text>`);
 
-  let start = -90;
-
-  players.forEach((p) => {
-    const sweep = (p.value / totalUSD) * 360;
-    const end = start + sweep;
-
-    /* сектор */
-    svg.insertAdjacentHTML(
-      'beforeend',
-      arc(200, 200, 190, start, end, p.color)
-    );
-
-    /* подпись */
-    const mid = start + sweep / 2;
-    const pos = polar(200, 200, 122, mid);
-    const angle = mid + 90;
-    const safe = (p.name || '?').toUpperCase();
-    const label = safe.length > 14 ? safe.slice(0, 12) + '…' : safe;
-
-    svg.insertAdjacentHTML(
-      'beforeend',
-      `
-        <text
-          x="${pos.x}"
-          y="${pos.y}"
-          transform="rotate(${angle} ${pos.x} ${pos.y})"
-          fill="url(#nameGradient)"
-          font-family="'Cinzel', serif"
-          font-size="14"
-          font-weight="bold"
-          letter-spacing=".3px"
-          filter="url(#nameShadow)"
-          text-anchor="middle"
-        >
-          ${label}
-        </text>`
-    );
-
-    start = end;
+    start=end;
   });
 }
+
 
 
 function refreshUI(){
