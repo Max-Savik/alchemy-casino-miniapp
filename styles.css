@@ -440,17 +440,22 @@ nav li {
     flex-shrink: 0;
   }
 }
-/* ---------- предотвратить горизонтальный скролл ---------- */
-html,body{overflow-x:hidden;}   /* скрываем возможный выброс */
+/* запрет прокрутки – на всякий случай */
+html,body{overflow-x:hidden;}
 
-.header-row{max-width:100%;}    /* если вдруг поменяете класс */
+/* HEADER: не даём теням / градиентам вылезти */
+header{overflow:hidden;}
 
+/* кнопка WALLET – максимум 34% ширины экрана;
+   текст обрежется, но иконка останется */
 .wallet-btn{
-  max-width:9rem;               /* НЕ шире 144 px */
-  white-space:nowrap;           /* не переносится */
+  max-width:34vw;            /* <= 34 % вьюпорта */
+  flex-shrink:1;             /* разрешаем сжиматься */
 }
-@media (max-width:430px){
-  .wallet-btn{
-    max-width:3.2rem;           /* ~ иконка + 4-5 px паддинга */
-  }
+
+/* если всё-таки 34 % много – прячем текст */
+@media(max-width:420px){
+  .wallet-btn span{display:none;}
+  .wallet-btn svg{margin-right:0;}
 }
+
