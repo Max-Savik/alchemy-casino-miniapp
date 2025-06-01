@@ -31,26 +31,27 @@
                 <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
             </a>
 
-                  <!-- баланс TON -->
-       <div id="balance" class="flex items-center gap-2 text-lg font-semibold">
-           <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg"
-                alt="TON" class="w-6 h-6">
-           <span id="tonBalance">0.00</span>
-       </div>
+     <!-- 2. БАЛАНС: иконка 20px, выравнивание -->
+     <div id="balance" class="flex items-center gap-2 text-lg font-semibold">
+         <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg" alt="TON"
+              class="w-5 h-5">
+         <span id="tonBalance">0.00</span>
+     </div>
 
 
-            <button id="connectWallet"
-                class="w-full sm:w-auto bg-gradient-to-br from-amber-500 to-amber-700 hover:brightness-110 text-gray-900 font-semibold py-2 px-5 rounded-xl shadow-lg">
-                🔗 Wallet
-            </button>
-        </div>
-    </header>
+    <button id="connectWallet"
+             class="w-auto flex-1 max-w-[180px]
+                    bg-gradient-to-br from-amber-500 to-amber-700
+                    hover:brightness-110 text-gray-900 font-semibold py-2 px-5
+                    rounded-xl shadow-lg">
 
     <!-- ========== MAIN ========== -->
     <main class="flex-grow">
 
         <!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
-        <section id="gameSection" class="flex flex-col items-center px-4 py-10 sm:py-14 gap-10">
+        <section id="gameSection"
+         class="flex flex-col items-center px-4 py-10 sm:py-14 gap-10
+                pb-24 sm:pb-0">  <!-- место под нижний нав -->
             <h1 class="text-4xl sm:text-6xl text-center mb-4 glow-text font-['Forum'] tracking-wider">
                 Алхимический&nbsp;Котел</h1>
             <p class="mb-8 sm:mb-12 text-center text-lg sm:text-2xl max-w-3xl font-['Forum']">
@@ -113,10 +114,11 @@
 
     <!-- ========== BOTTOM NAV ========== -->
     <nav class="bottom-nav flex justify-around py-3 text-lg font-semibold">
-        <button id="navGame" class="nav-link flex flex-col items-center">
-            <span>🜃</span><span>Котел</span>
-        </button>
-        <button id="navProfile" class="nav-link flex flex-col items-center">
+        <button id="navGame"
+        class="nav-link flex flex-col items-center text-amber-300 active:text-amber-500">
+   <span>🜃</span><span class="text-xs">Котел</span></button>
+
+        <button id="navProfile" class="nav-link flex flex-col items-center text-gray-200 active:text-amber-500">
             <span>👤</span><span>Профиль</span>
         </button>
     </nav>
