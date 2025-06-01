@@ -31,10 +31,13 @@
                 <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
             </a>
 
-            <nav class="flex gap-6 text-lg font-semibold">
-                <button id="navGame" class="nav-link">Котел</button>
-                <button id="navProfile" class="nav-link">Профиль</button>
-            </nav>
+                  <!-- баланс TON -->
+       <div id="balance" class="flex items-center gap-2 text-lg font-semibold">
+           <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg"
+                alt="TON" class="w-6 h-6">
+           <span id="tonBalance">0.00</span>
+       </div>
+
 
             <button id="connectWallet"
                 class="w-full sm:w-auto bg-gradient-to-br from-amber-500 to-amber-700 hover:brightness-110 text-gray-900 font-semibold py-2 px-5 rounded-xl shadow-lg">
@@ -108,9 +111,19 @@
 
     </main>
 
+    <!-- ========== BOTTOM NAV ========== -->
+    <nav class="bottom-nav flex justify-around py-3 text-lg font-semibold">
+        <button id="navGame" class="nav-link flex flex-col items-center">
+            <span>🜃</span><span>Котел</span>
+        </button>
+        <button id="navProfile" class="nav-link flex flex-col items-center">
+            <span>👤</span><span>Профиль</span>
+        </button>
+    </nav>
+
     <!-- ========== FOOTER ========== -->
     <footer class="text-center py-6 text-xs sm:text-sm opacity-60">
-        © 2025 Alchemy Casino.
+        © 2025 Alchemy Casino.
     </footer>
 </body>
 
