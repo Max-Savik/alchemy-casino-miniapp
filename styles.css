@@ -389,8 +389,8 @@ nav li {
 /* ---------- нижний навбар: safe-area + высота ---------- */
 .bottom-nav{
   position:fixed;left:0;right:0;bottom:0;
-  padding-top:0.35rem;
-  padding-bottom:calc(0.6rem + env(safe-area-inset-bottom));
+  padding-top:0.15rem;                        
+  padding-bottom:calc(0.35rem + env(safe-area-inset-bottom));
   background:rgba(22,14,6,.55);
   backdrop-filter:blur(8px) saturate(120%);
   border-top:1px solid rgba(199,164,87,.3);
