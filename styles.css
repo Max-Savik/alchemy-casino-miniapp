@@ -432,3 +432,11 @@ nav li {
   .wallet-btn{padding:.45rem .55rem;}
 }
 
+/* компактная Wallet-кнопка на узких экранах */
+@media (max-width:420px){
+  .wallet-btn{
+    padding: .45rem .6rem;   /* меньше, чем .9rem */
+    max-width: 40vw;         /* не больше 40% экрана */
+    flex-shrink: 0;
+  }
+}
