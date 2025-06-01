@@ -18,6 +18,7 @@ body {
     min-height: 100%;
     margin: 0;
     scroll-behavior: smooth;
+    padding-bottom: 4.5rem;
 }
 
 body {
@@ -359,6 +360,16 @@ nav li {
 ::-webkit-scrollbar-thumb {
     background: #8f6f28;
     border-radius: 3px;
+}
+/* ==== нижняя навигация ==== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: rgba(22,14,6,.55);
+    backdrop-filter: blur(8px) saturate(120%);
+    border-top: 1px solid rgba(199,164,87,.3);
+    z-index: 60;
 }
 
 /* ===== NFT cards ===== */
