@@ -397,6 +397,10 @@ nav li {
   z-index:60;
 }
 
+
+/* одинаково низкий и на больших экранах */
+.bottom-nav .nav-link span{font-size:0.70rem;}      /* подписи меньше */
+.bottom-nav .nav-link svg{width:15px;height:15px;}   /* иконки меньше */
 /* подсветка активной вкладки */
 .bottom-nav .nav-link{transition:color .3s;}
 .bottom-nav .nav-link.active{color:#d6b76d;}
