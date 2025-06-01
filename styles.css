@@ -395,3 +395,36 @@ nav li {
 .hidden {
     display: none
 }
+/* ---------- nft-card без @apply ---------- */
+.nft-card{
+  background:#1f2937;        /* bg-gray-800 */
+  border-radius:0.75rem;     /* rounded-xl  */
+  padding:0.75rem;           /* p-3         */
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  cursor:pointer;transition:0.2s;border:2px solid transparent;
+}
+.nft-card:hover    { border-color:#fbbf24 }   /* hover:ring-amber-400 */
+.nft-card.selected { border-color:#f59e0b }   /* ring-amber-500       */
+.nft-card.staked   { opacity:.4;pointer-events:none }
+
+.nft-card img{ width:6rem;height:6rem;object-fit:cover;border-radius:0.5rem; } /* w-24 h-24 rounded-lg */
+
+/* ---------- адаптивный отступ под нижний бар ---------- */
+@media (min-width:640px){
+  body{ padding-bottom:0; }
+}
+
+/* ---------- нижний навбар: safe-area + высота ---------- */
+.bottom-nav{
+  position:fixed;left:0;right:0;bottom:0;
+  padding-top:0.35rem;
+  padding-bottom:calc(0.6rem + env(safe-area-inset-bottom));
+  background:rgba(22,14,6,.55);
+  backdrop-filter:blur(8px) saturate(120%);
+  border-top:1px solid rgba(199,164,87,.3);
+  z-index:60;
+}
+
+/* подсветка активной вкладки */
+.bottom-nav .nav-link{transition:color .3s;}
+.bottom-nav .nav-link.active{color:#d6b76d;}
