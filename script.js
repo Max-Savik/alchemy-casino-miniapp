@@ -1,5 +1,11 @@
 const socket = io("https://alchemy-casino-miniapp.onrender.com"); 
 
+/* ===== временный мок баланса TON ===== */
+function setBalance(amount){
+  document.getElementById("tonBalance").textContent =
+        parseFloat(amount).toFixed(2);
+}
+
 /* === имя текущего пользователя из Telegram === */
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
 const myName =
