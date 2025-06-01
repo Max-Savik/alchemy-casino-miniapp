@@ -33,17 +33,18 @@
       <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
     </a>
 
-    <!-- баланс TON -->
+    <!-- spacer притянет кнопку вправо -->
+    <div class="flex-grow"></div>
+
+
+     <div class="flex items-center gap-2"> 
+         <!-- баланс TON -->
     <div id="balanceBox" class="flex items-center gap-1 flex-none px-2 py-1 rounded-full ton-pill">
       <img src="https://s3.coinmarketcap.com/static/img/portraits/6304d4f7dcf54d0fb59743ba.png"
      alt="TON" width="16" height="16" loading="lazy">
       <span id="tonBalance" class="text-sm font-semibold">0.00</span>
     </div>
-
-    <!-- spacer притянет кнопку вправо -->
-    <div class="flex-grow"></div>
-
-<!-- кнопка Wallet -->
+     <!-- кнопка Wallet -->
 <button id="connectWallet"
         class="wallet-btn flex items-center gap-1 flex-none">
   <!-- иконка -->
@@ -57,6 +58,8 @@
   <!-- подпись (прячем на узких) -->
   <span class="wallet-label">WALLET</span>
 </button>
+     </div>
+
 
   </div>
 </header>
