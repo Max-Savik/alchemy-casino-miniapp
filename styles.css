@@ -389,21 +389,19 @@ nav li {
 /* ---------- нижний навбар: safe-area + высота ---------- */
 .bottom-nav{
   position:fixed;left:0;right:0;bottom:0;
-  padding-top:0.10rem;
-  padding-bottom:calc(0.25rem + env(safe-area-inset-bottom));
+  /* ещё меньше вертикальных отступов */
+  padding-top:0.05rem;                                   /* было 0.10rem */
+  padding-bottom:calc(0.18rem + env(safe-area-inset-bottom)); /* было 0.25rem */
   background:rgba(22,14,6,.55);
   backdrop-filter:blur(8px) saturate(120%);
   border-top:1px solid rgba(199,164,87,.3);
   z-index:60;
 }
 
+/* подписи и иконки чуть крупнее, но всё ещё компактно */
+.bottom-nav .nav-link span{font-size:0.80rem;}   /* было 0.70rem */
+.bottom-nav .nav-link svg{width:16px;height:16px;}/* было 15px  */
 
-/* одинаково низкий и на больших экранах */
-.bottom-nav .nav-link span{font-size:0.70rem;}      /* подписи меньше */
-.bottom-nav .nav-link svg{width:15px;height:15px;}   /* иконки меньше */
-/* подсветка активной вкладки */
-.bottom-nav .nav-link{transition:color .3s;}
-.bottom-nav .nav-link.active{color:#d6b76d;}
 
 /* ── PILLS & BUTTON IN HEADER ─────────────── */
 .ton-pill{
