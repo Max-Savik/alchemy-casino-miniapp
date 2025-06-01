@@ -453,9 +453,13 @@ header{overflow:hidden;}
   flex-shrink:1;             /* разрешаем сжиматься */
 }
 
-/* если всё-таки 34 % много – прячем текст */
-@media(max-width:420px){
-  .wallet-btn span{display:none;}
-  .wallet-btn svg{margin-right:0;}
+/* показывать текст WALLET только когда экран шире 420 px */
+@media (max-width:420px){
+  .wallet-label{display:none;}      /* скрываем слово */
+  .wallet-btn{
+    padding:.45rem .55rem;          /* уже кнопка */
+    max-width:2.8rem;               /* ≈ иконка + паддинги */
+  }
 }
+
 
