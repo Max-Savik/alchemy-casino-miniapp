@@ -25,30 +25,32 @@
 
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
     <!-- ========== HEADER ========== -->
-    <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-            <a href="#" class="text-3xl font-extrabold glow-text flex items-center gap-1">
-                <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
-            </a>
+<header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
 
-     <!-- 2. БАЛАНС: иконка 20px, выравнивание -->
-     <div id="balance" class="flex items-center gap-2 text-lg font-semibold">
-         <img src="https://s3.coinmarketcap.com/static/img/portraits/6304d4f7dcf54d0fb59743ba.png" alt="TON"
-              class="w-5 h-5">
-         <span id="tonBalance">0.00</span>
-     </div>
+    <!-- логотип -->
+    <a class="text-3xl font-extrabold glow-text flex items-center gap-1 flex-none">
+      <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
+    </a>
 
+    <!-- баланс TON -->
+    <div id="balanceBox" class="flex items-center gap-1 flex-none px-2 py-1 rounded-full ton-pill">
+      <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg" alt="TON" class="w-4 h-4">
+      <span id="tonBalance" class="text-sm font-semibold">0.00</span>
+    </div>
 
-    <button id="connectWallet"
-        class="w-[160px]
-               bg-gradient-to-br from-amber-500 to-amber-700
-               hover:brightness-110 text-gray-900 font-semibold py-2 px-5
-               rounded-xl shadow-lg">
-      🔗 Wallet
+    <!-- spacer притянет кнопку вправо -->
+    <div class="flex-grow"></div>
+
+    <!-- кнопка Wallet -->
+    <button id="connectWallet" class="wallet-btn flex items-center gap-1 flex-none">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M4 6h16M4 18h16" stroke="#1b1405" stroke-width="2" stroke-linecap="round"/></svg>
+      WALLET
     </button>
 
-    </div>    
-</header>  
+  </div>
+</header>
+ 
     <!-- ========== MAIN ========== -->
     <main class="flex-grow">
 
