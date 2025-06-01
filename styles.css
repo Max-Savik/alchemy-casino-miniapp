@@ -361,35 +361,7 @@ nav li {
     background: #8f6f28;
     border-radius: 3px;
 }
-.bottom-nav {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(22,14,6,.55);
-  backdrop-filter: blur(8px) saturate(120%);
-  border-top: 1px solid rgba(199,164,87,.3);
-  z-index: 60;
-}
-.bottom-nav .nav-link { transition: color .3s; }
-.bottom-nav .nav-link.active { color: #d6b76d; }   /* золотой при активной */
 
-
-/* ===== NFT cards ===== */
-.nft-card {
-    @apply bg-gray-800 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer transition ring-2 ring-transparent hover:ring-amber-400;
-}
-
-.nft-card.selected {
-    @apply ring-amber-500;
-}
-
-.nft-card.staked {
-    @apply opacity-40 pointer-events-none;
-}
-
-.nft-card img {
-    @apply w-24 h-24 object-cover rounded-lg mb-2;
-}
 
 /* простой helper чтобы прятать/показывать секции */
 .hidden {
