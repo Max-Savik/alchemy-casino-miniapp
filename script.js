@@ -245,6 +245,9 @@ document.getElementById('navProfile').addEventListener('click',()=>show('profile
 function show(view){
   document.getElementById('gameSection').classList.toggle('hidden',view!=='game');
   document.getElementById('profileSection').classList.toggle('hidden',view!=='profile');
+    // ↓ Подсветка нижней навигации
+  document.getElementById('navGame').classList.toggle('active', view==='game');
+  document.getElementById('navProfile').classList.toggle('active', view==='profile')
 }
 
 /* ================= BUBBLES / STEAM (оставлено) ================= */
