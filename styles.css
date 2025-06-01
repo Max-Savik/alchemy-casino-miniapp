@@ -429,5 +429,6 @@ nav li {
 @media (max-width:380px){
   .wallet-btn span{display:none;}        /* прячем текст, оставляем иконку */
   .wallet-btn svg{margin:0;}             /* центрируем иконку */
+  .wallet-btn{padding:.45rem .55rem;}
 }
 
