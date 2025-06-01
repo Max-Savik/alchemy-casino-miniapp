@@ -440,3 +440,17 @@ nav li {
     flex-shrink: 0;
   }
 }
+/* ---------- предотвратить горизонтальный скролл ---------- */
+html,body{overflow-x:hidden;}   /* скрываем возможный выброс */
+
+.header-row{max-width:100%;}    /* если вдруг поменяете класс */
+
+.wallet-btn{
+  max-width:9rem;               /* НЕ шире 144 px */
+  white-space:nowrap;           /* не переносится */
+}
+@media (max-width:430px){
+  .wallet-btn{
+    max-width:3.2rem;           /* ~ иконка + 4-5 px паддинга */
+  }
+}
