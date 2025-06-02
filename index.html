@@ -126,16 +126,29 @@
 
     </main>
 
-    <!-- ========== BOTTOM NAV ========== -->
-    <nav class="bottom-nav flex justify-around py-3 text-lg font-semibold">
-        <button id="navGame"
-        class="nav-link flex flex-col items-center text-amber-300 active:text-amber-500">
-   <span>🜃</span><span class="text-xs">Котел</span></button>
+<!-- ========== BOTTOM NAV ========== -->
+<nav class="bottom-nav flex justify-around text-lg font-semibold">
+  <!-- ▼ 1. Игры -->
+  <button id="navGame" class="nav-link flex flex-col items-center">
+      <span class="nav-ico">🎮</span><span class="nav-lbl">Игры</span>
+  </button>
 
-        <button id="navProfile" class="nav-link flex flex-col items-center text-gray-200 active:text-amber-500">
-            <span>👤</span><span class="text-xs">Профиль</span>
-        </button>
-    </nav>
+  <!-- ▼ 2. Маркет -->
+  <button id="navMarket" class="nav-link flex flex-col items-center">
+      <span class="nav-ico">🛒</span><span class="nav-lbl">Маркет</span>
+  </button>
+
+  <!-- ▼ 3. Профиль -->
+  <button id="navProfile" class="nav-link flex flex-col items-center">
+      <span class="nav-ico">👤</span><span class="nav-lbl">Профиль</span>
+  </button>
+
+  <!-- ▼ 4. Заработок -->
+  <button id="navEarn" class="nav-link flex flex-col items-center">
+      <span class="nav-ico">💰</span><span class="nav-lbl">Доход</span>
+  </button>
+</nav>
+
 
     <!-- ========== FOOTER ========== -->
     <footer class="text-center py-6 text-xs sm:text-sm opacity-60">
