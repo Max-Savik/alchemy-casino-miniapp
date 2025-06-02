@@ -128,39 +128,37 @@
 
     </main>
 
-<!-- ========== BOTTOM NAV ========== -->
-<nav class="bottom-nav flex justify-around text-lg font-semibold">
-  <!-- ▼ 1. Игры -->
+<!-- ======================================================
+     НИЖНЯЯ НАВИГАЦИЯ (4 кнопки: Игры / Маркет / Профиль / Доход)
+     ====================================================== -->
+<nav class="bottom-nav flex justify-around">
+  <!-- 1. Игры -->
   <button id="navGame" class="nav-link flex flex-col items-center">
-    <!-- Новая SVG-иконка «Джойстик» -->
+    <!-- SVG-иконка «джойстик» -->
     <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
-      <!-- круг игрового контроллера -->
       <circle cx="12" cy="8" r="4" />
-      <!-- «ручка» джойстика -->
       <path d="M12 12v4" />
       <path d="M10 20h4" />
     </svg>
     <span class="nav-lbl">Игры</span>
   </button>
 
-  <!-- ▼ 2. Маркет -->
+  <!-- 2. Маркет -->
   <button id="navMarket" class="nav-link flex flex-col items-center">
-    <!-- Новая SVG-иконка «Тележка» -->
+    <!-- SVG-иконка «тележка» -->
     <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
-      <!-- корпус тележки -->
       <path d="M6 6h15l-1.5 9h-12L6 6z" />
-      <!-- колесо 1 -->
       <circle cx="9" cy="19" r="2" />
-      <!-- колесо 2 -->
       <circle cx="17" cy="19" r="2" />
     </svg>
     <span class="nav-lbl">Маркет</span>
   </button>
 
-  <!-- ▼ 3. Профиль -->
+  <!-- 3. Профиль -->
   <button id="navProfile" class="nav-link flex flex-col items-center">
+    <!-- SVG-иконка «профиль» -->
     <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-3-3.87" />
@@ -170,17 +168,19 @@
     <span class="nav-lbl">Профиль</span>
   </button>
 
-  <!-- ▼ 4. Заработок -->
+  <!-- 4. Доход -->
   <button id="navEarn" class="nav-link flex flex-col items-center">
+    <!-- SVG-иконка «доллар в квадрате» -->
     <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 4h16v16H4z" />      <!-- простой квадрат-рамка -->
-      <path d="M8 12h8" />           <!-- горизонтальная черта (доллар) -->
-      <path d="M12 8v8" />           <!-- вертикальная черта (доллар) -->
+      <path d="M4 4h16v16H4z" />
+      <path d="M8 12h8" />
+      <path d="M12 8v8" />
     </svg>
     <span class="nav-lbl">Доход</span>
   </button>
 </nav>
+
 
 
     <!-- ========== FOOTER ========== -->
