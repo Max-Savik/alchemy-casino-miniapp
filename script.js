@@ -240,15 +240,23 @@ document.getElementById("placeBet").addEventListener("click", () => {
 
 
 /* ================= SIMPLE NAV ================= */
-document.getElementById('navGame').addEventListener('click',()=>show('game'));
-document.getElementById('navProfile').addEventListener('click',()=>show('profile'));
+document.getElementById('navGame')   .addEventListener('click', ()=>show('game'));
+document.getElementById('navMarket') .addEventListener('click', ()=>show('market'));
+document.getElementById('navProfile').addEventListener('click', ()=>show('profile'));
+document.getElementById('navEarn')   .addEventListener('click', ()=>show('earn'));
 function show(view){
-  document.getElementById('gameSection').classList.toggle('hidden',view!=='game');
-  document.getElementById('profileSection').classList.toggle('hidden',view!=='profile');
-    // ↓ Подсветка нижней навигации
-  document.getElementById('navGame').classList.toggle('active', view==='game');
-  document.getElementById('navProfile').classList.toggle('active', view==='profile')
+  gameSection   .classList.toggle('hidden', view!=='game');
+  profileSection.classList.toggle('hidden', view!=='profile');
+  marketSection .classList.toggle('hidden', view!=='market');
+  earnSection   .classList.toggle('hidden', view!=='earn');
+
+  /* подсветка в навбаре */
+  navGame   .classList.toggle('active', view==='game');
+  navMarket .classList.toggle('active', view==='market');
+  navProfile.classList.toggle('active', view==='profile');
+  navEarn   .classList.toggle('active', view==='earn');
 }
+
 
 /* ================= BUBBLES / STEAM (оставлено) ================= */
 const cauldron=document.getElementById('cauldron');
