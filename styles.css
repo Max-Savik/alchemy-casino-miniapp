@@ -240,8 +240,9 @@ nav li {
 /* ===== CAULDRON / WHEEL (без изменений) ===== */
 #wheelWrapper {
     position: relative;
-    width: min(340px, 90vw);
-    height: min(340px, 90vw)
+    width: min(306px, 81vw);
+    height: min(306px, 81vw)
+    margin-top:-0.6rem;
 }
 
 #cauldron {
@@ -386,19 +387,6 @@ nav li {
   body{ padding-bottom:0; }
 }
 
-/* ---------- нижний навбар: safe-area + высота ---------- */
-.bottom-nav{
-  position:fixed;left:0;right:0;bottom:0;
-  padding-top:0.05rem;                                 
-  padding-bottom:calc(0.15rem + env(safe-area-inset-bottom));
-  background:rgba(22,14,6,.55);
-  backdrop-filter:blur(8px) saturate(120%);
-  border-top:1px solid rgba(199,164,87,.3);
-  z-index:60;
-}
-
-.bottom-nav .nav-link span{font-size:2rem;}   
-.bottom-nav .nav-link svg{width:16px;height:25px;}
 
 
 /* ── PILLS & BUTTON IN HEADER ─────────────── */
@@ -461,6 +449,19 @@ header{overflow:hidden;}
     max-width:2.8rem;               /* ≈ иконка + паддинги */
   }
 }
+/* ---------- нижний навбар: safe-area + высота ---------- */
+.bottom-nav{
+  position:fixed;left:0;right:0;bottom:0;
+  padding-top:0.25rem;                                 
+  padding-bottom:calc(0.15rem + env(safe-area-inset-bottom));
+  background:rgba(22,14,6,.55);
+  backdrop-filter:blur(8px) saturate(120%);
+  border-top:1px solid rgba(199,164,87,.3);
+  z-index:60;
+}
+
+.bottom-nav .nav-link span{font-size:2rem;}   
+.bottom-nav .nav-link svg{width:16px;height:25px;}
 
 /* каждая кнопка занимает ровно 25 % ширины */
 .bottom-nav .nav-link{
@@ -470,8 +471,8 @@ header{overflow:hidden;}
 }
 
 /* чуть крупнее иконка, подпись — как выше (0.8rem) */
-.nav-ico{font-size:1.05rem;line-height:1;}
-.nav-lbl{font-size:0.80rem;line-height:1;}
+.nav-ico{font-size:1.35rem;line-height:1;}
+.nav-lbl{font-size:0.90rem;line-height:1;}
 
 /* активная вкладка — золотой цвет */
 .bottom-nav .nav-link.active{color:#d6b76d;}
