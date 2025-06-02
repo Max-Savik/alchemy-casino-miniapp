@@ -449,35 +449,41 @@ header{overflow:hidden;}
     max-width:2.8rem;               /* ≈ иконка + паддинги */
   }
 }
-/* ─────────────── N  I  Z  H  N  I  Y   N  A  V  B  A  R ────────────── */
+/* ---------- нижний навбар (фиксированный) ---------- */
 .bottom-nav{
-  position:fixed; left:0; right:0; bottom:0;
-  /* высота: чуть «ниже» (= больше) и учёт safe-area */
-  padding-top:0.20rem;
-  padding-bottom:calc(0.40rem + env(safe-area-inset-bottom));
+  position:fixed;left:0;right:0;bottom:0;
+  padding-top:0.35rem;                               /* комфортная высота */
+  padding-bottom:calc(0.35rem + env(safe-area-inset-bottom));
   background:rgba(22,14,6,.55);
   backdrop-filter:blur(8px) saturate(120%);
-  border-top:1px solid rgba(199,164,87,.30);
+  border-top:1px solid rgba(199,164,87,.3);
   z-index:60;
-  display:flex; justify-content:space-around;
-  font-weight:600;
+  display:flex;justify-content:space-around;
 }
 
-/* ► каждая из 4-х кнопок = ровно 25 % */
+/* каждая кнопка = 25 % ширины, выравнивание по центру */
 .bottom-nav .nav-link{
   width:25%;
-  padding:0.35rem 0;               /* вертикальный отступ */
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
+  padding:0.25rem 0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
   transition:color .25s;
+  color:#d6b76d;               /* базовый цвет */
 }
 
-/* ► иконка и подпись умеренного размера */
-.nav-ico{font-size:1.30rem; line-height:1;}
-.nav-lbl{font-size:0.78rem; line-height:1; margin-top:0.05rem;}
+/* активная вкладка — ярче */
+.bottom-nav .nav-link.active{color:#ffda87;}
 
-/* ► подсветка активной */
-.bottom-nav .nav-link.active{color:#d6b76d;}
+/* ---------- иконка + подпись ---------- */
+.nav-ico{
+  width:24px;height:24px;      /* фиксированный размер!  */
+  margin-bottom:0.15rem;
+}
+
+.nav-lbl{
+  font-size:0.72rem;           /* читаемо, не громоздко   */
+  line-height:1;
+}
+
 
 
 
