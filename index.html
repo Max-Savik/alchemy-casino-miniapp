@@ -69,8 +69,8 @@
 
         <!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
         <section id="gameSection"
-         class="flex flex-col items-center px-4 py-10 sm:py-14 gap-10
-                pb-24 sm:pb-0">  <!-- место под нижний нав -->
+         class="flex flex-col items-center px-4 py-6 sm:py-10 gap-6
+                pb-24 sm:pb-0"> 
             <h1 class="text-4xl sm:text-6xl text-center mb-4 glow-text font-['Forum'] tracking-wider">Котел</h1>
 
             <div class="flex flex-col sm:flex-row sm:flex-wrap gap-8 sm:gap-12 justify-center w-full max-w-7xl">
@@ -129,28 +129,52 @@
     </main>
 
 <!-- ========== BOTTOM NAV ========== -->
-<nav class="bottom-nav flex justify-around text-lg font-semibold">
+<nav class="bottom-nav text-lg font-semibold">
+
   <!-- ▼ 1. Игры -->
   <button id="navGame" class="nav-link flex flex-col items-center">
-      <span class="nav-ico">🎮</span><span class="nav-lbl">Игры</span>
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+         <path d="M6 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
+         <circle cx="8" cy="16" r="1.5"/>
+         <circle cx="16" cy="16" r="1.5"/>
+         <path d="M9 8h6M12 5v6"/>
+      </svg>
+      <span class="nav-lbl">Игры</span>
   </button>
 
   <!-- ▼ 2. Маркет -->
   <button id="navMarket" class="nav-link flex flex-col items-center">
-      <span class="nav-ico">🛒</span><span class="nav-lbl">Маркет</span>
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+         <path d="M6 9l1 11h10l1-11"/>
+         <path d="M4 9h16l-1 11H5L4 9z"/>
+         <path d="M3 6h18l-1 3H4L3 6z"/>
+      </svg>
+      <span class="nav-lbl">Маркет</span>
   </button>
 
   <!-- ▼ 3. Профиль -->
   <button id="navProfile" class="nav-link flex flex-col items-center">
-      <span class="nav-ico">👤</span><span class="nav-lbl">Профиль</span>
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+         <circle cx="12" cy="8" r="4"/>
+         <path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/>
+      </svg>
+      <span class="nav-lbl">Профиль</span>
   </button>
 
-  <!-- ▼ 4. Заработок -->
+  <!-- ▼ 4. Доход -->
   <button id="navEarn" class="nav-link flex flex-col items-center">
-      <span class="nav-ico">💰</span><span class="nav-lbl">Доход</span>
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+         <path d="M12 1v22"/>
+         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      <span class="nav-lbl">Доход</span>
   </button>
-</nav>
 
+</nav>
 
     <!-- ========== FOOTER ========== -->
     <footer class="text-center py-6 text-xs sm:text-sm opacity-60">
