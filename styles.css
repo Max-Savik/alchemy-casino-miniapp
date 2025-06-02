@@ -390,17 +390,16 @@ nav li {
 .bottom-nav{
   position:fixed;left:0;right:0;bottom:0;
   /* ещё меньше вертикальных отступов */
-  padding-top:0.05rem;                                   /* было 0.10rem */
-  padding-bottom:calc(0.18rem + env(safe-area-inset-bottom)); /* было 0.25rem */
+  padding-top:0.05rem;                                 
+  padding-bottom:calc(0.1rem + env(safe-area-inset-bottom));
   background:rgba(22,14,6,.55);
   backdrop-filter:blur(8px) saturate(120%);
   border-top:1px solid rgba(199,164,87,.3);
   z-index:60;
 }
 
-/* подписи и иконки чуть крупнее, но всё ещё компактно */
-.bottom-nav .nav-link span{font-size:0.80rem;}   /* было 0.70rem */
-.bottom-nav .nav-link svg{width:16px;height:16px;}/* было 15px  */
+.bottom-nav .nav-link span{font-size:1rem;}   
+.bottom-nav .nav-link svg{width:16px;height:25px;}
 
 
 /* ── PILLS & BUTTON IN HEADER ─────────────── */
