@@ -134,17 +134,12 @@
 <nav class="bottom-nav flex justify-around">
   <!-- 1. Игры -->
   <button id="navGame" class="nav-link flex flex-col items-center">
-    <!-- SVG-иконка «геймпад» -->
     <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
-      <!-- Контур корпуса геймпада -->
       <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
-      <!-- Левый джойстик -->
       <circle cx="8" cy="12" r="1.5" />
-      <!-- Крестовина на правой стороне -->
       <path d="M12 10v4" />
       <path d="M11 12h2" />
-      <!-- Кнопки справа -->
       <path d="M16 11v2" />
       <path d="M15 12h2" />
     </svg>
@@ -153,21 +148,17 @@
 
   <!-- 2. Маркет -->
   <button id="navMarket" class="nav-link flex flex-col items-center">
-    <!-- SVG-иконка «тележка» -->
     <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
-      <!-- Колёса -->
       <circle cx="9" cy="21" r="1.5" />
       <circle cx="19" cy="21" r="1.5" />
-      <!-- Корпус тележки -->
       <path d="M1 1h4l2.68 13.39a2 2 0 001.97 1.61h9.72a2 2 0 001.97-1.61L23 6H6" />
     </svg>
     <span class="nav-lbl">Маркет</span>
   </button>
 
-  <!-- 3. Профиль (оставляем как есть) -->
+  <!-- 3. Профиль (оставляем без изменений) -->
   <button id="navProfile" class="nav-link flex flex-col items-center">
-    <!-- SVG-иконка «профиль» -->
     <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-3-3.87" />
@@ -177,19 +168,15 @@
     <span class="nav-lbl">Профиль</span>
   </button>
 
-  <!-- 4. Доход -->
+  <!-- 4. Доход (обновлённая иконка) -->
   <button id="navEarn" class="nav-link flex flex-col items-center">
-    <!-- SVG-иконка «монета с долларом» -->
     <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
       <!-- Контур монеты -->
       <circle cx="12" cy="12" r="8" />
-      <!-- Вертикальная черта штриха доллара -->
-      <path d="M12 8v8" />
-      <!-- Верхняя изогнутая часть S -->
-      <path d="M9 10h6c0 1.333-1.333 1.333-3 1.333s-3 .0-3-1.333z" />
-      <!-- Нижняя изогнутая часть S -->
-      <path d="M9 14h6c0-1.333-1.333-1.333-3-1.333s-3 0-3 1.333z" />
+      <!-- Стрелка вверх внутри монеты -->
+      <path d="M12 16V12" />
+      <path d="M10 14l2-2 2 2" />
     </svg>
     <span class="nav-lbl">Доход</span>
   </button>
