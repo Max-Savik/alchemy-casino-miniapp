@@ -449,40 +449,62 @@ header{overflow:hidden;}
     max-width:2.8rem;               /* ≈ иконка + паддинги */
   }
 }
-/* ---------- нижний навбар (фиксированный) ---------- */
-.bottom-nav{
-  position:fixed;left:0;right:0;bottom:0;
-  padding-top:0.35rem;                               /* комфортная высота */
-  padding-bottom:calc(0.35rem + env(safe-area-inset-bottom));
-  background:rgba(22,14,6,.55);
-  backdrop-filter:blur(8px) saturate(120%);
-  border-top:1px solid rgba(199,164,87,.3);
-  z-index:60;
-  display:flex;justify-content:space-around;
+/* =========================
+   НИЖНЯЯ НАВИГАЦИЯ (4 КНОПКИ)
+   ========================= */
+
+/* контейнер навигации */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-top: 0.35rem; /* чуть отступ сверху */
+  padding-bottom: calc(0.35rem + env(safe-area-inset-bottom)); /* safe-area снизу */
+  background: rgba(22, 14, 6, 0.55);
+  backdrop-filter: blur(8px) saturate(120%);
+  border-top: 1px solid rgba(199, 164, 87, 0.3);
+  z-index: 60;
+
+  display: flex;
+  justify-content: space-around;
 }
 
-/* каждая кнопка = 25 % ширины, выравнивание по центру */
-.bottom-nav .nav-link{
-  width:25%;
-  padding:0.25rem 0;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  transition:color .25s;
-  color:#d6b76d;               /* базовый цвет */
+/* каждая кнопка занимает ровно 25 % ширины */
+.bottom-nav .nav-link {
+  width: 25%;
+  padding: 0.25rem 0; /* небольшой вертикальный паддинг */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #d6b76d;              /* базовый цвет подписи */
+  transition: color 0.25s;
 }
 
-/* активная вкладка — ярче */
-.bottom-nav .nav-link.active{color:#ffda87;}
-
-/* ---------- иконка + подпись ---------- */
-.nav-ico{
-  width:24px;height:24px;      /* фиксированный размер!  */
-  margin-bottom:0.15rem;
+/* активная вкладка — более яркий (золотой) */
+.bottom-nav .nav-link.active {
+  color: #ffda87;
 }
 
-.nav-lbl{
-  font-size:0.72rem;           /* читаемо, не громоздко   */
-  line-height:1;
+/* ===================================
+   Иконка внутри кнопки (SVG) .nav-ico
+   =================================== */
+.nav-ico {
+  width: 24px;    /* жёстко задаём 24px × 24px */
+  height: 24px;
+  margin-bottom: 0.15rem; /* небольшой отступ до подписи */
+  stroke: currentColor;   /* цвет линий = цвет текста (.nav-link) */
 }
+
+/* ===================================
+   Подпись внутри кнопки (span.nav-lbl)
+   =================================== */
+.nav-lbl {
+  font-size: 0.72rem;  /* компактнее, но читаемо */
+  line-height: 1;
+}
+
 
 
 
