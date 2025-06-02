@@ -463,4 +463,18 @@ header{overflow:hidden;}
   }
 }
 
+/* каждая кнопка занимает ровно 25 % ширины */
+.bottom-nav .nav-link{
+  width:25%;padding:0.25rem 0;          /* тот же vertical-padding */
+  align-items:center;justify-content:center;
+  transition:color .25s;
+}
+
+/* чуть крупнее иконка, подпись — как выше (0.8rem) */
+.nav-ico{font-size:1.05rem;line-height:1;}
+.nav-lbl{font-size:0.80rem;line-height:1;}
+
+/* активная вкладка — золотой цвет */
+.bottom-nav .nav-link.active{color:#d6b76d;}
+
 
