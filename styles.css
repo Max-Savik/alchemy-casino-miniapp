@@ -507,38 +507,105 @@ header{overflow:hidden;}
 
 
 
-/* ─────────── Блок действий под котлом ─────────── */
-.bet-actions{
-  /* чуточку выше к котлу */
-  margin-top: -0.25rem;
-  justify-content: center;
-}
-
-/* компактная кнопка, наследует стили .alch-btn */
+/* ——— ОСНОВНАЯ КНОПКА СТАВКИ ——— */
 .bet-btn{
-  @extend .alch-btn;       /* если используете SCSS */
-  /*  ↓ в «чистом» CSS вместо @extend можно просто продублировать нужные свойства
-      или оставить пустым — .alch-btn уже на кнопке, а тут — переопределения */
-  padding: .55rem 1.1rem;        /* ниже и уже */
-  font-size: .95rem;
-  min-width: 6.2rem;
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.55rem;
+
+  padding:.9rem 2rem;          /* крупнее площадка клика */
+  min-width:10rem;             /* ≈160 px */
+  font:700 1.05rem 'Cinzel',serif;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  color:#1b1405;
+
+  border:none;
+  border-radius:999px;
+  cursor:pointer;
+  overflow:hidden;
+
+  box-shadow:
+    0 4px 8px rgba(0,0,0,.35),
+    0 0 18px 3px rgba(249,212,104,.35);
+
+  transition:
+    transform .25s cubic-bezier(.4,0,.2,1),
+    filter   .45s cubic-bezier(.4,0,.2,1);
 }
 
-/* одинаковые SVG-иконки внутри кнопок */
-.btn-ico{
-  width: 19px;
-  height: 19px;
-  stroke: currentColor;
+/* общее «всплывание» при наведении */
+.bet-btn:hover{
+  transform:translateY(-4px) scale(1.06);
+  filter:brightness(1.12);
 }
 
-/* текст прячется на очень узких экранах (<350 px),
-   чтобы кнопка осталась квадратной */
-@media (max-width: 350px){
-  .btn-txt{display:none;}
-  .bet-btn{padding:.55rem;}
+/* иконка внутри */
+.bet-btn .btn-ico{
+  width:22px;height:22px;
+  stroke:currentColor;
+}
+
+/* подпись прячем только на ОЧЕНЬ узких */
+@media (max-width:360px){
+  .bet-btn .btn-txt{display:none;}
+  .bet-btn{padding:.9rem;}
+}
+
+/* ——— ЦВЕТНЫЕ ТЕМЫ ДЛЯ КАЖДОЙ СТАВКИ ——— */
+
+/* NFT — «фантазийный» аметистовый градиент */
+.bet-nft{
+  background:linear-gradient(135deg,#dab3ff 0%,#9358ff 35%,#5c21e8 100%);
+}
+.bet-nft::before{
+  content:'';
+  position:absolute;inset:0;
+  background:inherit;background-size:200% 200%;
+  z-index:-1;
+  filter:blur(14px) brightness(1.4);
+  animation:molten 8s linear infinite;
+}
+
+/* TON — фирменный лазурный */
+.bet-ton{
+  background:linear-gradient(135deg,#a1f3ff 0%,#30d1ff 35%,#0084ff 100%);
+}
+.bet-ton::before{
+  content:'';
+  position:absolute;inset:0;
+  background:inherit;background-size:200% 200%;
+  z-index:-1;
+  filter:blur(14px) brightness(1.4);
+  animation:molten 8s linear infinite;
+}
+
+/* пробегающий блик (общий) */
+.bet-btn::after{
+  content:'';
+  position:absolute;top:-100%;left:-45%;
+  width:40%;height:250%;
+  background:linear-gradient(45deg,transparent 0%,rgba(255,255,255,.45) 45%,rgba(255,255,255,.45) 55%,transparent 100%);
+  transform:rotate(25deg);
+  opacity:0;
+  transition:opacity .3s;
+}
+.bet-btn:hover::after{
+  opacity:1;
+  animation:glint 1.2s cubic-bezier(.4,0,.2,1) forwards;
+}
+
+/* ——— АНИМАЦИИ (у вас они уже есть, но на всякий случай) ——— */
+@keyframes molten{
+  0%  {background-position:0% 50%}
+  50% {background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+@keyframes glint{
+  0%  {transform:translateX(-60%) rotate(25deg)}
+  100%{transform:translateX(220%) rotate(25deg)}
 }
 
 
