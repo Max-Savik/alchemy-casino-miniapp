@@ -9,7 +9,7 @@
     --alchemy-gold-1: #c7a457;
     --alchemy-gold-2: #8f6f28;
     --alchemy-radius: 2rem;
-   --gold-line: rgba(199, 164, 87, .35);   /* 35 % непрозрачности — тонко и не слепит */
+   --bottom-bar-h: calc(60px + env(safe-area-inset-bottom));
     /* единый радиус для всех «окон» */
 }
 
@@ -19,7 +19,7 @@ body {
     min-height: 100%;
     margin: 0;
     scroll-behavior: smooth;
-    padding-bottom: 0rem;
+    padding-bottom: var(--bottom-bar-h);
 }
 
 body {
@@ -461,31 +461,30 @@ header{overflow:hidden;}
   right: 0;
   bottom: 0;
 
-  /* тонкая золотая кромка */
-  border-top: 50px solid var(--gold-line);
-
-  /* никаких отступов сверху! */
-  padding-bottom: calc(.35rem + env(safe-area-inset-bottom));
+  /* высота = точно такая же переменная */
+  height: var(--bottom-bar-h);
+  padding-bottom: env(safe-area-inset-bottom); /* только safe area */
 
   background: rgba(22,14,6,.55);
   backdrop-filter: blur(8px) saturate(120%);
-  z-index: 60;
-
+  border-top: 1px solid rgba(199,164,87,.3);   /* золотая линия остаётся */
   display: flex;
   justify-content: space-between;
+  z-index: 60;
 }
 
-/* кнопки без изменений */
+
 .bottom-nav .nav-link{
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: .4rem 0;   /* «воздух» внутри */
+  padding: .4rem 0;     /* одна строка, чтобы иконки не прилипали */
   color: #d6b76d;
   transition: color .25s;
 }
+
 /* активная вкладка — более яркий (золотой) */
 .bottom-nav .nav-link.active {
   color: #ffda87;
