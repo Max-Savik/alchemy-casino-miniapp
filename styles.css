@@ -507,5 +507,38 @@ header{overflow:hidden;}
 
 
 
+/* ─────────── Блок действий под котлом ─────────── */
+.bet-actions{
+  /* чуточку выше к котлу */
+  margin-top: -0.25rem;
+  justify-content: center;
+}
+
+/* компактная кнопка, наследует стили .alch-btn */
+.bet-btn{
+  @extend .alch-btn;       /* если используете SCSS */
+  /*  ↓ в «чистом» CSS вместо @extend можно просто продублировать нужные свойства
+      или оставить пустым — .alch-btn уже на кнопке, а тут — переопределения */
+  padding: .55rem 1.1rem;        /* ниже и уже */
+  font-size: .95rem;
+  min-width: 6.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+/* одинаковые SVG-иконки внутри кнопок */
+.btn-ico{
+  width: 19px;
+  height: 19px;
+  stroke: currentColor;
+}
+
+/* текст прячется на очень узких экранах (<350 px),
+   чтобы кнопка осталась квадратной */
+@media (max-width: 350px){
+  .btn-txt{display:none;}
+  .bet-btn{padding:.55rem;}
+}
 
 
