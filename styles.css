@@ -512,7 +512,6 @@ header{overflow:hidden;}
   top: 0;                /* закрашиваем ровно высоту отступа */
   left: 0;
   right: 0;
-  height: 0.35rem;       /* = padding-top */
   background: rgba(22, 14, 6, 0.55); /* тот же цвет, что и у панели */
   pointer-events: none;  /* чтобы не мешал кликам */
 }
