@@ -101,34 +101,45 @@
   </div>
 
   <!-- ===== BET / PICKER ===== -->
+  <div
+    class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
+    <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
+      Сделать ставку
+    </h2>
+
+<!-- ▸▸▸ БЛОК СТАВОК ▸▸▸ -->
 <div class="flex gap-4 sm:gap-6">
 
-  <!-- NFT — «коробка» -->
+  <!-- NFT -->
   <button id="depositNFT"
           class="alch-btn flex-1 flex items-center justify-center gap-2">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <!-- верхняя грань -->
-      <polygon points="3 7 12 2 21 7 12 12" />
+    <!-- иконка-коробка -->
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.8"
+         stroke-linecap="round" stroke-linejoin="round">
+      <!-- крышка -->
+      <polygon points="3 7 12 2 21 7 12 12"/>
       <!-- левая грань -->
-      <polygon points="3 7 3 17 12 22 12 12" />
+      <polygon points="3 7 3 17 12 22 12 12"/>
       <!-- правая грань -->
-      <polygon points="21 7 21 17 12 22 12 12" />
+      <polygon points="21 7 21 17 12 22 12 12"/>
     </svg>
-    <span class="hidden sm:inline">NFT</span>
+    <span>NFT</span>
   </button>
 
-  <!-- TON — фирменный логотип Toncoin -->
+  <!-- TON -->
   <button id="depositTON"
           class="alch-btn flex-1 flex items-center justify-center gap-2">
-    <svg width="24" height="24" viewBox="0 0 256 256" fill="none">
-      <circle cx="128" cy="128" r="128" fill="#0098EA"/>
-      <!-- треугольник-стрела -->
-      <path d="M128 42c-4.6 0-9.1 2-12 6L55 187c-5.6 7.9 0.1 19 10 19h42c4.8 0 9-2.8 10.9-7.1l24.1-57.9
-               24.1 57.9a12 12 0 0 0 10.9 7.1h42c9.9 0 15.6-11.1 10-19L140 48a15 15 0 0 0-12-6z"
-            fill="#fff"/>
+    <!-- “закруглённый треугольник с полоской” -->
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <!-- наружный контур -->
+      <path d="M4 4h16l-8 16-8-16Z"/>
+      <!-- центральная полоска -->
+      <path d="M12 8v8"/>
     </svg>
-    <span class="hidden sm:inline">TON</span>
+    <span>TON</span>
   </button>
 
 </div>
