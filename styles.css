@@ -462,7 +462,7 @@ header{overflow:hidden;}
   padding-bottom: calc(0.35rem + env(safe-area-inset-bottom)); /* safe-area снизу */
   background: rgba(22, 14, 6, 0.55);
   backdrop-filter: blur(8px) saturate(120%);
-  border-top: 1px solid rgba(199, 164, 87, 0.3);
+  border-top: none; 
   z-index: 60;
 
   display: flex;
