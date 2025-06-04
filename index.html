@@ -101,34 +101,33 @@
       class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
   </div>
 
-  <!-- ▼ Блок действий под котлом ------------------------------------- -->
-<div class="bet-actions flex gap-3 mt-2 sm:gap-4">
+<!-- ▼ Блок действий под котлом ------------------------------------- -->
+<div class="bet-actions flex flex-wrap gap-4 justify-center">
 
-  <!-- Кнопка «Выбрать NFT» -->
-  <button id="openNftModal" class="alch-btn bet-btn">
+  <!-- Ставка NFT -->
+  <button id="openNftModal" class="bet-btn bet-nft group">
+    <!-- иконка -->
     <svg class="btn-ico" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" stroke-linejoin="round">
-      <!-- икон-коробка -->
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 7l9-4 9 4-9 4-9-4z"/>
       <path d="M3 7v8l9 4 9-4V7"/>
     </svg>
-    <span class="btn-txt">NFT</span>
+    <!-- подпись -->
+    <span class="btn-txt">Ставка&nbsp;NFT</span>
   </button>
 
-  <!-- Кнопка «Ставка TON» -->
-  <button id="placeTonBet" class="alch-btn bet-btn">
+  <!-- Ставка TON -->
+  <button id="placeTonBet" class="bet-btn bet-ton group">
     <svg class="btn-ico" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" stroke-linejoin="round">
-      <!-- икон-TON-кристалл -->
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 20 4 4h16l-8 16z"/>
       <path d="M12 14 9 8h6l-3 6z"/>
     </svg>
-    <span class="btn-txt">TON</span>
+    <span class="btn-txt">Ставка&nbsp;TON</span>
   </button>
 
 </div>
+
 
 
   <!-- Список участников и общий пот остаются без изменений -->
