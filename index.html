@@ -60,6 +60,7 @@
 </button>
      </div>
 
+
   </div>
 </header>
  
@@ -93,22 +94,28 @@
                     <p id="result" class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
                 </div>
 
-<!-- ===== DEPOSIT BTNS (NFT / TON) ===== -->
-<div class="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full justify-center mt-2">
-  <!-- NFT -->
-  <button id="depositNFT"
-          class="alch-btn alch-btn--nft flex items-center justify-center sm:min-w-[12rem]">
-    <!-- иконка (алхимический символ металлов +)  -->
-    🜃&nbsp;Внести&nbsp;NFT
-  </button>
+               <!-- ===== BET / PICKER ===== -->
+<div
+  class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
+  <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
+    Сделать ставку
+  </h2>
 
-  <!-- TON -->
-  <button id="depositTON"
-          class="alch-btn alch-btn--ton flex items-center justify-center sm:min-w-[12rem]">
-    <!-- простая «монетка» -->
-    ⬤&nbsp;Внести&nbsp;TON
-  </button>
+  <div class="space-y-4 sm:space-y-6">
+    <!-- Кнопка: внести NFT -->
+    <button id="depositNFT"
+            class="alch-btn w-full flex items-center justify-center gap-2">
+      🖼️ <span>Внести NFT</span>
+    </button>
+
+    <!-- Кнопка: внести TON -->
+    <button id="depositTON"
+            class="alch-btn w-full flex items-center justify-center gap-2">
+      💎 <span>Внести TON</span>
+    </button>
+  </div>
 </div>
+
 
             <!-- ===== PLAYERS LIST ===== -->
             <div
