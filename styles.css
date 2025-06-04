@@ -467,12 +467,14 @@ header{overflow:hidden;}
   z-index: 60;
 
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 
 /* каждая кнопка занимает ровно 25 % ширины */
 .bottom-nav .nav-link {
-  width: 25%;
+  flex: 1 1 0;
+  text-align: center;
+  padding: .25rem 0;
   padding: 0.25rem 0; /* небольшой вертикальный паддинг */
   display: flex;
   flex-direction: column;
