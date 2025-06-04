@@ -10,6 +10,7 @@
     --alchemy-gold-2: #8f6f28;
     --alchemy-radius: 2rem;
    --bottom-bar-h: calc(60px + env(safe-area-inset-bottom));
+   --safe-extra: 8px; /* насколько выше хотим поднять */
     /* единый радиус для всех «окон» */
 }
 
@@ -454,20 +455,18 @@ header{overflow:hidden;}
    НИЖНЯЯ НАВИГАЦИЯ (4 КНОПКИ)
    ========================= */
 
-/* === нижняя навигация === */
 .bottom-nav{
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
-
-  /* высота = точно такая же переменная */
+  bottom: 0;                      /* остаётся “внизу” экрана */
   height: var(--bottom-bar-h);
-  padding-bottom: env(safe-area-inset-bottom); /* только safe area */
+
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--safe-extra));
 
   background: rgba(22,14,6,.55);
   backdrop-filter: blur(8px) saturate(120%);
-  border-top: 1px solid rgba(199,164,87,.3);   /* золотая линия остаётся */
+  border-top: 1px solid rgba(199,164,87,.3);
   display: flex;
   justify-content: space-between;
   z-index: 60;
@@ -476,13 +475,13 @@ header{overflow:hidden;}
 
 .bottom-nav .nav-link{
   flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: .4rem 0;     /* одна строка, чтобы иконки не прилипали */
-  color: #d6b76d;
-  transition: color .25s;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding: .4rem 0;   /* можно чуть увеличить при желании */
+  color:#d6b76d;
+  transition:color .25s;
 }
 
 /* активная вкладка — более яркий (золотой) */
