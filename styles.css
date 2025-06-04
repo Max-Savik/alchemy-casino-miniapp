@@ -241,7 +241,7 @@ nav li {
 #wheelWrapper {
     position: relative;
     width: min(306px, 81vw);
-    height: min(306px, 81vw);
+    height: min(306px, 81vw)
     margin-top:-0.6rem;
 }
 
@@ -468,7 +468,6 @@ header{overflow:hidden;}
 
   display: flex;
   justify-content: space-around;
-  pointer-events:none;    /* клики сквозь полоску */
 }
 
 /* каждая кнопка занимает ровно 25 % ширины */
@@ -505,7 +504,6 @@ header{overflow:hidden;}
   font-size: 0.72rem;  /* компактнее, но читаемо */
   line-height: 1;
 }
-
 
 
 
