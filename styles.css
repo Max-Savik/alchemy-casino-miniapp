@@ -9,6 +9,7 @@
     --alchemy-gold-1: #c7a457;
     --alchemy-gold-2: #8f6f28;
     --alchemy-radius: 2rem;
+   --gold-line: rgba(199, 164, 87, .35);   /* 35 % непрозрачности — тонко и не слепит */
     /* единый радиус для всех «окон» */
 }
 
@@ -453,36 +454,38 @@ header{overflow:hidden;}
    НИЖНЯЯ НАВИГАЦИЯ (4 КНОПКИ)
    ========================= */
 
-/* контейнер навигации */
-.bottom-nav {
+/* === нижняя навигация === */
+.bottom-nav{
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  padding-bottom: calc(0.35rem + env(safe-area-inset-bottom)); /* safe-area снизу */
-  background: rgba(22, 14, 6, 0.55);
+
+  /* тонкая золотая кромка */
+  border-top: 1px solid var(--gold-line);
+
+  /* никаких отступов сверху! */
+  padding-bottom: calc(.35rem + env(safe-area-inset-bottom));
+
+  background: rgba(22,14,6,.55);
   backdrop-filter: blur(8px) saturate(120%);
-  border-top: none; 
   z-index: 60;
 
   display: flex;
   justify-content: space-between;
 }
 
-/* каждая кнопка занимает ровно 25 % ширины */
-.bottom-nav .nav-link {
+/* кнопки без изменений */
+.bottom-nav .nav-link{
   flex: 1 1 0;
-  text-align: center;
-  padding: .25rem 0;
-  padding: 0.25rem 0; /* небольшой вертикальный паддинг */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #d6b76d;              /* базовый цвет подписи */
-  transition: color 0.25s;
+  padding: .4rem 0;   /* «воздух» внутри */
+  color: #d6b76d;
+  transition: color .25s;
 }
-
 /* активная вкладка — более яркий (золотой) */
 .bottom-nav .nav-link.active {
   color: #ffda87;
