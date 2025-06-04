@@ -459,7 +459,6 @@ header{overflow:hidden;}
   left: 0;
   right: 0;
   bottom: 0;
-  padding-top: 0.35rem; /* чуть отступ сверху */
   padding-bottom: calc(0.35rem + env(safe-area-inset-bottom)); /* safe-area снизу */
   background: rgba(22, 14, 6, 0.55);
   backdrop-filter: blur(8px) saturate(120%);
