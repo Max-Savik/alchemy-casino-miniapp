@@ -80,29 +80,29 @@
   <div
     class="flex flex-col sm:flex-row sm:flex-wrap gap-8 sm:gap-12 justify-center w-full max-w-7xl">
 
-    <!-- ===== CAULDRON & SPIN ===== -->
-    <div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
-      <div id="wheelWrapper" class="relative">
+<!-- ===== CAULDRON & SPIN ===== -->
+<div class="flex flex-col items-center gap-4 sm:gap-6 order-1 sm:order-none">
 
-        <!-- таймер / статус над котлом -->
-        <div id="countdown"
-             class="absolute -top-9 left-1/2 -translate-x-1/2
-                    text-2xl sm:text-3xl font-['Forum'] glow-text
-                    whitespace-nowrap">
-          Ожидание игроков…
-        </div>
+  <!-- таймер / статус — теперь в нормальном потоке -->
+  <div id="countdown"
+       class="text-2xl sm:text-3xl font-['Forum'] glow-text whitespace-nowrap">
+    Ожидание игроков…
+  </div>
 
-        <div id="cauldron">
-          <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
-          <div id="steam"></div>
-        </div>
-        <div class="pointer"></div>
-      </div>
-
-      <!-- результат под котлом -->
-      <p id="result"
-         class="mt-3 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+  <!-- сам котёл -->
+  <div id="wheelWrapper" class="relative">
+    <div id="cauldron">
+      <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
+      <div id="steam"></div>
     </div>
+    <div class="pointer"></div>
+  </div>
+
+  <!-- результат под котлом -->
+  <p id="result"
+     class="text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+</div>
+
 
   </div> <!-- 💡 ОБЯЗАТЕЛЬНО закрываем flex-контейнер ДО блока ставок -->
 
