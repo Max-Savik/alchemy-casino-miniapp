@@ -81,15 +81,7 @@
     class="flex flex-col sm:flex-row sm:flex-wrap gap-8 sm:gap-12 justify-center w-full max-w-7xl">
 
 <!-- ===== CAULDRON & SPIN ===== -->
-<div class="flex flex-col items-center gap-4 sm:gap-6 order-1 sm:order-none">
-
-  <!-- таймер / статус — теперь в нормальном потоке -->
-  <div id="countdown"
-       class="text-2xl sm:text-3xl font-['Forum'] glow-text whitespace-nowrap">
-    Ожидание игроков…
-  </div>
-
-  <!-- сам котёл -->
+<div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
   <div id="wheelWrapper" class="relative">
     <div id="cauldron">
       <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
@@ -98,33 +90,38 @@
     <div class="pointer"></div>
   </div>
 
-  <!-- результат под котлом -->
+  <!-- таймер / статус ПОД котлом -->
+  <div id="countdown"
+       class="mt-3 text-2xl sm:text-3xl font-['Forum'] glow-text">
+    Ожидание игроков…
+  </div>
+
+  <!-- результат -->
   <p id="result"
-     class="text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+     class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
 </div>
 
+<!-- ===== BET / PICKER ===== -->
+<div
+  class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
+  <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
+    Сделать ставку
+  </h2>
 
-  </div> <!-- 💡 ОБЯЗАТЕЛЬНО закрываем flex-контейнер ДО блока ставок -->
+  <!-- две кнопки — в один ряд -->
+  <div class="flex gap-4 sm:gap-6">
+    <button id="depositNFT"
+            class="alch-btn flex-1 flex items-center justify-center gap-2">
+    <span>Подарки</span>
+    </button>
 
-  <!-- ===== BET / PICKER ===== -->
-  <div
-    class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
-    <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
-      Сделать ставку
-    </h2>
-
-    <div class="space-y-4 sm:space-y-6">
-      <button id="depositNFT"
-              class="alch-btn w-full flex items-center justify-center gap-2">
-        🖼️ <span>Внести NFT</span>
-      </button>
-
-      <button id="depositTON"
-              class="alch-btn w-full flex items-center justify-center gap-2">
-        💎 <span>Внести TON</span>
-      </button>
-    </div>
+    <button id="depositTON"
+            class="alch-btn flex-1 flex items-center justify-center gap-2">
+    <span>TON</span>
+    </button>
   </div>
+</div>
+
 </section>
 
 
