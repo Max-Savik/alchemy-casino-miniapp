@@ -36,12 +36,24 @@ const selected = new Set();     // остаётся локально
 let phase = "waiting";        // waiting | countdown | spinning
 
 /* ================= ELEMENTS ================= */
-const svg=document.getElementById('wheelSvg');
-const list=document.getElementById('players');
-const pot=document.getElementById('pot');
-const picker=document.getElementById('nftPicker');
-const grid=document.getElementById('profileGrid');
-const statusEl=document.getElementById('countdown'); 
+const svg      = document.getElementById('wheelSvg');
+const list     = document.getElementById('players');
+const pot      = document.getElementById('pot');
+const picker   = document.getElementById('nftPicker');
+const grid     = document.getElementById('profileGrid');
+const statusEl = document.getElementById('countdown');
+
+/* 👉 ДОБАВЬТЕ ЭТО: ссылки на секции и кнопки навигации */
+const gameSection    = document.getElementById('gameSection');
+const marketSection  = document.getElementById('marketSection');
+const profileSection = document.getElementById('profileSection');
+const earnSection    = document.getElementById('earnSection');
+
+const navGame    = document.getElementById('navGame');
+const navMarket  = document.getElementById('navMarket');
+const navProfile = document.getElementById('navProfile');
+const navEarn    = document.getElementById('navEarn');
+
 
 /* ================= RENDER HELPERS ================= */
 function cardHTML(nft,extra=''){return`
