@@ -9,9 +9,8 @@
     --alchemy-gold-1: #c7a457;
     --alchemy-gold-2: #8f6f28;
     --alchemy-radius: 2rem;
-   --bottom-bar-h: calc(60px + env(safe-area-inset-bottom));
-   --safe-extra: 8px; /* насколько выше хотим поднять */
-    /* единый радиус для всех «окон» */
+   --safe-extra: 8px;                                         /* запас */
+  --bottom-bar-h: calc(60px + env(safe-area-inset-bottom) + var(--safe-extra));
 }
 
 /* ===== BASE LAYOUT ===== */
@@ -384,10 +383,6 @@ nav li {
 
 .nft-card img{ width:6rem;height:6rem;object-fit:cover;border-radius:0.5rem; } /* w-24 h-24 rounded-lg */
 
-/* ---------- адаптивный отступ под нижний бар ---------- */
-@media (min-width:640px){
-  body{ padding-bottom:0; }
-}
 
 
 
@@ -455,13 +450,15 @@ header{overflow:hidden;}
    НИЖНЯЯ НАВИГАЦИЯ (4 КНОПКИ)
    ========================= */
 
+/* 3. панель */
 .bottom-nav{
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;                      /* остаётся “внизу” экрана */
+  bottom: 0;
   height: var(--bottom-bar-h);
 
+  /* safe-area + наш запас остаются внутри навбарa */
   padding-bottom: calc(env(safe-area-inset-bottom) + var(--safe-extra));
 
   background: rgba(22,14,6,.55);
@@ -472,16 +469,16 @@ header{overflow:hidden;}
   z-index: 60;
 }
 
-
+/* кнопки */
 .bottom-nav .nav-link{
   flex: 1 1 0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding: .4rem 0;   /* можно чуть увеличить при желании */
-  color:#d6b76d;
-  transition:color .25s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: .4rem 0;
+  color: #d6b76d;
+  transition: color .25s;
 }
 
 /* активная вкладка — более яркий (золотой) */
