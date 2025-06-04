@@ -462,7 +462,7 @@ header{overflow:hidden;}
   bottom: 0;
 
   /* тонкая золотая кромка */
-  border-top: 1px solid var(--gold-line);
+  border-top: 50px solid var(--gold-line);
 
   /* никаких отступов сверху! */
   padding-bottom: calc(.35rem + env(safe-area-inset-bottom));
