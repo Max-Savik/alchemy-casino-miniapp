@@ -506,13 +506,4 @@ header{overflow:hidden;}
   line-height: 1;
 }
 
-.bottom-nav::before {
-  content: '';
-  position: absolute;
-  top: 0;                /* закрашиваем ровно высоту отступа */
-  left: 0;
-  right: 0;
-  background: rgba(22, 14, 6, 0.55); /* тот же цвет, что и у панели */
-  pointer-events: none;  /* чтобы не мешал кликам */
-}
 
