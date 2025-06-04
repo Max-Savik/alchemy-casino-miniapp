@@ -109,22 +109,27 @@
 
   <!-- две кнопки — в один ряд -->
   <div class="flex gap-4 sm:gap-6">
-    <!-- Кнопка для NFT -->
+    <!-- Кнопка для NFT (3D-коробка) -->
     <button id="depositNFT"
             class="alch-btn flex-1 flex items-center justify-center gap-2">
-      <!-- SVG-иконка коробки -->
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="1" ry="1"/>
+      <!-- SVG-иконка 3D-коробки -->
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linejoin="round">
+        <!-- Верхняя грань -->
+        <polygon points="4,7 12,3 20,7 12,11" fill="none"/>
+        <!-- Левая грань -->
+        <polygon points="4,7 12,11 12,19 4,15" fill="none"/>
+        <!-- Правая грань -->
+        <polygon points="20,7 12,11 12,19 20,15" fill="none"/>
       </svg>
       <span>NFT</span>
     </button>
 
-    <!-- Кнопка для TON -->
+    <!-- Кнопка для TON (символ побольше) -->
     <button id="depositTON"
             class="alch-btn flex-1 flex items-center justify-center gap-2">
-      <!-- SVG-иконка треугольника с вертикальной полоской -->
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" fill="none" stroke="#1b1405" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
-        <!-- Тонкий контур треугольника с закруглёнными углами -->
+      <!-- SVG-иконка треугольника с вертикальной полоской, увеличена до 24×24 -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" fill="none" stroke="#1b1405" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Контур треугольника с закруглёнными углами -->
         <polygon points="150,150 362,150 256,384"/>
         <!-- Вертикальная полоска по центру -->
         <line x1="256" y1="150" x2="256" y2="384"/>
@@ -134,6 +139,7 @@
   </div>
   <div id="nftPicker" class="hidden"><button id="placeBet" class="hidden"></button></div>
 </div>
+
 
 </div> 
 
