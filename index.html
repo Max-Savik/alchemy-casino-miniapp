@@ -94,21 +94,23 @@
                     <p id="result" class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
                 </div>
 
-                <!-- ===== BET / PICKER ===== -->
-                <div class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
-                    <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Сделать ставку</h2>
+<!-- ===== DEPOSIT BTNS (NFT / TON) ===== -->
+<div class="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full justify-center mt-2">
+  <!-- NFT -->
+  <button id="depositNFT"
+          class="alch-btn alch-btn--nft flex items-center justify-center sm:min-w-[12rem]">
+    <!-- иконка (алхимический символ металлов +)  -->
+    🜃&nbsp;Внести&nbsp;NFT
+  </button>
 
-                    <div class="space-y-5 sm:space-y-6">
+  <!-- TON -->
+  <button id="depositTON"
+          class="alch-btn alch-btn--ton flex items-center justify-center sm:min-w-[12rem]">
+    <!-- простая «монетка» -->
+    ⬤&nbsp;Внести&nbsp;TON
+  </button>
+</div>
 
-                        <div>
-                            <label class="block mb-2">Выберите NFT (можно несколько)</label>
-                            <div id="nftPicker" class="flex flex-wrap gap-3"></div>
-                        </div>
-
-                        <button id="placeBet" class="alch-btn w-full">🜃 Бросить ингредиент</button>
-                    </div>
-                </div>
-            </div>
 
             <!-- ===== PLAYERS LIST ===== -->
             <div
