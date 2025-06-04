@@ -68,84 +68,59 @@
     <main class="flex-grow">
 
         <!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
-<!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
 <section
   id="gameSection"
   class="flex flex-col items-center px-4 py-2 sm:py-4 gap-6
          pb-24 sm:pb-0">
-
-  <!-- Заголовок -->
   <h1
     class="text-4xl sm:text-6xl text-center mb-4 glow-text font-['Forum'] tracking-wider">
     Котел
   </h1>
 
-  <!-- Секция с котлом и указателем -->
-  <div class="flex flex-col items-center gap-6 sm:gap-8">
-    <div id="wheelWrapper" class="relative">
-      <div id="cauldron">
-        <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
-        <div id="steam"></div>
-      </div>
-      <div class="pointer"></div>
-    </div>
+            <div class="flex flex-col sm:flex-row sm:flex-wrap gap-8 sm:gap-12 justify-center w-full max-w-7xl">
+                <!-- ===== CAULDRON & SPIN ===== -->
+                <div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
+                    <div id="wheelWrapper" class="relative">
+                        <div id="cauldron">
+                            <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
+                            <div id="steam"></div>
+                        </div>
+                        <div class="pointer"></div>
+                    </div>
 
-    <!-- Таймер / статус -->
-    <div
-      id="countdown"
-      class="mt-4 text-2xl sm:text-3xl font-['Forum'] glow-text">
-      Ожидание игроков...
-    </div>
-    <p
-      id="result"
-      class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
-  </div>
+                    <div id="countdown" class="mt-4 text-2xl sm:text-3xl font-['Forum'] glow-text">
+                      Ожидание игроков...
+                    </div>
+                    <p id="result" class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+                </div>
 
-<!-- ▼ Блок действий под котлом ------------------------------------- -->
-<div class="bet-actions flex flex-wrap gap-4 justify-center">
+                <!-- ===== BET / PICKER ===== -->
+                <div class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
+                    <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Сделать ставку</h2>
 
-  <!-- Ставка NFT -->
-  <button id="openNftModal" class="bet-btn bet-nft group">
-    <!-- иконка -->
-    <svg class="btn-ico" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 7l9-4 9 4-9 4-9-4z"/>
-      <path d="M3 7v8l9 4 9-4V7"/>
-    </svg>
-    <!-- подпись -->
-    <span class="btn-txt">Ставка&nbsp;NFT</span>
-  </button>
+                    <div class="space-y-5 sm:space-y-6">
 
-  <!-- Ставка TON -->
-  <button id="placeTonBet" class="bet-btn bet-ton group">
-    <svg class="btn-ico" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 20 4 4h16l-8 16z"/>
-      <path d="M12 14 9 8h6l-3 6z"/>
-    </svg>
-    <span class="btn-txt">Ставка&nbsp;TON</span>
-  </button>
+                        <div>
+                            <label class="block mb-2">Выберите NFT (можно несколько)</label>
+                            <div id="nftPicker" class="flex flex-wrap gap-3"></div>
+                        </div>
 
-</div>
+                        <button id="placeBet" class="alch-btn w-full">🜃 Бросить ингредиент</button>
+                    </div>
+                </div>
+            </div>
 
+            <!-- ===== PLAYERS LIST ===== -->
+            <div
+                class="glass border-ornate alch-rounded mt-12 p-6 sm:p-10 w-full max-w-4xl shadow-[0_0_60px_rgba(0,0,0,0.85)]">
+                <h3 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Участники</h3>
+                <ul id="players" class="space-y-4 sm:space-y-5 text-base sm:text-lg"></ul>
 
-
-  <!-- Список участников и общий пот остаются без изменений -->
-  <div
-    class="glass border-ornate alch-rounded mt-12 p-6 sm:p-10 w-full max-w-4xl shadow-[0_0_60px_rgba(0,0,0,0.85)]">
-    <h3 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
-      Участники
-    </h3>
-    <ul id="players" class="space-y-4 sm:space-y-5 text-base sm:text-lg">
-      <!-- сюда рендерятся текущие игроки -->
-    </ul>
-
-    <div class="mt-6 text-right text-2xl font-extrabold glow-text">
-      Общий котел: <span id="pot">$0</span>
-    </div>
-  </div>
-</section>
-
+                <div class="mt-6 text-right text-2xl font-extrabold glow-text">
+                    Общий котел: <span id="pot">$0</span>
+                </div>
+            </div>
+        </section>
 
         <!-- ▸▸▸ PROFILE ▸▸▸ -->
         <section id="profileSection" class="hidden px-4 py-10 sm:py-14">
