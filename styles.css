@@ -535,24 +535,26 @@ body.compact .nft-card      {padding:0.4rem !important;}
 body.compact .nft-card img  {width:4.75rem !important;height:4.75rem !important;}
 
 
-/* 1. Даем больше отступа над «Котел» (между шапкой и самим блоком) */
+
+/* 1. Даем небольшой отступ сверху у всего блока (между шапкой и заголовком) */
 #gameSection {
-  padding-top: 1.5rem !important;
+  padding-top: 1rem !important;
 }
 
-/* 2. Увеличиваем шрифт заголовка и даем отступы сверху/снизу */
+/* 2. Делаем шрифт «Котел» крупнее и задаем отступы сверху/снизу */
 #gameSection h1 {
   font-size: clamp(2.5rem, 6vw, 3.5rem) !important;
   margin-top: 0 !important;
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.75rem !important;
 }
 
-/* 3. Для надежности — убедимся, что compact-режим не «зажимает» заголовок */
+/* 3. Если у вас включен compact-режим, дублируем те же правила */
 body.compact #gameSection h1 {
   font-size: clamp(2.5rem, 6vw, 3.5rem) !important;
   margin-top: 0 !important;
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.75rem !important;
 }
+
 
 #cauldron {
   /* Force a perfect circle shape */
