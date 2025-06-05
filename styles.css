@@ -252,7 +252,7 @@ nav li {
     В данном примере я поставил scale(2.5). 
     Если у вас визуально чуть великовато/маловато, можно варьировать 2.4…2.6.
   */
-  transform: scale(2.5);
+  transform: scale(1.75);
   transform-origin: center center;
 }
 
