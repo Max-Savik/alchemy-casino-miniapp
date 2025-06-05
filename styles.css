@@ -533,3 +533,23 @@ body.compact .wallet-btn{padding:0.25rem 0.45rem !important;font-size:0.78rem !i
 /* мелочи ---------------------------------------------------------------- */
 body.compact .nft-card      {padding:0.4rem !important;}
 body.compact .nft-card img  {width:4.75rem !important;height:4.75rem !important;}
+
+
+/* CUSTOM OVERRIDES: Enlarge heading "Котел", add spacing between header and cauldron graphic, and make cauldron perfectly circular */
+
+#gameSection {
+  /* Add extra space between header and h1/cauldron */
+  padding-top: 1rem !important;
+}
+
+#gameSection h1 {
+  /* Make the "Котел" text larger */
+  font-size: clamp(2rem, 5vw, 3rem) !important;
+  /* Add more space below the heading */
+  margin-bottom: 0.8rem !important;
+}
+
+#cauldron {
+  /* Force a perfect circle shape */
+  border-radius: 50% !important;
+}
