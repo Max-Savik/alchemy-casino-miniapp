@@ -536,3 +536,7 @@ body.compact .nft-card img  {width:4.75rem !important;height:4.75rem !important;
 body.compact #gameSection {
   margin-top: 10rem !important;
 }
+
+main {
+  padding-top: 4rem;
+}
