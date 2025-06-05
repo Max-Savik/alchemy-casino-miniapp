@@ -242,8 +242,8 @@ nav li {
 #wheelWrapper {
     position: relative;
     width: min(306px, 81vw);
-    height: min(306px, 81vw)
-    margin-top:0rem;
+    height: min(306px, 81vw);
+    margin-top:4rem;
 }
 
 #cauldron {
