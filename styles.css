@@ -237,11 +237,15 @@ nav li {
 .alch-btn .bet-icon {
   width: 32px;
   height: 32px;
+  flex-shrink: 0;
   margin: 0;
   padding: 0;
-  flex-shrink: 0; /* чтобы иконка не сжималась при узком экране */
+  display: block;
 }
-
+#depositTON .bet-icon {
+  transform: scale(1.25);
+  transform-origin: center;
+}
 
 /* ===== CAULDRON / WHEEL (без изменений) ===== */
 #wheelWrapper {
