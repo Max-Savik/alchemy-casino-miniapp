@@ -532,7 +532,6 @@ body.compact h3{font-size:1.2rem;}
 
 
 /* ---------- мелочи ---------- */
-body.compact .pointer        {border-width:14px 16px 32px;}
 body.compact .nft-card       {padding:0.5rem;}
 body.compact .nft-card img   {width:5.25rem; height:5.25rem;}
 
