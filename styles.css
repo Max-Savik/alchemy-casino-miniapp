@@ -243,7 +243,7 @@ nav li {
     position: relative;
     width: min(306px, 81vw);
     height: min(306px, 81vw)
-    margin-top:5rem;
+    margin-top:3rem;
 }
 
 #cauldron {
@@ -517,10 +517,7 @@ body.compact [class*="gap-"]{gap:0.45rem !important;}
 body.compact .mb-8       {margin-bottom:0.8rem !important;}
 body.compact .mt-12      {margin-top:1rem !important;}
 
-/* «Котел» почти под шапкой --------------------------------------------- */
-body.compact #gameSection {
-  padding-top: 2rem !important;
-}
+
 body.compact #gameSection h1{
   margin-top:-0.4rem !important;  /* поднимаем вверх */
   margin-bottom:0.4rem !important;
