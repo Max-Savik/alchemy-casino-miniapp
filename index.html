@@ -67,92 +67,76 @@
     <!-- ========== MAIN ========== -->
     <main class="flex-grow">
 
-<!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
-<section
-  id="gameSection"
-  class="flex flex-col items-center px-4 py-2 sm:py-4 gap-6 pb-24 sm:pb-0">
+<main class="flex-grow">
+  <!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
+  <section
+    id="gameSection"
+    class="flex flex-col items-center px-4 py-1 sm:py-2 gap-6 pb-24 sm:pb-0">
+    
+    <!-- ===== FLEX-КОНТЕЙНЕР: котёл + блок ставок ===== -->
+    <div class="flex flex-col sm:flex-row sm:flex-wrap gap-8 sm:gap-12 justify-center w-full max-w-7xl">
 
-<!-- ===== FLEX-КОНТЕЙНЕР: котёл + блок ставок ===== -->
-<div class="flex flex-col sm:flex-row sm:flex-wrap gap-8 sm:gap-12 justify-center w-full max-w-7xl">
+      <!-- ===== CAULDRON & SPIN ===== -->
+      <div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
+        <!-- таймер / статус НАД котлом -->
+        <div id="countdown"
+             class="mb-2 text-2xl sm:text-3xl font-['Forum'] glow-text">
+          Ожидание игроков…
+        </div>
 
-<!-- ===== CAULDRON & SPIN ===== -->
-<div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
-  <!-- таймер / статус НАД котлом -->
-  <div id="countdown"
-       class="mb-3 text-2xl sm:text-3xl font-['Forum'] glow-text">
-    Ожидание игроков…
-  </div>
+        <div id="wheelWrapper" class="relative">
+          <div id="cauldron">
+            <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
+            <div id="steam"></div>
+          </div>
+          <div class="pointer"></div>
+        </div>
 
-  <div id="wheelWrapper" class="relative">
-    <div id="cauldron">
-      <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
-      <div id="steam"></div>
+        <!-- результат -->
+        <p id="result"
+           class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+      </div>
+
+      <!-- ===== BET / PICKER ===== -->
+      <div class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
+        <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
+          Сделать ставку
+        </h2>
+
+        <div class="flex gap-4 sm:gap-6">
+          <button id="depositNFT" class="alch-btn flex-1 flex items-center justify-center gap-2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linejoin="round">
+              <polygon points="4,7 12,3 20,7 12,11" fill="none"/>
+              <polygon points="4,7 12,11 12,19 4,15" fill="none"/>
+              <polygon points="20,7 12,11 12,19 20,15" fill="none"/>
+            </svg>
+            <span>NFT</span>
+          </button>
+
+          <button id="depositTON" class="alch-btn flex-1 flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="40" height="40" fill="none" stroke="#1b1405" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="150,150 362,150 256,384"/>
+              <line x1="256" y1="150" x2="256" y2="384"/>
+            </svg>
+            <span>TON</span>
+          </button>
+        </div>
+        <div id="nftPicker" class="hidden"><button id="placeBet" class="hidden"></button></div>
+      </div>
+
+    </div> 
+
+    <!-- ===== PLAYERS LIST ===== -->
+    <div class="glass border-ornate alch-rounded mt-12 p-6 sm:p-10 w-full max-w-4xl shadow-[0_0_60px_rgba(0,0,0,0.85)]">
+      <h3 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Участники</h3>
+      <ul id="players" class="space-y-4 sm:space-y-5 text-base sm:text-lg"></ul>
+
+      <div class="mt-6 text-right text-2xl font-extrabold glow-text">
+        Общий котел: <span id="pot">$0</span>
+      </div>
     </div>
-    <div class="pointer"></div>
-  </div>
 
-  <!-- результат -->
-  <p id="result"
-     class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
-</div>
-
-
-<!-- ===== BET / PICKER ===== -->
-<div
-  class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
-  <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
-    Сделать ставку
-  </h2>
-
-  <!-- две кнопки — в один ряд -->
-  <div class="flex gap-4 sm:gap-6">
-    <!-- Кнопка для NFT (чуть больше 3D-коробка) -->
-    <button id="depositNFT"
-            class="alch-btn flex-1 flex items-center justify-center gap-2">
-      <!-- SVG-иконка 3D-коробки увеличена до 24×24 -->
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linejoin="round">
-        <!-- Верхняя грань -->
-        <polygon points="4,7 12,3 20,7 12,11" fill="none"/>
-        <!-- Левая грань -->
-        <polygon points="4,7 12,11 12,19 4,15" fill="none"/>
-        <!-- Правая грань -->
-        <polygon points="20,7 12,11 12,19 20,15" fill="none"/>
-      </svg>
-      <span>NFT</span>
-    </button>
-
-    <!-- Кнопка для TON (намного больше символ) -->
-    <button id="depositTON"
-            class="alch-btn flex-1 flex items-center justify-center gap-2">
-      <!-- SVG-иконка треугольника с вертикальной полоской увеличена до 40×40 -->
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="40" height="40" fill="none" stroke="#1b1405" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
-        <!-- Контур треугольника с закруглёнными углами -->
-        <polygon points="150,150 362,150 256,384"/>
-        <!-- Вертикальная полоска по центру -->
-        <line x1="256" y1="150" x2="256" y2="384"/>
-      </svg>
-      <span>TON</span>
-    </button>
-  </div>
-  <div id="nftPicker" class="hidden"><button id="placeBet" class="hidden"></button></div>
-</div>
-
-
-
-</div> 
-
-<!-- ===== PLAYERS LIST ===== -->
-<div
-  class="glass border-ornate alch-rounded mt-12 p-6 sm:p-10 w-full max-w-4xl shadow-[0_0_60px_rgba(0,0,0,0.85)]">
-  <h3 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Участники</h3>
-  <ul id="players" class="space-y-4 sm:space-y-5 text-base sm:text-lg"></ul>
-
-  <div class="mt-6 text-right text-2xl font-extrabold glow-text">
-    Общий котел: <span id="pot">$0</span>
-  </div>
-</div>
-
-        </section>
+  </section>
 
         <!-- ▸▸▸ PROFILE ▸▸▸ -->
         <section id="profileSection" class="hidden px-4 py-10 sm:py-14">
