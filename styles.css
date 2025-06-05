@@ -538,7 +538,7 @@ body.compact .nft-card img  {width:4.75rem !important;height:4.75rem !important;
 
 /* 1. Небольшой отступ сверху у всего блока между шапкой и заголовком */
 #gameSection {
-  padding-top: 1rem !important;
+  padding-top: 7rem !important;
 }
 
 /* 2. Делаем шрифт «Котел» крупнее и задаем отступы сверху/снизу */
