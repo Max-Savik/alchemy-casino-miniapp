@@ -151,10 +151,10 @@ nav li {
   align-items: center;           /* центрируем вертикально иконку + текст */
   justify-content: center;
 
-  padding: 0.5rem 1rem;          
+  padding: 0.75rem 1.5rem;         
 
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   color: #1b1405;
   background: linear-gradient(135deg,
           var(--grad-from) 0%,
