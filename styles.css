@@ -545,3 +545,7 @@ section {
   /* Tailwind’s gap-8 = 2rem; заменяем на 1rem (≈ gap-4) */
   gap: 0.5rem !important;
 }
+
+#gameSection .mt-12 {
+  margin-top: 0 !important;
+}
