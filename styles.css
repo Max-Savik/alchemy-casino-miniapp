@@ -539,9 +539,9 @@ section {
 
 #gameSection {
   padding-top: 0.25rem;
-   gap: 1rem !important;
+   gap: 0.5rem !important;
 }
 #gameSection > div.flex.flex-col {
   /* Tailwind’s gap-8 = 2rem; заменяем на 1rem (≈ gap-4) */
-  gap: 1rem !important;
+  gap: 0.5rem !important;
 }
