@@ -527,7 +527,6 @@ body.compact #gameSection h1{
 }
 
 /* кнопки ---------------------------------------------------------------- */
-body.compact .alch-btn {padding:0.5rem 0 !important;font-size:0.9rem !important;}
 body.compact .wallet-btn{padding:0.25rem 0.45rem !important;font-size:0.78rem !important;}
 
 
