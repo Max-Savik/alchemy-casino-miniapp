@@ -136,20 +136,25 @@ nav li {
     width: 100%
 }
 
-/* ===== ALCHEMY MAGIC BUTTON (поправленный) ===== */
+/* =========================================================================
+   ALCHEMY MAGIC BUTTON (уменьшенный вариант)
+   ========================================================================= */
+
 .alch-btn {
-  /* приглушённый градиент */
+  /* приглушённый градиент из прошлого примера */
   --grad-from: #d4b258;
   --grad-via:  #a8862e;
   --grad-to:   #7f6320;
 
   position: relative;
-  display: inline-block;
-  width: 100%;
-  padding: 1rem 0;
+  display: inline-flex;          /* inline-flex, чтобы подгонять размер по содержимому */
+  align-items: center;           /* центрируем вертикально иконку + текст */
+  justify-content: center;
+
+  padding: 0.5rem 1rem;          
+
   font-weight: 700;
   font-size: 1.1rem;
-  text-align: center;
   color: #1b1405;
   background: linear-gradient(135deg,
           var(--grad-from) 0%,
@@ -157,7 +162,7 @@ nav li {
           var(--grad-to) 100%);
   background-size: 200% 200%;
   border: none;
-  border-radius: 999px;
+  border-radius: 1rem;           /* делаем скругление меньше, чтобы не было полностью кругло */
   cursor: pointer;
   box-shadow:
       0 2px 6px rgba(0, 0, 0, .35),
@@ -168,10 +173,11 @@ nav li {
       filter .45s cubic-bezier(.4, 0, .2, 1);
   overflow: hidden;
 
-  /* отступ между иконкой и текстом */
-  gap: 0.5rem; /* то же что gap-2 (8px) */
+  /* Отступ между SVG и текстом (тот же gap-2 / 8px) */
+  gap: 0.5rem; 
 }
 
+/* hover-эффекты оставляем прежними, их можно чуть подтянуть, если надо */
 .alch-btn:hover {
   transform: translateY(-2px) scale(1.04);
   filter: brightness(1.08);
@@ -221,7 +227,10 @@ nav li {
   100% { transform: translateX(220%) rotate(25deg) }
 }
 
-/* ===== ВЫРАВНИВАНИЕ И ОДИНАКОВЫЙ РАЗМЕР SVG ===== */
+/* =========================================================================
+   ВЫРАВНИВАНИЕ И ОДИНАКОВЫЙ РАЗМЕР SVG ВНУТРИ КНОПКИ
+   ========================================================================= */
+
 .alch-btn .bet-icon {
   width: 24px;
   height: 24px;
