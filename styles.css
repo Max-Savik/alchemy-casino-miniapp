@@ -535,18 +535,23 @@ body.compact .nft-card      {padding:0.4rem !important;}
 body.compact .nft-card img  {width:4.75rem !important;height:4.75rem !important;}
 
 
-/* CUSTOM OVERRIDES: Enlarge heading "Котел", add spacing between header and cauldron graphic, and make cauldron perfectly circular */
-
+/* 1. Даем больше отступа над «Котел» (между шапкой и самим блоком) */
 #gameSection {
-  /* Add extra space between header and h1/cauldron */
-  padding-top: 1rem !important;
+  padding-top: 1.5rem !important;
 }
 
+/* 2. Увеличиваем шрифт заголовка и даем отступы сверху/снизу */
 #gameSection h1 {
-  /* Make the "Котел" text larger */
-  font-size: clamp(2rem, 5vw, 3rem) !important;
-  /* Add more space below the heading */
-  margin-bottom: 0.8rem !important;
+  font-size: clamp(2.5rem, 6vw, 3.5rem) !important;
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important;
+}
+
+/* 3. Для надежности — убедимся, что compact-режим не «зажимает» заголовок */
+body.compact #gameSection h1 {
+  font-size: clamp(2.5rem, 6vw, 3.5rem) !important;
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important;
 }
 
 #cauldron {
