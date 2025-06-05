@@ -533,3 +533,6 @@ body.compact .wallet-btn{padding:0.25rem 0.45rem !important;font-size:0.78rem !i
 body.compact .nft-card      {padding:0.4rem !important;}
 body.compact .nft-card img  {width:4.75rem !important;height:4.75rem !important;}
 
+body.compact #gameSection {
+  padding-top: 2rem !important;
+}
