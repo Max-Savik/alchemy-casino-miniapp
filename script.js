@@ -12,13 +12,13 @@ const inventory = [
   { id:'cryst66', name:'Vintage Cigar', price:25, img:'https://nft.fragment.com/gift/vintagecigar-6050.medium.jpg',  staked:false },
 ];
 const selected = new Set();            // NFT, выбранные перед ставкой
-const palette = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
+const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
 
 let players   = [];
 let totalUSD  = 0;
 let phase     = "waiting";              // waiting | countdown | spinning
 
-// Храним развернутых игроков (по имени) для отображения более 8 NFT
+// Храним развернутых игроков (по имени) для истории NFT 
 const expandedPlayers = new Set();
 
 // =========================== Элементы страницы ===========================
@@ -36,7 +36,6 @@ const placeBetBtn    = document.getElementById('placeBet');
 const nftPicker      = document.getElementById('nftPicker');
 const historyBtn     = document.getElementById('historyBtn');
 
-// Навигация
 const gameSection    = document.getElementById('gameSection');
 const marketSection  = document.getElementById('marketSection');
 const profileSection = document.getElementById('profileSection');
@@ -46,7 +45,7 @@ const navMarket      = document.getElementById('navMarket');
 const navProfile     = document.getElementById('navProfile');
 const navEarn        = document.getElementById('navEarn');
 
-// Имя текущего пользователя из Telegram
+// Имя пользователя из Telegram
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
 const myName =
   tgUser.username
@@ -54,25 +53,22 @@ const myName =
     || "Гость";
 
 // ====================== Локальное Хранилище Истории ======================
-// Попытаться загрузить уже существующую историю из localStorage
+// Загружаем историю из localStorage или создаём пустую
 let gameHistory = [];
 try {
   const saved = localStorage.getItem('gameHistory');
-  if (saved) {
-    gameHistory = JSON.parse(saved);
-  }
+  if (saved) gameHistory = JSON.parse(saved);
 } catch (e) {
-  console.warn("Не удалось прочитать gameHistory из localStorage:", e);
+  console.warn("Не удалось прочитать gameHistory:", e);
 }
 
-// Функция для добавления новой записи и сохранения в localStorage
+// Добавляем запись и сохраняем
 function addToHistory(record) {
-  // record = { timestamp, winner, total, participants }
   gameHistory.push(record);
   try {
     localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
   } catch (e) {
-    console.warn("Не удалось сохранить gameHistory в localStorage:", e);
+    console.warn("Не удалось сохранить историю:", e);
   }
 }
 
@@ -82,9 +78,9 @@ function polar(cx,cy,r,deg){
   return { x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad) };
 }
 function arc(cx,cy,r,start,end,color){
-  const s=polar(cx,cy,r,end),
-        e=polar(cx,cy,r,start),
-        large=(end-start)<=180?0:1;
+  const s = polar(cx,cy,r,end),
+        e = polar(cx,cy,r,start),
+        large = (end-start)<=180 ? 0 : 1;
   return `<path d="M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y} Z" fill="${color}"/>`;
 }
 
@@ -152,7 +148,7 @@ function drawWheel() {
   });
 }
 
-// Обновляем UI: рисуем список участников, колесо, picker, профиль
+// Обновляем UI: участников, колесо, picker, профиль
 function refreshUI() {
   list.innerHTML = '';
 
@@ -160,7 +156,7 @@ function refreshUI() {
     const li = document.createElement('li');
     li.className = 'flex flex-col gap-1 py-2';
 
-    // ── Блок: Ник + сумма + процент
+    // ── Ник + сумма + процент
     const headerDiv = document.createElement('div');
     headerDiv.className = 'flex items-baseline gap-2';
 
@@ -180,15 +176,15 @@ function refreshUI() {
     headerDiv.appendChild(valueEl);
     headerDiv.appendChild(percEl);
 
-    // ── Блок: Иконки NFT (сортировка по цене, максимум 8, с кнопкой развернуть/скрыть)
+    // ── Иконки NFT (отсортированы по цене, максимум 8, с развёрткой/сокрытием)
     const iconsWrapper = document.createElement('div');
     iconsWrapper.className = 'flex flex-wrap items-center gap-2 mt-1';
 
     const sortedNFTs = [...p.nfts].sort((a,b) => b.price - a.price);
-    const isExpanded = expandedPlayers.has(p.name);
-    const maxToShow = 8;
+    const isExpanded   = expandedPlayers.has(p.name);
+    const maxToShow    = 8;
 
-    // Утилита: создаём стилизованную иконку
+    // Утилита: создаёт «нарядную» NFT-иконку с hover-ценой
     function makeNFTIcon(nftObj) {
       const wrapper = document.createElement('div');
       wrapper.className = `
@@ -201,26 +197,21 @@ function refreshUI() {
         hover:scale-110 
         transition-transform duration-150
       `;
-
       const img = document.createElement('img');
       img.src = nftObj.img;
       img.alt = nftObj.id;
       img.className = 'w-full h-full object-cover';
       wrapper.appendChild(img);
 
-      // При наведении показываем цену
       const priceBadge = document.createElement('div');
       priceBadge.textContent = `$${nftObj.price}`;
       priceBadge.className = `
-        absolute 
-        bottom-0 left-0 
+        absolute bottom-0 left-0 
         w-full 
         bg-gray-900/80 
         text-xs text-amber-300 
-        text-center 
-        py-0.5 
-        opacity-0 
-        hover:opacity-100 
+        text-center py-0.5 
+        opacity-0 hover:opacity-100 
         transition-opacity duration-150
       `;
       wrapper.appendChild(priceBadge);
@@ -233,7 +224,6 @@ function refreshUI() {
       sortedNFTs.forEach(nftObj => {
         iconsWrapper.appendChild(makeNFTIcon(nftObj));
       });
-      // Если было больше 8, добавляем кнопку «Скрыть»
       if (sortedNFTs.length > maxToShow) {
         const hideBtn = document.createElement('button');
         hideBtn.textContent = 'Скрыть';
@@ -250,13 +240,11 @@ function refreshUI() {
         });
         iconsWrapper.appendChild(hideBtn);
       }
-
     } else {
       // Показываем только первые 8
       sortedNFTs.slice(0, maxToShow).forEach(nftObj => {
         iconsWrapper.appendChild(makeNFTIcon(nftObj));
       });
-      // Кнопка «Показать все»
       const showAllBtn = document.createElement('button');
       showAllBtn.textContent = 'Показать все';
       showAllBtn.className = `
@@ -286,14 +274,14 @@ function refreshUI() {
 }
 
 // ========================= SOCKET EVENTS =========================
-// При подключении новый клиент сразу получает текущее состояние
+// При подключении сразу слать текущее состояние
 socket.on("state", s => {
   players  = s.players;
   totalUSD = s.totalUSD;
   phase    = s.phase;
 
-  // Если новый раунд (players.length === 0), сбрасываем всё
   if (players.length === 0) {
+    // Новый раунд: сбрасываем UI
     inventory.forEach(n => n.staked = false);
     gsap.set('#wheelSvg', { rotation: 0 });
     document.getElementById('result').textContent = '';
@@ -334,12 +322,15 @@ socket.on("spinEnd", ({ winner, total }) => {
   phase = "waiting";
   updateStatus();
 
-  // Собираем запись для истории:
+  // Собираем полную информацию о раунде:
   const record = {
     timestamp: new Date().toISOString(),
     winner:    winner.name,
     total:     total,
-    participants: players.map(p => p.name).join(', ')
+    participants: players.map(p => ({
+      name: p.name,
+      nfts: p.nfts  // массив {id, img, price}
+    }))
   };
   addToHistory(record);
 });
@@ -395,7 +386,7 @@ function updateStatus(sec = null){
 }
 
 // =================== PICKER & BET ===================
-// Открыть модальное окно выбора NFT
+// Открываем модальное окно выбора NFT
 depositNFTBtn.addEventListener('click', () => {
   renderPicker();
   selected.clear();
@@ -404,7 +395,7 @@ depositNFTBtn.addEventListener('click', () => {
   pickerOverlay.classList.remove('hidden');
 });
 
-// Закрыть окно без ставки
+// Закрываем окно без ставки
 closePickerBtn.addEventListener('click', () => {
   pickerOverlay.classList.add('hidden');
   selected.clear();
@@ -463,7 +454,6 @@ function show(view){
 }
 
 // =================== HISTORY BUTTON ===================
-// При клике открываем history.html
 historyBtn.addEventListener('click', () => {
   window.location.href = 'history.html';
 });
