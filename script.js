@@ -136,14 +136,14 @@ function drawWheel(){
   });
 }
 
-function refreshUI(){
+function refreshUI() {
   list.innerHTML = '';
 
   players.forEach(p => {
     const li = document.createElement('li');
     li.className = 'flex flex-col gap-1 py-2';
 
-    // 1️⃣ Блок с ником и суммой (ниже процент)
+    // ── Блок с ником и суммой (+ процент)
     const headerDiv = document.createElement('div');
     headerDiv.className = 'flex items-baseline gap-2';
 
@@ -163,50 +163,106 @@ function refreshUI(){
     headerDiv.appendChild(valueEl);
     headerDiv.appendChild(percEl);
 
-    // 2️⃣ Блок с маленькими иконками NFT, отсортированными по цене (descending)
+    // ── Блок с иконками NFT (отсортированы по цене, от дорогих к дешевым)
     const iconsWrapper = document.createElement('div');
-    iconsWrapper.className = 'flex gap-1 mt-1 flex-wrap';
+    // flex-wrap, gap, выравнивание; чтобы иконки красиво переходили на новую строку
+    iconsWrapper.className = 'flex flex-wrap items-center gap-2 mt-1';
 
     const sortedNFTs = [...p.nfts].sort((a,b) => b.price - a.price);
+    const isExpanded  = expandedPlayers.has(p.name);
+    const maxToShow   = 24;
 
-    // Проверяем, развернут ли данный игрок
-    const isExpanded = expandedPlayers.has(p.name);
-    const maxToShow = 8;
+    // Функция-утилита для создания «нарядной» иконки NFT
+    function makeNFTIcon(nftObj) {
+      const wrapper = document.createElement('div');
+      wrapper.className = `
+        relative 
+        w-8 h-8 
+        rounded-md 
+        overflow-hidden 
+        shadow-lg 
+        border border-gray-600 
+        hover:scale-110 
+        transition-transform duration-150 ease-in-out
+      `;
+
+      const img = document.createElement('img');
+      img.src = nftObj.img;
+      img.alt = nftObj.id;
+      img.className = 'w-full h-full object-cover';
+      wrapper.appendChild(img);
+
+      // При наведении показываем подпись с ценой
+      const priceBadge = document.createElement('div');
+      priceBadge.textContent = `$${nftObj.price}`;
+      priceBadge.className = `
+        absolute 
+        bottom-0 
+        left-0 
+        w-full 
+        bg-gray-900/80 
+        text-xs 
+        text-amber-300 
+        text-center 
+        py-0.5 
+        opacity-0 
+        hover:opacity-100 
+        transition-opacity duration-150
+      `;
+      wrapper.appendChild(priceBadge);
+
+      return wrapper;
+    }
 
     if (sortedNFTs.length <= maxToShow || isExpanded) {
-      // Показываем все NFT (сортированные) — либо их меньше 8, либо игрок развернут
+      // Показываем все NFT
       sortedNFTs.forEach(nftObj => {
-        const img = document.createElement('img');
-        img.src = nftObj.img;
-        img.alt = nftObj.id;
-        img.className = 'w-6 h-6 rounded-sm border border-gray-600';
-        iconsWrapper.appendChild(img);
+        iconsWrapper.appendChild(makeNFTIcon(nftObj));
       });
+
+      // Если было развёрнуто, добавим кнопку «Скрыть»
+      if (sortedNFTs.length > maxToShow) {
+        const hideBtn = document.createElement('button');
+        hideBtn.textContent = 'Скрыть';
+        hideBtn.className = `
+          ml-1 
+          text-xs 
+          text-red-400 
+          hover:text-red-600 
+          hover:underline
+        `;
+        hideBtn.addEventListener('click', () => {
+          expandedPlayers.delete(p.name);
+          refreshUI();
+        });
+        iconsWrapper.appendChild(hideBtn);
+      }
     } else {
       // Показываем только первые 8
       sortedNFTs.slice(0, maxToShow).forEach(nftObj => {
-        const img = document.createElement('img');
-        img.src = nftObj.img;
-        img.alt = nftObj.id;
-        img.className = 'w-6 h-6 rounded-sm border border-gray-600';
-        iconsWrapper.appendChild(img);
+        iconsWrapper.appendChild(makeNFTIcon(nftObj));
       });
 
       // Добавляем кнопку «Показать все»
-      const btn = document.createElement('button');
-      btn.textContent = 'Показать все';
-      btn.className = 'text-xs text-blue-400 hover:underline ml-1';
-      btn.addEventListener('click', () => {
+      const showAllBtn = document.createElement('button');
+      showAllBtn.textContent = 'Показать все';
+      showAllBtn.className = `
+        ml-1 
+        text-xs 
+        text-blue-400 
+        hover:text-blue-600 
+        hover:underline
+      `;
+      showAllBtn.addEventListener('click', () => {
         expandedPlayers.add(p.name);
         refreshUI();
       });
-      iconsWrapper.appendChild(btn);
+      iconsWrapper.appendChild(showAllBtn);
     }
 
-    // Собираем <li>
+    // ── Собираем <li>
     li.appendChild(headerDiv);
     li.appendChild(iconsWrapper);
-
     list.appendChild(li);
   });
 
@@ -215,8 +271,6 @@ function refreshUI(){
   renderPicker();
   renderProfile();
 }
-
-
 /* ==== SOCKET EVENTS ==== */
 socket.on("state", s => {
   players  = s.players;
