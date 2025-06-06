@@ -20,6 +20,11 @@ const inventory = [
   { id:'egg007',  name:'Loot Bag',         price:45, img:'https://nft.fragment.com/gift/lootbag-767.medium.jpg',   staked:false },
   { id:'elixir1', name:'Vintage Cigar',    price:25, img:'https://nft.fragment.com/gift/vintagecigar-19295.medium.jpg', staked:false },
   { id:'cryst66', name:'Vintage Cigar',    price:25, img:'https://nft.fragment.com/gift/vintagecigar-6050.medium.jpg',  staked:false },
+  { id:'diamondring-4526',  name:'Diamond Ring',         price:40, img:'https://nft.fragment.com/gift/diamondring-4526.medium.jpg', staked:false },
+  { id:'eternalrose-9785', name:'Eternal Rose',         price:40, img:'https://nft.fragment.com/gift/eternalrose-9785.medium.jpg',  staked:false },
+  { id:'lovecandle-14932',  name:'Love Candle',         price:45, img:'https://nft.fragment.com/gift/lovecandle-14932.medium.jpg',   staked:false },
+  { id:'lovepotion-11784', name:'Love Potion',    price:25, img:'https://nft.fragment.com/gift/lovepotion-11784.medium.jpg', staked:false },
+  { id:'lovecandle-7853', name:'Love Candle',    price:25, img:'https://nft.fragment.com/gift/lovecandle-7853.medium.jpg',  staked:false },
 ];
 
 /* SVG-helpers */
