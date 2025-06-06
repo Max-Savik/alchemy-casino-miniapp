@@ -1,10 +1,7 @@
-// ────────────────────────────────────────────────────────────────
-//  Jackpot Server with Persistent JSON History
-//  --------------------------------------------------------------
-//  • Stores every finished round in history.json (atomic writes)
-//  • Serves GET /history for the front‑end
-//  • Otherwise identical behaviour to your original script
-// ────────────────────────────────────────────────────────────────
+
+const cors  = require('cors');
+app.use(cors({ origin: 'https://max-savik.github.io' })); 
+
 
 const express = require('express');
 const http    = require('http');
