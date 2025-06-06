@@ -1,3 +1,5 @@
+// File: script.js
+
 // ============================ script.js ============================
 
 // 1. Подключаемся к бекенду
@@ -5,16 +7,16 @@ const socket = io("https://alchemy-casino-miniapp.onrender.com");
 
 // 2. Локальное состояние
 const inventory = [
-  { id:'orb001',  name:'Loot Bag',         price:40, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg', staked:false },
-  { id:'pearl42', name:'Loot Bag',         price:40, img:'https://nft.fragment.com/gift/lootbag-9355.medium.jpg',  staked:false },
-  { id:'egg007',  name:'Loot Bag',         price:45, img:'https://nft.fragment.com/gift/lootbag-767.medium.jpg',   staked:false },
-  { id:'elixir1', name:'Vintage Cigar',    price:25, img:'https://nft.fragment.com/gift/vintagecigar-19295.medium.jpg', staked:false },
-  { id:'cryst66', name:'Vintage Cigar',    price:25, img:'https://nft.fragment.com/gift/vintagecigar-6050.medium.jpg',  staked:false },
-  { id:'diamondring-4526',  name:'Diamond Ring',         price:11, img:'https://nft.fragment.com/gift/diamondring-4526.medium.jpg', staked:false },
-  { id:'eternalrose-9785', name:'Eternal Rose',         price:10, img:'https://nft.fragment.com/gift/eternalrose-9785.medium.jpg',  staked:false },
-  { id:'lovecandle-14932',  name:'Love Candle',         price:7, img:'https://nft.fragment.com/gift/lovecandle-14932.medium.jpg',   staked:false },
-  { id:'lovepotion-11784', name:'Love Potion',    price:6, img:'https://nft.fragment.com/gift/lovepotion-11784.medium.jpg', staked:false },
-  { id:'lovecandle-7853', name:'Love Candle',    price:5, img:'https://nft.fragment.com/gift/lovecandle-7853.medium.jpg',  staked:false },
+  { id:'orb001',          name:'Loot Bag',      price:40, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg',   staked:false },
+  { id:'pearl42',         name:'Loot Bag',      price:40, img:'https://nft.fragment.com/gift/lootbag-9355.medium.jpg',    staked:false },
+  { id:'egg007',          name:'Loot Bag',      price:45, img:'https://nft.fragment.com/gift/lootbag-767.medium.jpg',     staked:false },
+  { id:'elixir1',         name:'Vintage Cigar', price:25, img:'https://nft.fragment.com/gift/vintagecigar-19295.medium.jpg', staked:false },
+  { id:'cryst66',         name:'Vintage Cigar', price:25, img:'https://nft.fragment.com/gift/vintagecigar-6050.medium.jpg',    staked:false },
+  { id:'diamondring-4526',name:'Diamond Ring',  price:11, img:'https://nft.fragment.com/gift/diamondring-4526.medium.jpg',  staked:false },
+  { id:'eternalrose-9785',name:'Eternal Rose',  price:10, img:'https://nft.fragment.com/gift/eternalrose-9785.medium.jpg',  staked:false },
+  { id:'lovecandle-14932',name:'Love Candle',   price:7,  img:'https://nft.fragment.com/gift/lovecandle-14932.medium.jpg',   staked:false },
+  { id:'lovepotion-11784',name:'Love Potion',   price:6,  img:'https://nft.fragment.com/gift/lovepotion-11784.medium.jpg',  staked:false },
+  { id:'lovecandle-7853', name:'Love Candle',   price:5,  img:'https://nft.fragment.com/gift/lovecandle-7853.medium.jpg',   staked:false },
 ];
 const selected = new Set();            // NFT, выбранные перед ставкой
 const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
@@ -79,13 +81,13 @@ function addToHistory(record) {
 
 // ========================== SVG-хелперы ==========================
 function polar(cx,cy,r,deg){
-  const rad=(deg-90)*Math.PI/180;
-  return { x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad) };
+  const rad = (deg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 function arc(cx,cy,r,start,end,color){
   const s = polar(cx,cy,r,end),
         e = polar(cx,cy,r,start),
-        large = (end-start)<=180 ? 0 : 1;
+        large = (end - start) <= 180 ? 0 : 1;
   return `<path d="M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y} Z" fill="${color}"/>`;
 }
 
@@ -140,7 +142,7 @@ function drawWheel() {
       );
     }
     // подписи
-    const mid = start + sweep/2;
+    const mid = start + sweep / 2;
     const pos = polar(200,200,120,mid);
     const angle = mid + 90;
     svg.insertAdjacentHTML('beforeend',`
@@ -174,20 +176,20 @@ function refreshUI() {
     valueEl.className = 'text-gray-100 text-sm';
 
     const percEl = document.createElement('span');
-    percEl.textContent = `· ${((p.value/totalUSD)*100).toFixed(1)}%`;
+    percEl.textContent = `· ${((p.value/totalUSD) * 100).toFixed(1)}%`;
     percEl.className = 'text-emerald-400 text-xs';
 
     headerDiv.appendChild(nameEl);
     headerDiv.appendChild(valueEl);
     headerDiv.appendChild(percEl);
 
-    // ── Иконки NFT (отсортированы по цене, максимум 8, с развёрткой/сокрытием)
+    // ── Иконки NFT (отсортированы по цене, максимум 24, с развёрткой/сокрытием)
     const iconsWrapper = document.createElement('div');
     iconsWrapper.className = 'flex flex-wrap items-center gap-2 mt-1';
 
     const sortedNFTs = [...p.nfts].sort((a,b) => b.price - a.price);
-    const isExpanded   = expandedPlayers.has(p.name);
-    const maxToShow    = 24;
+    const isExpanded = expandedPlayers.has(p.name);
+    const maxToShow  = 24;
 
     // Утилита: создаёт «нарядную» NFT-иконку с hover-ценой
     function makeNFTIcon(nftObj) {
@@ -246,7 +248,7 @@ function refreshUI() {
         iconsWrapper.appendChild(hideBtn);
       }
     } else {
-      // Показываем только первые 8
+      // Показываем только первые 24
       sortedNFTs.slice(0, maxToShow).forEach(nftObj => {
         iconsWrapper.appendChild(makeNFTIcon(nftObj));
       });
@@ -314,7 +316,7 @@ socket.on("countdownTick", ({ remaining }) => {
 
 socket.on("spinStart", ({ players: list, winner }) => {
   players  = list;
-  totalUSD = list.reduce((a,b)=>a+b.value, 0);
+  totalUSD = list.reduce((a,b) => a + b.value, 0);
   phase    = "spinning";
   lockBets(true);
   updateStatus();
@@ -353,14 +355,14 @@ function highlightWinner(winner){
 
 function runSpinAnimation(winner){
   const idx = players.indexOf(winner);
-  let start=-90, mid=0;
+  let start = -90, mid = 0;
   players.forEach((p,i) => {
-    const sweep = (p.value/totalUSD)*360;
-    if (i === idx) mid = start + sweep/2;
+    const sweep = (p.value / totalUSD) * 360;
+    if (i === idx) mid = start + sweep / 2;
     start += sweep;
   });
-  const spins = 6 + Math.floor(Math.random()*4);
-  const target = 360*spins + (360 - mid);
+  const spins = 6 + Math.floor(Math.random() * 4);
+  const target = 360 * spins + (360 - mid);
   gsap.to('#wheelSvg', {
     duration: 6,
     rotation: target,
@@ -447,15 +449,15 @@ navMarket.addEventListener('click', () => show('market'));
 navProfile.addEventListener('click',() => show('profile'));
 navEarn.addEventListener('click',   () => show('earn'));
 function show(view){
-  gameSection   .classList.toggle('hidden', view!=='game');
-  profileSection.classList.toggle('hidden', view!=='profile');
-  marketSection .classList.toggle('hidden', view!=='market');
-  earnSection   .classList.toggle('hidden', view!=='earn');
+  gameSection   .classList.toggle('hidden', view !== 'game');
+  profileSection.classList.toggle('hidden', view !== 'profile');
+  marketSection .classList.toggle('hidden', view !== 'market');
+  earnSection   .classList.toggle('hidden', view !== 'earn');
 
-  navGame   .classList.toggle('active', view==='game');
-  navMarket .classList.toggle('active', view==='market');
-  navProfile.classList.toggle('active', view==='profile');
-  navEarn   .classList.toggle('active', view==='earn');
+  navGame   .classList.toggle('active', view === 'game');
+  navMarket .classList.toggle('active', view === 'market');
+  navProfile.classList.toggle('active', view === 'profile');
+  navEarn   .classList.toggle('active', view === 'earn');
 }
 
 // =================== HISTORY BUTTON ===================
@@ -466,20 +468,26 @@ historyBtn.addEventListener('click', () => {
 // ======================= BUBBLES/STEAM =======================
 const cauldron = document.getElementById('cauldron');
 function spawnBubble(){
-  const b=document.createElement('span');
-  b.className='bubble';
-  b.style.left=Math.random()*80+10+'%';
-  const s=10+Math.random()*16;
-  b.style.width=b.style.height=s+'px';
-  b.style.animation=`rise ${4+Math.random()*3}s ease-in forwards`;
+  const b = document.createElement('span');
+  b.className = 'bubble';
+  b.style.left = Math.random() * 80 + 10 + '%';
+  const s = 10 + Math.random() * 16;
+  b.style.width = b.style.height = s + 'px';
+  b.style.animation = `rise ${4 + Math.random() * 3}s ease-in forwards`;
   cauldron.appendChild(b);
-  setTimeout(()=>b.remove(),7000);
+  setTimeout(() => b.remove(), 7000);
 }
-setInterval(spawnBubble,1000);
-gsap.fromTo('#steam',{scale:.6,opacity:0},{scale:1.4,opacity:.55,y:-90,duration:5,repeat:-1,ease:'power1.out',repeatDelay:1.2});
+setInterval(spawnBubble, 1000);
+gsap.fromTo('#steam', { scale: .6, opacity: 0 }, {
+  scale: 1.4,
+  opacity: .55,
+  y: -90,
+  duration: 5,
+  repeat: -1,
+  ease: 'power1.out',
+  repeatDelay: 1.2
+});
 
 // ======================= INIT =======================
 show('game');
 refreshUI();
-
-
