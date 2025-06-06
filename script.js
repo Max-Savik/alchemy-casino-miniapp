@@ -45,6 +45,9 @@ let players   = [];
 let totalUSD  = 0;
 let phase     = "waiting";        // waiting | countdown | spinning
 const selected = new Set();       // выбраны NFT для ставки
+// Храним тех, чьи NFT развернуты (показываем все), по имени игрока
+const expandedPlayers = new Set();
+
 
 /* ELEMENTS */
 const svg            = document.getElementById('wheelSvg');
@@ -140,7 +143,7 @@ function refreshUI(){
     const li = document.createElement('li');
     li.className = 'flex flex-col gap-1 py-2';
 
-    // 1️⃣ Блок с ником и суммой (снизу %)
+    // 1️⃣ Блок с ником и суммой (ниже процент)
     const headerDiv = document.createElement('div');
     headerDiv.className = 'flex items-baseline gap-2';
 
@@ -162,26 +165,42 @@ function refreshUI(){
 
     // 2️⃣ Блок с маленькими иконками NFT, отсортированными по цене (descending)
     const iconsWrapper = document.createElement('div');
-    iconsWrapper.className = 'flex gap-1 mt-1';
+    iconsWrapper.className = 'flex gap-1 mt-1 flex-wrap';
 
-    // Сортируем p.nfts по убыванию price
     const sortedNFTs = [...p.nfts].sort((a,b) => b.price - a.price);
 
-    // Покажем максимум 4 самых дорогих, остальные → "+N"
-    const maxToShow = 4;
-    sortedNFTs.slice(0, maxToShow).forEach(nftObj => {
-      const img = document.createElement('img');
-      img.src = nftObj.img;
-      img.alt = nftObj.id;
-      img.className = 'w-6 h-6 rounded-sm border border-gray-600';
-      iconsWrapper.appendChild(img);
-    });
+    // Проверяем, развернут ли данный игрок
+    const isExpanded = expandedPlayers.has(p.name);
+    const maxToShow = 8;
 
-    if (sortedNFTs.length > maxToShow) {
-      const more = document.createElement('span');
-      more.textContent = `+${sortedNFTs.length - maxToShow}`;
-      more.className = 'text-xs text-gray-400 ml-1 self-center';
-      iconsWrapper.appendChild(more);
+    if (sortedNFTs.length <= maxToShow || isExpanded) {
+      // Показываем все NFT (сортированные) — либо их меньше 8, либо игрок развернут
+      sortedNFTs.forEach(nftObj => {
+        const img = document.createElement('img');
+        img.src = nftObj.img;
+        img.alt = nftObj.id;
+        img.className = 'w-6 h-6 rounded-sm border border-gray-600';
+        iconsWrapper.appendChild(img);
+      });
+    } else {
+      // Показываем только первые 8
+      sortedNFTs.slice(0, maxToShow).forEach(nftObj => {
+        const img = document.createElement('img');
+        img.src = nftObj.img;
+        img.alt = nftObj.id;
+        img.className = 'w-6 h-6 rounded-sm border border-gray-600';
+        iconsWrapper.appendChild(img);
+      });
+
+      // Добавляем кнопку «Показать все»
+      const btn = document.createElement('button');
+      btn.textContent = 'Показать все';
+      btn.className = 'text-xs text-blue-400 hover:underline ml-1';
+      btn.addEventListener('click', () => {
+        expandedPlayers.add(p.name);
+        refreshUI();
+      });
+      iconsWrapper.appendChild(btn);
     }
 
     // Собираем <li>
@@ -196,7 +215,6 @@ function refreshUI(){
   renderPicker();
   renderProfile();
 }
-
 
 
 /* ==== SOCKET EVENTS ==== */
