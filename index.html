@@ -7,7 +7,6 @@
   <title>Golden Games</title>
 
   <!-- === внешние библиотеки === -->
-  <!-- Socket.IO клиент -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -17,9 +16,10 @@
 
   <!-- === наши стили / логика === -->
   <link rel="stylesheet" href="styles.css" />
+  <script src="script.js" defer></script>
+  <script src="history.js" defer></script> <!-- подготовим его заранее -->
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="script.js" defer></script>
 </head>
 
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
@@ -30,16 +30,7 @@
       <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none">
         <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
       </a>
-
-      <!-- spacer притянет кнопки правее -->
       <div class="flex-grow"></div>
-
-      <!-- кнопка История -->
-      <button id="historyBtn"
-              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200">
-        История
-      </button>
-
       <div class="flex items-center gap-2">
         <!-- баланс TON -->
         <div id="balanceBox" class="flex items-center gap-1 flex-none px-2 py-1 rounded-full ton-pill">
@@ -49,13 +40,11 @@
         </div>
         <!-- кнопка Wallet -->
         <button id="connectWallet" class="wallet-btn flex items-center gap-1 flex-none">
-          <!-- иконка -->
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                stroke="#1b1405" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 7h20v12H2z" />              <!-- корпус -->
-            <path d="M18 7V5a2 2 0 0 0-2-2H2v4" /> <!-- клапан -->
+            <path d="M2 7h20v12H2z" />
+            <path d="M18 7V5a2 2 0 0 0-2-2H2v4" />
           </svg>
-          <!-- подпись (прячем на узких) -->
           <span class="wallet-label">WALLET</span>
         </button>
       </div>
@@ -72,12 +61,19 @@
       <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 justify-center w-full max-w-7xl">
 
         <!-- ===== CAULDRON & SPIN ===== -->
-        <div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
+        <div class="relative flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
           <!-- таймер / статус НАД котлом -->
           <div id="countdown"
                class="mb-2 text-2xl sm:text-3xl font-['Forum'] glow-text">
             Ожидание игроков…
           </div>
+
+          <!-- ===== Здесь добавляем кнопку «История» ===== -->
+          <button id="historyBtn"
+                  class="absolute top-2 right-2 z-40 px-3 py-1 bg-gray-800/90 hover:bg-gray-700 rounded-md text-gray-200 text-xs sm:text-sm">
+            История
+          </button>
+          <!-- ============================================== -->
 
           <div id="wheelWrapper" class="relative">
             <div id="cauldron">
@@ -126,9 +122,8 @@
                 ✕
               </button>
             </div>
-            <!-- Контейнер для карточек NFT (будет заполнен renderPicker) -->
+            <!-- Контейнер для карточек NFT (заполняется renderPicker) -->
             <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
-              <!-- Здесь динамически будут вставляться карточки одной NFT -->
             </div>
             <!-- Кнопка «Поставить» -->
             <div class="mt-6 text-right">
@@ -160,15 +155,13 @@
     </section>
     <section id="marketSection" class="hidden px-4 py-8">…Маркет (скоро)…</section>
     <section id="earnSection"   class="hidden px-4 py-8">…Доход (скоро)…</section>
-
   </main>
 
-  <!-- ======================================================
-       НИЖНЯЯ НАВИГАЦИЯ (4 кнопки: Игры / Маркет / Профиль / Доход)
-       ====================================================== -->
+  <!-- НИЖНЯЯ НАВИГАЦИЯ -->
   <nav class="bottom-nav flex justify-around">
     <button id="navGame" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
         <circle cx="8" cy="12" r="1.5" />
         <path d="M12 10v4" />
@@ -179,7 +172,8 @@
       <span class="nav-lbl">Игры</span>
     </button>
     <button id="navMarket" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
         <circle cx="9" cy="21" r="1.5" />
         <circle cx="19" cy="21" r="1.5" />
         <path d="M1 1h4l2.68 13.39a2 2 0 001.97 1.61h9.72a2 2 0 001.97-1.61L23 6H6" />
@@ -187,7 +181,8 @@
       <span class="nav-lbl">Маркет</span>
     </button>
     <button id="navProfile" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-3-3.87" />
         <path d="M4 21v-2a4 4 0 0 1 3-3.87" />
         <circle cx="12" cy="7" r="4" />
@@ -195,7 +190,8 @@
       <span class="nav-lbl">Профиль</span>
     </button>
     <button id="navEarn" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="8" />
         <path d="M12 14V10" />
         <path d="M10 12l2-2 2 2" />
@@ -204,5 +200,4 @@
     </button>
   </nav>
 </body>
-
 </html>
