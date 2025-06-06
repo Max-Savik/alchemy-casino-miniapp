@@ -1,13 +1,10 @@
 
-const cors  = require('cors');
-app.use(cors({ origin: 'https://max-savik.github.io' })); 
-
-
 const express = require('express');
 const http    = require('http');
 const { Server } = require('socket.io');
 const fs      = require('fs').promises;
 const path    = require('path');
+const cors   = require('cors');
 
 // ────────────────────────── Config ─────────────────────────────
 const PORT         = process.env.PORT || 3000;
@@ -39,6 +36,7 @@ async function saveHistory() {
 
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
+app.use(cors({ origin: 'https://max-savik.github.io' }));
 app.use(express.static(__dirname));          // serve front‑end files
 
 app.get('/history', (req, res) => res.json(history));
