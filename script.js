@@ -130,42 +130,59 @@ function drawWheel(){
 
 function refreshUI(){
   list.innerHTML = '';
+
   players.forEach(p => {
-    // Основной li
     const li = document.createElement('li');
-    li.className = 'flex items-center gap-2';
+    li.className = 'flex flex-col gap-1 py-2';
 
-    // 1️⃣ Блок с маленькими NFT-иконками (макс. 4 штуки, например)
+    // 1️⃣ Блок с ником и суммой (снизу %)
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'flex items-baseline gap-2';
+
+    const nameEl = document.createElement('span');
+    nameEl.textContent = p.name;
+    nameEl.className = 'text-amber-300 font-semibold';
+
+    const valueEl = document.createElement('span');
+    valueEl.textContent = `$${p.value.toFixed(2)}`;
+    valueEl.className = 'text-gray-100 text-sm';
+
+    const percEl = document.createElement('span');
+    percEl.textContent = `· ${((p.value/totalUSD)*100).toFixed(1)}%`;
+    percEl.className = 'text-emerald-400 text-xs';
+
+    headerDiv.appendChild(nameEl);
+    headerDiv.appendChild(valueEl);
+    headerDiv.appendChild(percEl);
+
+    // 2️⃣ Блок с маленькими иконками NFT, отсортированными по цене (descending)
     const iconsWrapper = document.createElement('div');
-    iconsWrapper.className = 'flex gap-1';
+    iconsWrapper.className = 'flex gap-1 mt-1';
 
-    // p.nfts — массив объектов { id, img, price }
-    // Покажем не более 4-х превью, остальные скроем (чтобы не было слишком длинно)
+    // Сортируем p.nfts по убыванию price
+    const sortedNFTs = [...p.nfts].sort((a,b) => b.price - a.price);
+
+    // Покажем максимум 4 самых дорогих, остальные → "+N"
     const maxToShow = 4;
-    p.nfts.slice(-maxToShow).forEach(nftObj => {
+    sortedNFTs.slice(0, maxToShow).forEach(nftObj => {
       const img = document.createElement('img');
       img.src = nftObj.img;
       img.alt = nftObj.id;
       img.className = 'w-6 h-6 rounded-sm border border-gray-600';
       iconsWrapper.appendChild(img);
     });
-    if (p.nfts.length > maxToShow) {
+
+    if (sortedNFTs.length > maxToShow) {
       const more = document.createElement('span');
-      more.textContent = `+${p.nfts.length - maxToShow}`;
-      more.className = 'text-xs text-gray-400 ml-1';
+      more.textContent = `+${sortedNFTs.length - maxToShow}`;
+      more.className = 'text-xs text-gray-400 ml-1 self-center';
       iconsWrapper.appendChild(more);
     }
 
-    // 2️⃣ Блок с текстом «имя — сумма · процент»
-    const textWrapper = document.createElement('div');
-    textWrapper.innerHTML = `
-      <span class="text-amber-300 font-medium">${p.name}</span>
-      — $${p.value.toFixed(2)}
-      <span class="text-emerald-400">· ${((p.value/totalUSD)*100).toFixed(1)}%</span>
-    `;
-
+    // Собираем <li>
+    li.appendChild(headerDiv);
     li.appendChild(iconsWrapper);
-    li.appendChild(textWrapper);
+
     list.appendChild(li);
   });
 
@@ -174,6 +191,7 @@ function refreshUI(){
   renderPicker();
   renderProfile();
 }
+
 
 
 /* ==== SOCKET EVENTS ==== */
