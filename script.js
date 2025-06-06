@@ -131,16 +131,50 @@ function drawWheel(){
 function refreshUI(){
   list.innerHTML = '';
   players.forEach(p => {
+    // Основной li
     const li = document.createElement('li');
-    li.innerHTML = `<span class="text-amber-300">${p.name}</span> — $${p.value.toFixed(2)}
-      · <span class="text-emerald-400">${((p.value/totalUSD)*100).toFixed(1)}%</span>`;
+    li.className = 'flex items-center gap-2';
+
+    // 1️⃣ Блок с маленькими NFT-иконками (макс. 4 штуки, например)
+    const iconsWrapper = document.createElement('div');
+    iconsWrapper.className = 'flex gap-1';
+
+    // p.nfts — массив объектов { id, img, price }
+    // Покажем не более 4-х превью, остальные скроем (чтобы не было слишком длинно)
+    const maxToShow = 4;
+    p.nfts.slice(-maxToShow).forEach(nftObj => {
+      const img = document.createElement('img');
+      img.src = nftObj.img;
+      img.alt = nftObj.id;
+      img.className = 'w-6 h-6 rounded-sm border border-gray-600';
+      iconsWrapper.appendChild(img);
+    });
+    if (p.nfts.length > maxToShow) {
+      const more = document.createElement('span');
+      more.textContent = `+${p.nfts.length - maxToShow}`;
+      more.className = 'text-xs text-gray-400 ml-1';
+      iconsWrapper.appendChild(more);
+    }
+
+    // 2️⃣ Блок с текстом «имя — сумма · процент»
+    const textWrapper = document.createElement('div');
+    textWrapper.innerHTML = `
+      <span class="text-amber-300 font-medium">${p.name}</span>
+      — $${p.value.toFixed(2)}
+      <span class="text-emerald-400">· ${((p.value/totalUSD)*100).toFixed(1)}%</span>
+    `;
+
+    li.appendChild(iconsWrapper);
+    li.appendChild(textWrapper);
     list.appendChild(li);
   });
+
   pot.textContent = '$' + totalUSD.toFixed(2);
   drawWheel();
   renderPicker();
   renderProfile();
 }
+
 
 /* ==== SOCKET EVENTS ==== */
 socket.on("state", s => {
@@ -279,9 +313,9 @@ placeBetBtn.addEventListener('click', () => {
 
   const name = myName;
   const nfts = Array.from(selected).map(id => {
-    const n = inventory.find(x => x.id === id);
-    return { id: n.id, price: n.price };
-  });
+  const n = inventory.find(x => x.id === id);
+  return { id: n.id, price: n.price, img: n.img };
+});
 
   // Локально помечаем NFT стейкнутыми
   nfts.forEach(({ id }) => {
