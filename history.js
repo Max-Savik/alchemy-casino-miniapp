@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 1) Пытаемся получить историю с сервера
   try {
-    const res = await fetch('/history');
+    const API = 'https://alchemy-casino-miniapp.onrender.com';
+    const res = await fetch(`${API}/history`);
     if (!res.ok) throw new Error(`Server responded ${res.status}`);
     gameHistory = await res.json();
   } catch (serverErr) {
@@ -19,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2) Фоллбэк — пробуем загрузить статичный файл history.json
     try {
-      const res2 = await fetch('history.json');
+      const res2 = await fetch(`${API}/history.json`);
       if (!res2.ok) throw new Error(`history.json responded ${res2.status}`);
       gameHistory = await res2.json();
     } catch (fileErr) {
