@@ -5,11 +5,16 @@ const socket = io("https://alchemy-casino-miniapp.onrender.com");
 
 // 2. Локальное состояние
 const inventory = [
-  { id:'orb001',  name:'Loot Bag',      price:40, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg', staked:false },
-  { id:'pearl42', name:'Loot Bag',      price:40, img:'https://nft.fragment.com/gift/lootbag-9355.medium.jpg',  staked:false },
-  { id:'egg007',  name:'Loot Bag',      price:45, img:'https://nft.fragment.com/gift/lootbag-767.medium.jpg',   staked:false },
-  { id:'elixir1', name:'Vintage Cigar', price:25, img:'https://nft.fragment.com/gift/vintagecigar-19295.medium.jpg', staked:false },
-  { id:'cryst66', name:'Vintage Cigar', price:25, img:'https://nft.fragment.com/gift/vintagecigar-6050.medium.jpg',  staked:false },
+  { id:'orb001',  name:'Loot Bag',         price:40, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg', staked:false },
+  { id:'pearl42', name:'Loot Bag',         price:40, img:'https://nft.fragment.com/gift/lootbag-9355.medium.jpg',  staked:false },
+  { id:'egg007',  name:'Loot Bag',         price:45, img:'https://nft.fragment.com/gift/lootbag-767.medium.jpg',   staked:false },
+  { id:'elixir1', name:'Vintage Cigar',    price:25, img:'https://nft.fragment.com/gift/vintagecigar-19295.medium.jpg', staked:false },
+  { id:'cryst66', name:'Vintage Cigar',    price:25, img:'https://nft.fragment.com/gift/vintagecigar-6050.medium.jpg',  staked:false },
+  { id:'diamondring-4526',  name:'Diamond Ring',         price:11, img:'https://nft.fragment.com/gift/diamondring-4526.medium.jpg', staked:false },
+  { id:'eternalrose-9785', name:'Eternal Rose',         price:10, img:'https://nft.fragment.com/gift/eternalrose-9785.medium.jpg',  staked:false },
+  { id:'lovecandle-14932',  name:'Love Candle',         price:7, img:'https://nft.fragment.com/gift/lovecandle-14932.medium.jpg',   staked:false },
+  { id:'lovepotion-11784', name:'Love Potion',    price:6, img:'https://nft.fragment.com/gift/lovepotion-11784.medium.jpg', staked:false },
+  { id:'lovecandle-7853', name:'Love Candle',    price:5, img:'https://nft.fragment.com/gift/lovecandle-7853.medium.jpg',  staked:false },
 ];
 const selected = new Set();            // NFT, выбранные перед ставкой
 const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
