@@ -187,7 +187,7 @@ function refreshUI() {
 
     const sortedNFTs = [...p.nfts].sort((a,b) => b.price - a.price);
     const isExpanded   = expandedPlayers.has(p.name);
-    const maxToShow    = 8;
+    const maxToShow    = 24;
 
     // Утилита: создаёт «нарядную» NFT-иконку с hover-ценой
     function makeNFTIcon(nftObj) {
