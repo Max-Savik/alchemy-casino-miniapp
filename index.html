@@ -2,230 +2,207 @@
 <html lang="ru">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Golden Games</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Golden Games</title>
 
-    <!-- === внешние библиотеки === -->
-    <!-- Socket.IO клиент -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <!-- === внешние библиотеки === -->
+  <!-- Socket.IO клиент -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Forum&family=Cinzel:wght@600;800&family=Uncial+Antiqua&display=swap"
+    rel="stylesheet" />
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Forum&family=Cinzel:wght@600;800&family=Uncial+Antiqua&display=swap"
-        rel="stylesheet" />
-
-    <!-- === наши стили / логика === -->
-    <link rel="stylesheet" href="styles.css" />
-    <!-- Telegram Web App SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="script.js" defer></script>
+  <!-- === наши стили / логика === -->
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="script.js" defer></script>
 </head>
 
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
-    <!-- ========== HEADER ========== -->
-<header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
-  <div class="header-row max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+  <!-- ========== HEADER ========== -->
+  <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
+    <div class="header-row max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <!-- логотип -->
+      <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none">
+        <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
+      </a>
 
-    <!-- логотип -->
-    <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none">
-      <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
-    </a>
+      <!-- spacer притянет кнопки правее -->
+      <div class="flex-grow"></div>
 
-    <!-- spacer притянет кнопку вправо -->
-    <div class="flex-grow"></div>
+      <!-- кнопка История -->
+      <button id="historyBtn"
+              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200">
+        История
+      </button>
 
-     <div class="flex items-center gap-2"> 
-         <!-- баланс TON -->
-    <div id="balanceBox" class="flex items-center gap-1 flex-none px-2 py-1 rounded-full ton-pill">
-      <img src="https://s3.coinmarketcap.com/static/img/portraits/6304d4f7dcf54d0fb59743ba.png"
-     alt="TON" width="16" height="16" loading="lazy">
-      <span id="tonBalance" class="text-sm font-semibold">7.23</span>
-    </div>
-     <!-- кнопка Wallet -->
-<button id="connectWallet"
-        class="wallet-btn flex items-center gap-1 flex-none">
-  <!-- иконка -->
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-     stroke="#1b1405" stroke-width="2" stroke-linecap="round"
-     stroke-linejoin="round">
-  <path d="M2 7h20v12H2z"/>              <!-- корпус -->
-  <path d="M18 7V5a2 2 0 0 0-2-2H2v4"/> <!-- клапан -->
-</svg>
-
-  <!-- подпись (прячем на узких) -->
-  <span class="wallet-label">WALLET</span>
-</button>
-     </div>
-
-
-  </div>
-</header>
- 
-    <!-- ========== MAIN ========== -->
-    <main class="flex-grow">
-
-<main class="flex-grow">
-  <!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
-  <section
-    id="gameSection"
-    class="flex flex-col items-center px-4 py-1 sm:py-2 gap-0 pb-24 sm:pb-0">
-    
-    <!-- ===== FLEX-КОНТЕЙНЕР: котёл + блок ставок ===== -->
-    <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 justify-center w-full max-w-7xl">
-
-      <!-- ===== CAULDRON & SPIN ===== -->
-      <div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
-        <!-- таймер / статус НАД котлом -->
-        <div id="countdown"
-             class="mb-2 text-2xl sm:text-3xl font-['Forum'] glow-text">
-          Ожидание игроков…
+      <div class="flex items-center gap-2">
+        <!-- баланс TON -->
+        <div id="balanceBox" class="flex items-center gap-1 flex-none px-2 py-1 rounded-full ton-pill">
+          <img src="https://s3.coinmarketcap.com/static/img/portraits/6304d4f7dcf54d0fb59743ba.png"
+               alt="TON" width="16" height="16" loading="lazy" />
+          <span id="tonBalance" class="text-sm font-semibold">7.23</span>
         </div>
-
-        <div id="wheelWrapper" class="relative">
-          <div id="cauldron">
-            <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
-            <div id="steam"></div>
-          </div>
-          <div class="pointer"></div>
-        </div>
-
-        <!-- результат -->
-        <p id="result"
-           class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+        <!-- кнопка Wallet -->
+        <button id="connectWallet" class="wallet-btn flex items-center gap-1 flex-none">
+          <!-- иконка -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="#1b1405" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 7h20v12H2z" />              <!-- корпус -->
+            <path d="M18 7V5a2 2 0 0 0-2-2H2v4" /> <!-- клапан -->
+          </svg>
+          <!-- подпись (прячем на узких) -->
+          <span class="wallet-label">WALLET</span>
+        </button>
       </div>
+    </div>
+  </header>
 
-      <!-- ===== BET / PICKER ===== -->
-<div class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
-  <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
-    Сделать ставку
-  </h2>
+  <!-- ========== MAIN ========== -->
+  <main class="flex-grow">
 
-  <div class="flex gap-4 sm:gap-6 justify-center">
-    <button id="depositNFT" class="alch-btn flex items-center justify-center gap-2">
-      <svg class="bet-icon" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linejoin="round">
-        <polygon points="4,7 12,3 20,7 12,11" fill="none"/>
-        <polygon points="4,7 12,11 12,19 4,15" fill="none"/>
-        <polygon points="20,7 12,11 12,19 20,15" fill="none"/>
-      </svg>
-      <span>NFT</span>
-    </button>
+    <!-- ▸▸▸ GAME / КОТЕЛ ▸▸▸ -->
+    <section id="gameSection"
+             class="flex flex-col items-center px-4 py-1 sm:py-2 gap-0 pb-24 sm:pb-0">
+      <!-- ===== FLEX-КОНТЕЙНЕР: котёл + блок ставок ===== -->
+      <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 justify-center w-full max-w-7xl">
 
-    <button id="depositTON" class="alch-btn flex items-center justify-center gap-2">
-      <svg class="bet-icon" viewBox="0 0 512 512" fill="none" stroke="#1b1405" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="150,150 362,150 256,384"/>
-        <line x1="256" y1="150" x2="256" y2="384"/>
-      </svg>
-      <span>TON</span>
-    </button>
-  </div>
-</div>
+        <!-- ===== CAULDRON & SPIN ===== -->
+        <div class="flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
+          <!-- таймер / статус НАД котлом -->
+          <div id="countdown"
+               class="mb-2 text-2xl sm:text-3xl font-['Forum'] glow-text">
+            Ожидание игроков…
+          </div>
+
+          <div id="wheelWrapper" class="relative">
+            <div id="cauldron">
+              <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
+              <div id="steam"></div>
+            </div>
+            <div class="pointer"></div>
+          </div>
+
+          <!-- результат -->
+          <p id="result"
+             class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+        </div>
+
+        <!-- ===== BET / PICKER ===== -->
+        <div class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
+          <h2 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">
+            Сделать ставку
+          </h2>
+          <div class="flex gap-4 sm:gap-6 justify-center">
+            <button id="depositNFT" class="alch-btn flex items-center justify-center gap-2">
+              <svg class="bet-icon" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linejoin="round">
+                <polygon points="4,7 12,3 20,7 12,11" fill="none" />
+                <polygon points="4,7 12,11 12,19 4,15" fill="none" />
+                <polygon points="20,7 12,11 12,19 20,15" fill="none" />
+              </svg>
+              <span>NFT</span>
+            </button>
+            <button id="depositTON" class="alch-btn flex items-center justify-center gap-2">
+              <svg class="bet-icon" viewBox="0 0 512 512" fill="none" stroke="#1b1405" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="150,150 362,150 256,384" />
+                <line x1="256" y1="150" x2="256" y2="384" />
+              </svg>
+              <span>TON</span>
+            </button>
+          </div>
+        </div>
 
         <!-- Оверлей для NFT-пика (по умолчанию скрыт) -->
-<div id="nftPickerOverlay" class="fixed inset-0 flex items-center justify-center bg-black/70 hidden z-50">
-  <!-- Модальное окно -->
-  <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-md">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold text-gray-100">Выберите NFT</h3>
-      <button id="closePicker" class="text-gray-400 hover:text-white">
-        ✕
-      </button>
-    </div>
-    <!-- Контейнер для карточек NFT (будет заполнен renderPicker) -->
-    <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
-      <!-- Здесь динамически будут вставляться карточки одной NFT -->
-      <!-- <div class="nft-card" data-id="...">…</div> -->
-    </div>
-    <!-- Кнопка «Поставить» -->
-    <div class="mt-6 text-right">
-      <button id="placeBet"
-              class="px-4 py-2 bg-amber-500 text-gray-900 rounded-lg font-medium disabled:opacity-50"
-              disabled>
-        Поставить выбранные
-      </button>
-    </div>
-  </div>
-</div>
+        <div id="nftPickerOverlay" class="fixed inset-0 flex items-center justify-center bg-black/70 hidden z-50">
+          <!-- Модальное окно -->
+          <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-md">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-100">Выберите NFT</h3>
+              <button id="closePicker" class="text-gray-400 hover:text-white">
+                ✕
+              </button>
+            </div>
+            <!-- Контейнер для карточек NFT (будет заполнен renderPicker) -->
+            <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
+              <!-- Здесь динамически будут вставляться карточки одной NFT -->
+            </div>
+            <!-- Кнопка «Поставить» -->
+            <div class="mt-6 text-right">
+              <button id="placeBet"
+                      class="px-4 py-2 bg-amber-500 text-gray-900 rounded-lg font-medium disabled:opacity-50"
+                      disabled>
+                Поставить выбранные
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-    </div> 
-
-    <!-- ===== PLAYERS LIST ===== -->
-    <div class="glass border-ornate alch-rounded mt-2 p-6 sm:p-10 w-full max-w-4xl shadow-[0_0_60px_rgba(0,0,0,0.85)]">
-      <h3 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Участники</h3>
-      <ul id="players" class="space-y-4 sm:space-y-5 text-base sm:text-lg"></ul>
-
-      <div class="mt-6 text-right text-2xl font-extrabold glow-text">
-        Общий котел: <span id="pot">$0</span>
+      <!-- ===== PLAYERS LIST ===== -->
+      <div class="glass border-ornate alch-rounded mt-2 p-6 sm:p-10 w-full max-w-4xl shadow-[0_0_60px_rgba(0,0,0,0.85)]">
+        <h3 class="text-xl sm:text-3xl mb-5 sm:mb-8 glow-text font-['Forum']">Участники</h3>
+        <ul id="players" class="space-y-4 sm:space-y-5 text-base sm:text-lg"></ul>
+        <div class="mt-6 text-right text-2xl font-extrabold glow-text">
+          Общий котел: <span id="pot">$0</span>
+        </div>
       </div>
-    </div>
+    </section>
 
-  </section>
+    <!-- ▸▸▸ PROFILE ▸▸▸ -->
+    <section id="profileSection" class="hidden px-4 py-10 sm:py-14">
+      <h2 class="text-3xl mb-6 glow-text font-['Forum']">Мои NFT</h2>
+      <div id="profileGrid" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+    <section id="marketSection" class="hidden px-4 py-8">…Маркет (скоро)…</section>
+    <section id="earnSection"   class="hidden px-4 py-8">…Доход (скоро)…</section>
 
-        <!-- ▸▸▸ PROFILE ▸▸▸ -->
-        <section id="profileSection" class="hidden px-4 py-10 sm:py-14">
-            <h2 class="text-3xl mb-6 glow-text font-['Forum']">Мои NFT</h2>
-            <div id="profileGrid" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
-        </section>
-        <section id="marketSection"   class="hidden px-4 py-8">   …Маркет (скоро)…   </section>
-        <section id="earnSection"     class="hidden px-4 py-8">   …Доход (скоро)…    </section>
+  </main>
 
-    </main>
-
-<!-- ======================================================
-     НИЖНЯЯ НАВИГАЦИЯ (4 кнопки: Игры / Маркет / Профиль / Доход)
-     ====================================================== -->
-<nav class="bottom-nav flex justify-around">
-  <!-- 1. Игры -->
-  <button id="navGame" class="nav-link flex flex-col items-center">
-    <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" stroke-linejoin="round">
-      <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
-      <circle cx="8" cy="12" r="1.5" />
-      <path d="M12 10v4" />
-      <path d="M11 12h2" />
-      <path d="M16 11v2" />
-      <path d="M15 12h2" />
-    </svg>
-    <span class="nav-lbl">Игры</span>
-  </button>
-
-  <!-- 2. Маркет -->
-  <button id="navMarket" class="nav-link flex flex-col items-center">
-    <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="9" cy="21" r="1.5" />
-      <circle cx="19" cy="21" r="1.5" />
-      <path d="M1 1h4l2.68 13.39a2 2 0 001.97 1.61h9.72a2 2 0 001.97-1.61L23 6H6" />
-    </svg>
-    <span class="nav-lbl">Маркет</span>
-  </button>
-
-  <!-- 3. Профиль (оставляем без изменений) -->
-  <button id="navProfile" class="nav-link flex flex-col items-center">
-    <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M4 21v-2a4 4 0 0 1 3-3.87" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-    <span class="nav-lbl">Профиль</span>
-  </button>
-
-  <!-- 4. Доход (обновлённая иконка) -->
-  <button id="navEarn" class="nav-link flex flex-col items-center">
-    <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" stroke-linejoin="round">
-      <!-- Контур монеты -->
-      <circle cx="12" cy="12" r="8" />
-      <!-- Центральная стрелка вверх -->
-      <path d="M12 14V10" />
-      <path d="M10 12l2-2 2 2" />
-    </svg>
-    <span class="nav-lbl">Доход</span>
-  </button>
-</nav>
+  <!-- ======================================================
+       НИЖНЯЯ НАВИГАЦИЯ (4 кнопки: Игры / Маркет / Профиль / Доход)
+       ====================================================== -->
+  <nav class="bottom-nav flex justify-around">
+    <button id="navGame" class="nav-link flex flex-col items-center">
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
+        <circle cx="8" cy="12" r="1.5" />
+        <path d="M12 10v4" />
+        <path d="M11 12h2" />
+        <path d="M16 11v2" />
+        <path d="M15 12h2" />
+      </svg>
+      <span class="nav-lbl">Игры</span>
+    </button>
+    <button id="navMarket" class="nav-link flex flex-col items-center">
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1.5" />
+        <circle cx="19" cy="21" r="1.5" />
+        <path d="M1 1h4l2.68 13.39a2 2 0 001.97 1.61h9.72a2 2 0 001.97-1.61L23 6H6" />
+      </svg>
+      <span class="nav-lbl">Маркет</span>
+    </button>
+    <button id="navProfile" class="nav-link flex flex-col items-center">
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M4 21v-2a4 4 0 0 1 3-3.87" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+      <span class="nav-lbl">Профиль</span>
+    </button>
+    <button id="navEarn" class="nav-link flex flex-col items-center">
+      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 14V10" />
+        <path d="M10 12l2-2 2 2" />
+      </svg>
+      <span class="nav-lbl">Доход</span>
+    </button>
+  </nav>
 </body>
 
 </html>
