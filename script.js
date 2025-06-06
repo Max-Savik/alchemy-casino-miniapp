@@ -54,6 +54,12 @@ const navMarket  = document.getElementById('navMarket');
 const navProfile = document.getElementById('navProfile');
 const navEarn    = document.getElementById('navEarn');
 
+// сразу после загрузки страницы
+document.addEventListener('DOMContentLoaded', () => {
+  const tg = window.Telegram.WebApp;
+  tg.ready();       // сообщаем Telegram, что WebApp готов
+  tg.expand();      // разворачиваем WebApp на весь доступный вертикальный размер
+});
 
 /* ================= RENDER HELPERS ================= */
 function cardHTML(nft,extra=''){return`
