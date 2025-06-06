@@ -65,7 +65,7 @@ function startSpin() {
     // Даем фронту ~3 секунды на показ эффекта "highlightWinner"
     setTimeout(() => {
       resetRound();
-    }, 3000);
+    }, 6000);
 
   }, 6000); // столько же, сколько анимация GSAP на фронте
 }
