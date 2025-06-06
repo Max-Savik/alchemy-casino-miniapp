@@ -245,7 +245,7 @@ nav li {
 
 /* === Специально для кнопки TON: сильно увеличиваем содержимое (≈×2.5) === */
 #depositTON .bet-icon {
-  transform: scale(2.5);
+  transform: scale(1.5);
 }
 
 /* ===== CAULDRON / WHEEL (без изменений) ===== */
