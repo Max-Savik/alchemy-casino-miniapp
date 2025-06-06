@@ -1,5 +1,5 @@
 // File: history.js
-
+<script src="history.js" defer></script>
 document.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('historyContainer');
   const backBtn   = document.getElementById('backBtn');
