@@ -1,23 +1,63 @@
+// ────────────────────────────────────────────────────────────────
+//  Jackpot Server with Persistent JSON History
+//  --------------------------------------------------------------
+//  • Stores every finished round in history.json (atomic writes)
+//  • Serves GET /history for the front‑end
+//  • Otherwise identical behaviour to your original script
+// ────────────────────────────────────────────────────────────────
+
 const express = require('express');
 const http    = require('http');
 const { Server } = require('socket.io');
+const fs      = require('fs').promises;
+const path    = require('path');
 
-const PORT = process.env.PORT || 3000;
+// ────────────────────────── Config ─────────────────────────────
+const PORT         = process.env.PORT || 3000;
+const HISTORY_FILE = path.join(__dirname, 'history.json');
 
+// ─────────────────── JSON‑history helpers ──────────────────────
+let history = [];
+
+async function loadHistory() {
+  try {
+    const txt = await fs.readFile(HISTORY_FILE, 'utf8');
+    history   = JSON.parse(txt);
+    console.log(`Loaded ${history.length} history records.`);
+  } catch (e) {
+    if (e.code !== 'ENOENT') {
+      console.error('History read error → starting empty:', e);
+    } else {
+      console.log('No existing history.json, starting fresh.');
+    }
+    history = [];
+  }
+}
+
+async function saveHistory() {
+  const tmp = HISTORY_FILE + '.tmp';
+  await fs.writeFile(tmp, JSON.stringify(history, null, 2));
+  await fs.rename(tmp, HISTORY_FILE);
+}
+
+// ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
-app.use(express.static(__dirname));   // 📂 отдавать все файлы этой папки
-const httpServer = http.createServer(app);
-const io = new Server(httpServer, { cors: { origin: '*' } });   // * dev-режим
+app.use(express.static(__dirname));          // serve front‑end files
 
-// 1️⃣ Храним состояние одного раунда (start → countdown → spin → reset)
+app.get('/history', (req, res) => res.json(history));
+
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, { cors: { origin: '*' } });   // * dev CORS
+
+// ───────────────────── Game state (1 round) ────────────────────
 let game = {
-  players: [],        // [{ name, value, color, nfts: [ {id, img, price} ] }]
+  players: [],        // [{ name, value, color, nfts:[{id,img,price}] }]
   totalUSD: 0,
   phase: 'waiting',   // waiting → countdown → spinning
-  endsAt: null        // timestamp конца обратного отсчёта
+  endsAt: null
 };
 
-// 2️⃣ Вспомогательные функции
+// ───────────────────── Helper functions ────────────────────────
 function weightedPick() {
   const ticket = Math.random() * game.totalUSD;
   let acc = 0;
@@ -33,11 +73,10 @@ function resetRound() {
   io.emit('state', game);
 }
 
-// 3️⃣ Запуск таймера (45 сек) при ≥ 2 игроках
 function maybeStartCountdown() {
   if (game.phase !== 'waiting' || game.players.length < 2) return;
   game.phase  = 'countdown';
-  game.endsAt = Date.now() + 45_000; // ← 45 000 мс вместо 60 000
+  game.endsAt = Date.now() + 45_000; // 45 s
   io.emit('countdownStart', { endsAt: game.endsAt });
 
   const timer = setInterval(() => {
@@ -51,55 +90,58 @@ function maybeStartCountdown() {
   }, 1000);
 }
 
-// 4️⃣ Крутилка
 function startSpin() {
   game.phase = 'spinning';
   const winner = weightedPick();
-  // При старте спина отдаем и список игроков, и победителя
   io.emit('spinStart', { players: game.players, winner });
 
-  // Через 6 сек — кидаем spinEnd и после небольшой паузы сбрасываем раунд
+  // after GSAP animation (6 s) → spinEnd
   setTimeout(() => {
     io.emit('spinEnd', { winner, total: game.totalUSD });
 
-    // Даем фронту ~3 секунды на показ эффекта "highlightWinner"
-    setTimeout(() => {
-      resetRound();
-    }, 6000);
+    // ─────────────── Persist round in history ────────────────
+    history.push({
+      timestamp: new Date().toISOString(),
+      winner:    winner.name,
+      total:     game.totalUSD,
+      participants: game.players.map(p => ({
+        name: p.name,
+        nfts: p.nfts
+      }))
+    });
+    saveHistory().catch(console.error);
+    // ──────────────────────────────────────────────────────────
 
-  }, 6000); // столько же, сколько анимация GSAP на фронте
+    setTimeout(resetRound, 6000); // small pause before next round
+  }, 6000);
 }
 
-// 5️⃣ Сердце: приём ставок
+// ───────────────────── Socket handlers ─────────────────────────
 io.on('connection', socket => {
-  socket.emit('state', game);               // отправляем новому клиенту текущее
+  socket.emit('state', game);   // send current state
 
   socket.on('placeBet', ({ name, nfts }) => {
-    // nfts: [ {id, price, img} ]
     let player = game.players.find(p => p.name === name);
     if (!player) {
       const palette = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
-      player = {
-        name,
-        value: 0,
-        color: palette[game.players.length % palette.length],
-        nfts: []   // добавляем поле для храниния именно тех NFT (id+img+price)
-      };
+      player = { name, value: 0, color: palette[game.players.length % palette.length], nfts: [] };
       game.players.push(player);
     }
 
-    // Суммируем value и totalUSD, и записываем каждый NFT в player.nfts
-    const added = nfts.reduce((s,x) => s + x.price, 0);
+    const added = nfts.reduce((s, x) => s + x.price, 0);
     player.value += added;
     game.totalUSD += added;
-    // Добавляем в player.nfts (может быть несколько раз в разные раунды)
-    nfts.forEach(x => {
-      player.nfts.push({ id: x.id, img: x.img, price: x.price });
-    });
+    nfts.forEach(x => player.nfts.push({ id: x.id, img: x.img, price: x.price }));
 
-    io.emit('state', game);     // рассылаем обновление всем
-    maybeStartCountdown();      // возможно, пора начать таймер
+    io.emit('state', game);
+    maybeStartCountdown();
   });
 });
 
-httpServer.listen(PORT, () => console.log('Jackpot server on', PORT));
+// ──────────────────────── Bootstrap ───────────────────────────
+loadHistory()
+  .then(() => httpServer.listen(PORT, () => console.log('Jackpot server on', PORT)))
+  .catch(err => {
+    console.error('Startup failed:', err);
+    process.exit(1);
+  });
