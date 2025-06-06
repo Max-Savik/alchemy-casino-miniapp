@@ -1,4 +1,7 @@
 // File: history.js
+
+const API = "https://alchemy-casino-miniapp.onrender.com";
+
 document.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('historyContainer');
   const backBtn   = document.getElementById('backBtn');
@@ -11,7 +14,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 1) Пытаемся получить историю с сервера
   try {
-    const API = 'https://alchemy-casino-miniapp.onrender.com';
     const res = await fetch(`${API}/history`);
     if (!res.ok) throw new Error(`Server responded ${res.status}`);
     gameHistory = await res.json();
