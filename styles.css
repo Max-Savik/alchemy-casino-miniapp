@@ -232,25 +232,20 @@ nav li {
 /* === Унифицируем «контейнеры» для обеих иконок === */
 .alch-btn .bet-icon {
   display: block;
-   transform-box: fill-box;
-transform-origin: center center;
   width: 32px;
   height: 32px;
   flex-shrink: 0;
   margin: 0;
   padding: 0;
+
+  /* ВАЖНО: чтобы SVG-трансформации применялись к самому содержимому */
+  transform-box: fill-box;
+  transform-origin: center center;
 }
 
-/* === Специально для кнопки TON ↑ масштабируем содержимое побольше === */
+/* === Специально для кнопки TON: сильно увеличиваем содержимое (≈×2.5) === */
 #depositTON .bet-icon {
-  /* 
-    Чтобы «маленький» (≈13px) треугольник превратился в полный квадрат 32px,
-    нужно примерно: 32/13 ≈ 2.46. 
-    В данном примере я поставил scale(1.1). 
-    Если у вас визуально чуть великовато/маловато, можно варьировать 2.4…2.6.
-  */
-  transform: scale(2);
-  transform-origin: center center;
+  transform: scale(2.5);
 }
 
 /* ===== CAULDRON / WHEEL (без изменений) ===== */
