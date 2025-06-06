@@ -7,9 +7,8 @@
 
   <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- наш скрипт history.js -->
-  <script src="history.js" defer></script>
   <link rel="stylesheet" href="styles.css" />
+  <script src="history.js" defer></script>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
   <!-- HEADER -->
@@ -19,21 +18,22 @@
         <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
       </a>
       <div class="flex-grow"></div>
-      <button id="backBtn" class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200">
+      <button id="backBtn"
+              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200">
         Назад
       </button>
     </div>
   </header>
 
-  <!-- MAIN: заголовок и контейнер для списка -->
+  <!-- MAIN -->
   <main class="flex-grow px-4 py-6">
     <h1 class="text-3xl mb-6 glow-text font-['Forum']">История игр</h1>
-    <div id="historyContainer" class="max-w-4xl mx-auto">
-      <!-- Сюда history.js подставит таблицу или сообщение “Нет записей” -->
+    <div id="historyContainer" class="max-w-full mx-auto space-y-6">
+      <!-- Сюда history.js вставит записи -->
     </div>
   </main>
 
-  <!-- FOOTER (необязательно) -->
+  <!-- FOOTER -->
   <footer class="py-4 text-center text-gray-400">
     © 2025 Golden Play
   </footer>
