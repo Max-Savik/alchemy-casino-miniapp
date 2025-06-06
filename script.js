@@ -16,11 +16,11 @@ const myName =
 
 /* ================= SAMPLE INVENTORY ================= */
 const inventory = [
-  { id:'orb001',  name:'🔥 Огненный Орб #001', price:10, img:'https://picsum.photos/seed/orb/200', staked:false },
-  { id:'pearl42', name:'💧 Жемчужина Вод #042',price:25, img:'https://picsum.photos/seed/pearl/200',staked:false },
-  { id:'egg007',  name:'🐲 Яйцо Дракона #007', price:60, img:'https://picsum.photos/seed/egg/200',  staked:false },
-  { id:'elixir1', name:'🧪 Эликсир Манны #155',price:5,  img:'https://picsum.photos/seed/elixir/200',staked:false },
-  { id:'cryst66', name:'🌑 Тёмный Кристалл #666',price:45,img:'https://picsum.photos/seed/cryst/200', staked:false },
+  { id:'orb001',  name:'Loot Bag', price:40, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg', staked:false },
+  { id:'pearl42', name:'Loot Bag',price:40, img:'https://nft.fragment.com/gift/lootbag-9355.medium.jpg',staked:false },
+  { id:'egg007',  name:'Loot Bag', price:45, img:'https://nft.fragment.com/gift/lootbag-767.medium.jpg',  staked:false },
+  { id:'elixir1', name:'Vintage Cigar',price:25,  img:'https://nft.fragment.com/gift/vintagecigar-19295.medium.jpg',staked:false },
+  { id:'cryst66', name:'Vintage Cigar',price:25,img:'https://nft.fragment.com/gift/vintagecigar-6050.medium.jpg', staked:false },
 ];
 
 /* ================= SVG helpers (как раньше) ================= */
