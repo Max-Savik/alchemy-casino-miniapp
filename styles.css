@@ -232,6 +232,8 @@ nav li {
 /* === Унифицируем «контейнеры» для обеих иконок === */
 .alch-btn .bet-icon {
   display: block;
+   transform-box: fill-box;
+transform-origin: center center;
   width: 32px;
   height: 32px;
   flex-shrink: 0;
