@@ -43,15 +43,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  /* ───── сортируем по времени: самые свежие сверху ───── */
+  gameHistory = [...gameHistory].sort(
+    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+  );
+
   /* ─────────── рендер карточек ─────────── */
   gameHistory.forEach((record, idx) => {
     const card = document.createElement('div');
     card.className =
-      'opacity-0 bg-gray-800 rounded-lg p-4 flex flex-col gap-4 translate-y-4'; // анимационное начальное состояние
+      'opacity-0 bg-gray-800 rounded-lg p-4 flex flex-col gap-4 translate-y-4';
 
     /* ── верхняя строка: дата + победитель ── */
     const info = document.createElement('div');
-    info.className = 'flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2';
+    info.className =
+      'flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 break-words';
 
     const dt      = new Date(record.timestamp);
     const dateStr = dt.toLocaleString('ru-RU', {
@@ -63,10 +69,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     dateEl.textContent = dateStr;
     dateEl.className   = 'text-gray-400 text-sm';
 
-    /* 👑 победитель со «короной» и сиянием */
+    /* 👑 победитель с короной и свечением */
     const winnerEl = document.createElement('div');
     winnerEl.innerHTML = `
-      <span class="inline-flex items-center gap-1 text-amber-300 font-bold winner-glow">
+      <span class="inline-flex items-center gap-1 text-amber-300 font-bold winner-glow max-w-full break-words">
         <svg class="w-4 h-4 -mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
           <path d="M4 7l3.89 7.26L12 8l4.11 6.26L20 7l-2 12H6L4 7z"/>
         </svg>
@@ -93,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <span class="text-emerald-300 font-medium">${p.name}</span>
         поставил <span class="text-gray-100">$${totalByPlayer.toFixed(2)}</span>
       `;
-      pHeader.className = 'text-sm';
+      pHeader.className = 'text-sm break-words';
 
       const nftsWrapper = document.createElement('div');
       nftsWrapper.className = 'flex gap-2 overflow-x-auto py-1';
@@ -130,12 +136,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     card.appendChild(participantsWrapper);
     container.appendChild(card);
 
-    /* ── запускаем анимацию появления с небольшим каскадом ── */
+    /* ── анимация появления ── */
     requestAnimationFrame(() => {
       setTimeout(() => {
         card.classList.add('animate-fade-in-up');
         card.classList.remove('opacity-0', 'translate-y-4');
-      }, idx * 60); // 60 мс сдвиг между карточками
+      }, idx * 60);
     });
   });
 });
