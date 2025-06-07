@@ -1,81 +1,41 @@
 <!DOCTYPE html>
-<html lang="ru" class="scroll-smooth">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>История игр – Golden Games</title>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>История игр – Golden Games</title>
 
-    <!-- TailwindCSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="history.js" defer></script>
+</head>
+<body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
+  <!-- HEADER -->
+  <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
+    <div class="header-row max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none">
+        <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
+      </a>
+      <div class="flex-grow"></div>
+      <button id="backBtn"
+              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200">
+        Назад
+      </button>
+    </div>
+  </header>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net" />
-    <link
-      href="https://fonts.bunny.net/css?family=forum:400|uncial-antiqua:400"
-      rel="stylesheet"
-    />
+  <!-- MAIN -->
+  <main class="flex-grow px-4 py-6">
+    <h1 class="text-3xl mb-6 glow-text font-['Forum']">История игр</h1>
+    <div id="historyContainer" class="max-w-full mx-auto space-y-6">
+      <!-- history.js подставит сюда карточки -->
+    </div>
+  </main>
 
-    <style>
-      /* ─── Custom utils ─────────────────────────────────────────────── */
-      .glow-text {
-        text-shadow: 0 0 4px rgba(253, 224, 71, 0.6), 0 0 10px rgba(253, 224, 71, 0.35);
-      }
-      .glass {
-        /* Using Tailwind arbitrary variants */
-        @apply backdrop-blur-md bg-gray-800/60;
-      }
-      /* Scrollbar styling for NFT carousels */
-      .scrollbar::-webkit-scrollbar {
-        height: 6px;
-      }
-      .scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .scrollbar::-webkit-scrollbar-thumb {
-        background: #6b7280; /* gray-500 */
-        border-radius: 3px;
-      }
-    </style>
-
-    <!-- Подключаем внешний скрипт -->
-    <script src="history.js" defer></script>
-  </head>
-
-  <body class="min-h-screen flex flex-col bg-gradient-to-b from-gray-950 via-gray-900 to-black text-gray-200">
-    <!-- ───── Header ─────────────────────────────────────────────────── -->
-    <header
-      class="glass sticky top-0 z-50 border-b border-amber-500/30 shadow-lg backdrop-saturate-200"
-    >
-      <div
-        class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 lg:px-6"
-      >
-        <a
-          href="index.html"
-          class="flex select-none items-center gap-1 font-['Uncial Antiqua'] text-2xl font-extrabold tracking-tight glow-text"
-        >
-          ☿<span class="hidden sm:inline">Golden&nbsp;Play</span>
-        </a>
-        <div class="flex-grow"></div>
-        <button
-          id="backBtn"
-          class="rounded-md bg-gray-800 px-3 py-1 text-sm text-gray-200 transition-colors duration-200 hover:bg-gray-700"
-        >
-          ← Назад
-        </button>
-      </div>
-    </header>
-
-    <!-- ───── Main ──────────────────────────────────────────────────── -->
-    <main class="flex-grow px-4 py-6 lg:px-6">
-      <h1 class="mb-6 font-['Forum'] text-3xl font-semibold glow-text">
-        История игр
-      </h1>
-      <div id="historyContainer" class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"></div>
-    </main>
-
-    <!-- ───── Footer ────────────────────────────────────────────────── -->
-    <footer class="py-4 text-center text-sm text-gray-500">
-      © 2025 Golden Play
-    </footer>
-  </body>
+  <!-- FOOTER -->
+  <footer class="py-4 text-center text-gray-400">
+    © 2025 Golden Play
+  </footer>
+</body>
 </html>
