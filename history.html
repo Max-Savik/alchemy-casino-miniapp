@@ -26,10 +26,16 @@
         0 0 8px #f59e0baa,
         0 0 12px #d97706aa;
     }
-    +/* подсветка победной ставки */
-@keyframes pulseBorder {
-  0%, 100% { box-shadow: 0 0 4px 0 #fbbf24aa; }
-  50%      { box-shadow: 0 0 12px 4px #fbbf24aa; }
+    /* подсветка победной ставки */
+@keyframes pulseGlow {
+  0%,100% { box-shadow: 0 0 0 2px #fbbf24; }
+  50%     { box-shadow: 0 0 10px 4px #fbbf24; }
+}
+.winner-bet {
+  background-color: rgba(251,191,36,0.05); /* лёгкий amber-фон */
+  border-radius: .375rem;                  /* rounded-md */
+  box-shadow: 0 0 0 2px #fbbf24;           /* ровная «рамка» */
+  animation: pulseGlow 2.8s ease-in-out infinite;
 }
 .winner-bet {
   position: relative;
