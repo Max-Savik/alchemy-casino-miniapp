@@ -5,44 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>История игр – Golden Play</title>
 
-  <!-- TailwindCSS CDN -->
+  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css" />
 
-  <!-- Custom styles -->
-  <link rel="stylesheet" href="history_styles.css" />
+  <!-- Анимации / кастом-CSS -->
+  <style>
+    /* карточки мягко «выпрыгивают» вверх */
+    @keyframes fadeInUp {
+      from {opacity: 0; transform: translateY(1rem);}
+      to   {opacity: 1; transform: translateY(0);}
+    }
+    .animate-fade-in-up {animation: fadeInUp .45s ease forwards;}
 
-  <!-- History logic -->
+    /* лёгкое свечение победителя */
+    .winner-glow {
+      text-shadow:
+        0 0 4px #fbbf24aa,
+        0 0 8px #f59e0baa,
+        0 0 12px #d97706aa;
+    }
+  </style>
+
+  <!-- Скрипт -->
   <script src="history.js" defer></script>
 </head>
-<body class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-950 to-black text-gray-200">
+
+<body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
+
   <!-- HEADER -->
-  <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
+  <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30 backdrop-blur-md">
     <div class="header-row max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
       <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none">
         <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
       </a>
       <div class="flex-grow"></div>
       <button id="backBtn"
-              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200 transition-colors">
+              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md">
         ← Назад
       </button>
     </div>
   </header>
 
   <!-- MAIN -->
-  <main class="flex-grow px-4 py-10">
-    <h1 class="text-4xl mb-8 glow-text font-['Forum'] text-center">История игр</h1>
+  <main class="flex-grow px-4 py-6 max-w-5xl mx-auto">
+    <h1 class="text-3xl mb-6 glow-text font-['Forum']">История игр</h1>
 
-    <!-- Timeline container -->
-    <div id="historyContainer"
-         class="timeline relative max-w-3xl mx-auto space-y-10">
-      <!-- history.js will inject cards here -->
+    <!-- спиннер загрузки -->
+    <div id="loader" class="flex justify-center py-10">
+      <div class="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
     </div>
-  </main>
 
-  <!-- FOOTER -->
-  <footer class="py-6 text-center text-gray-500 text-sm">
-    © 2025 Golden Play
-  </footer>
+    <!-- сюда придут карточки -->
+    <div id="historyContainer" class="space-y-6 hidden"></div>
+  </main>
 </body>
 </html>
