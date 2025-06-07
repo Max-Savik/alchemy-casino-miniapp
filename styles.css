@@ -557,13 +557,9 @@ section {
 
 /* ─── Шрифт для заголовка истории ─── */
 .page-title{
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Forum', serif;
 }
 
-/* ─── Страница истории без нижнего «подпрыгивания» ─── */
-.history-page{
-    padding-bottom: 0;            /* убираем запас под bottom-nav */
-}
 
 
 
