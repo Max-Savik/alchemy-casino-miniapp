@@ -3,14 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>История игр – Golden Games</title>
+  <title>История игр – Golden Play</title>
 
-  <!-- TailwindCSS -->
+  <!-- TailwindCSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom styles -->
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- History logic -->
   <script src="history.js" defer></script>
 </head>
-<body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
+<body class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-950 to-black text-gray-200">
   <!-- HEADER -->
   <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
     <div class="header-row max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -19,22 +23,25 @@
       </a>
       <div class="flex-grow"></div>
       <button id="backBtn"
-              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200">
-        Назад
+              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200 transition-colors">
+        ← Назад
       </button>
     </div>
   </header>
 
   <!-- MAIN -->
-  <main class="flex-grow px-4 py-6">
-    <h1 class="text-3xl mb-6 glow-text font-['Forum']">История игр</h1>
-    <div id="historyContainer" class="max-w-full mx-auto space-y-6">
-      <!-- history.js подставит сюда карточки -->
+  <main class="flex-grow px-4 py-10">
+    <h1 class="text-4xl mb-8 glow-text font-['Forum'] text-center">История игр</h1>
+
+    <!-- Timeline container -->
+    <div id="historyContainer"
+         class="timeline relative max-w-3xl mx-auto space-y-10">
+      <!-- history.js will inject cards here -->
     </div>
   </main>
 
   <!-- FOOTER -->
-  <footer class="py-4 text-center text-gray-400">
+  <footer class="py-6 text-center text-gray-500 text-sm">
     © 2025 Golden Play
   </footer>
 </body>
