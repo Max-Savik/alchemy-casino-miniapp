@@ -26,6 +26,25 @@
         0 0 8px #f59e0baa,
         0 0 12px #d97706aa;
     }
+    +/* подсветка победной ставки */
+@keyframes pulseBorder {
+  0%, 100% { box-shadow: 0 0 4px 0 #fbbf24aa; }
+  50%      { box-shadow: 0 0 12px 4px #fbbf24aa; }
+}
+.winner-bet {
+  position: relative;
+  border: 1px solid #fbbf24;
+  background-color: rgba(251,191,36,0.08); /* amber-300/8% */
+  border-radius: 0.5rem;
+  animation: pulseBorder 2.8s ease-in-out infinite;
+}
+.winner-bet::before {           /* маленький кубок слева-сверху */
+  content: "🏆";
+  position: absolute;
+  top: -0.8rem;
+  left: -0.6rem;
+  font-size: 1.25rem;
+}
   </style>
 
   <!-- Скрипт -->
