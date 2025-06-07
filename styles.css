@@ -555,6 +555,15 @@ section {
   margin-top: 0 !important;
 }
 
+/* ─── Шрифт для заголовка истории ─── */
+.page-title{
+    font-family: 'Cinzel Decorative', serif;
+}
+
+/* ─── Страница истории без нижнего «подпрыгивания» ─── */
+.history-page{
+    padding-bottom: 0;            /* убираем запас под bottom-nav */
+}
 
 
 
