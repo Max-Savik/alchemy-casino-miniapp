@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     record.participants.forEach(p => {
       const pDiv = document.createElement('div');
-      pDiv.className = 'flex flex-col gap-1';
+      pDiv.className = 'flex flex-col gap-1' + (p.name === record.winner ? ' winner-bet' : '');
 
       const totalByPlayer = p.nfts.reduce((sum, x) => sum + x.price, 0);
       const pHeader = document.createElement('div');
