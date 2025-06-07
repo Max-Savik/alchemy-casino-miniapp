@@ -1,42 +1,197 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>История игр – Golden Games</title>
+<html lang="ru" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>История игр – Golden Games</title>
 
-  <!-- TailwindCSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="history.js" defer></script>
-</head>
-<body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
-  <!-- HEADER -->
-  <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
-    <div class="header-row max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-      <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none">
-        <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
-      </a>
-      <div class="flex-grow"></div>
-      <button id="backBtn"
-              class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-200">
-        Назад
-      </button>
-    </div>
-  </header>
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- MAIN -->
-  <main class="flex-grow px-4 py-6">
-    <h1 class="text-3xl mb-6 glow-text font-['Forum']">История игр</h1>
-    <div id="historyContainer" class="max-w-full mx-auto space-y-6">
-      <!-- history.js подставит сюда карточки -->
-    </div>
-  </main>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net" />
+    <link
+      href="https://fonts.bunny.net/css?family=forum:400|uncial-antiqua:400"
+      rel="stylesheet"
+    />
 
-  <!-- FOOTER -->
-  <footer class="py-4 text-center text-gray-400">
-    © 2025 Golden Play
-  </footer>
-</body>
+    <style>
+      /* ─── Custom utils ─────────────────────────────────────────────── */
+      .glow-text {
+        text-shadow: 0 0 4px rgba(253, 224, 71, 0.6), 0 0 10px rgba(253, 224, 71, 0.35);
+      }
+      .glass {
+        @apply backdrop-blur-md bg-gray-800/60; /* tailwind arbitrary variants */
+      }
+      /* Scrollbar styling for NFT carousels */
+      .scrollbar::-webkit-scrollbar {
+        height: 6px;
+      }
+      .scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .scrollbar::-webkit-scrollbar-thumb {
+        background: #6b7280; /* gray-500 */
+        border-radius: 3px;
+      }
+    </style>
+
+    <script defer>
+      // history.js (inlined for single‑file demo)
+      const API = "https://alchemy-casino-miniapp.onrender.com";
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const container = document.getElementById("historyContainer");
+        const backBtn = document.getElementById("backBtn");
+
+        backBtn.addEventListener("click", () => {
+          history.back();
+        });
+
+        // Skeleton placeholders while loading
+        const addSkeletons = () => {
+          for (let i = 0; i < 6; i++) {
+            const skel = document.createElement("div");
+            skel.className =
+              "animate-pulse rounded-xl bg-gray-800/60 h-36 sm:h-40 xl:h-44";
+            container.appendChild(skel);
+          }
+        };
+        addSkeletons();
+
+        let gameHistory = null;
+        try {
+          const res = await fetch(`${API}/history`);
+          if (!res.ok) throw new Error(res.statusText);
+          gameHistory = await res.json();
+        } catch (err) {
+          console.warn("Fetch /history failed", err);
+          try {
+            const res2 = await fetch(`${API}/history.json`);
+            if (!res2.ok) throw new Error(res2.statusText);
+            gameHistory = await res2.json();
+          } catch (fileErr) {
+            console.error("Fallback history.json failed", fileErr);
+          }
+        }
+
+        // Clear skeletons
+        container.innerHTML = "";
+
+        if (!Array.isArray(gameHistory)) {
+          container.innerHTML =
+            '<p class="text-center text-red-400 text-lg py-12">Ошибка при загрузке истории.</p>';
+          return;
+        }
+        if (gameHistory.length === 0) {
+          container.innerHTML =
+            '<p class="text-center text-gray-400 text-lg py-12">История пуста — нет завершённых игр.</p>';
+          return;
+        }
+
+        // Render records
+        gameHistory.forEach((record, idx) => {
+          const card = document.createElement("article");
+          card.className =
+            "relative isolate overflow-hidden rounded-xl bg-gray-800/70 p-4 transition-transform duration-300 hover:-translate-y-1 hover:ring-1 hover:ring-amber-400/60";
+
+          // subtle background gradient accent per card
+          card.style.setProperty(
+            "--tw-gradient-from",
+            idx % 3 === 0 ? "#7928CA" : idx % 3 === 1 ? "#FF0080" : "#F8CB00"
+          );
+          card.classList.add("before:absolute", "before:inset-0", "before:-z-10", "before:opacity-20", "before:bg-gradient-to-br", "before:from-[var(--tw-gradient-from)]", "before:to-transparent");
+
+          // top line: date & winner
+          const dt = new Date(record.timestamp);
+          const dateStr = dt.toLocaleString("ru-RU", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          card.innerHTML = `
+            <header class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 text-sm font-light">
+              <time datetime="${dt.toISOString()}" class="text-gray-400">${dateStr}</time>
+              <div class="text-gray-300 font-normal">
+                <span class="text-amber-300 font-medium">${record.winner}</span>
+                выиграл
+                <span class="font-semibold text-emerald-300">$${record.total.toFixed(2)}</span>
+              </div>
+            </header>
+            <hr class="border-gray-700/60 my-2" />
+            <section class="flex flex-col gap-3"></section>
+          `;
+
+          const playersSection = card.querySelector("section");
+
+          record.participants.forEach((p) => {
+            const totalByPlayer = p.nfts.reduce((s, x) => s + x.price, 0);
+            const pBlock = document.createElement("div");
+            pBlock.innerHTML = `
+              <h3 class="text-gray-200 text-sm font-medium">
+                <span class="text-emerald-400">${p.name}</span>
+                поставил <span class="text-gray-100">$${totalByPlayer.toFixed(2)}</span>
+              </h3>
+              <div class="flex gap-2 overflow-x-auto scrollbar py-1"></div>
+            `;
+            const nftStrip = pBlock.querySelector("div");
+            p.nfts.forEach((n) => {
+              const nft = document.createElement("figure");
+              nft.className =
+                "relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-md group ring-1 ring-gray-600/60";
+              nft.innerHTML = `
+                <img src="${n.img}" alt="${n.id}" class="w-full h-full object-cover" />
+                <figcaption class="absolute inset-0 flex items-end justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-amber-200 pb-0.5">$${n.price}</figcaption>
+              `;
+              nftStrip.appendChild(nft);
+            });
+            playersSection.appendChild(pBlock);
+          });
+
+          container.appendChild(card);
+        });
+      });
+    </script>
+  </head>
+
+  <body class="min-h-screen flex flex-col bg-gradient-to-b from-gray-950 via-gray-900 to-black text-gray-200">
+    <!-- ───── Header ─────────────────────────────────────────────────── -->
+    <header
+      class="glass sticky top-0 z-50 border-b border-amber-500/30 shadow-lg backdrop-saturate-200"
+    >
+      <div
+        class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 lg:px-6"
+      >
+        <a
+          href="index.html"
+          class="flex select-none items-center gap-1 font-['Uncial Antiqua'] text-2xl font-extrabold tracking-tight glow-text"
+        >
+          ☿<span class="hidden sm:inline">Golden&nbsp;Play</span>
+        </a>
+        <div class="flex-grow"></div>
+        <button
+          id="backBtn"
+          class="rounded-md bg-gray-800 px-3 py-1 text-sm text-gray-200 transition-colors duration-200 hover:bg-gray-700"
+        >
+          ← Назад
+        </button>
+      </div>
+    </header>
+
+    <!-- ───── Main ──────────────────────────────────────────────────── -->
+    <main class="flex-grow px-4 py-6 lg:px-6">
+      <h1 class="mb-6 font-['Forum'] text-3xl font-semibold glow-text">
+        История игр
+      </h1>
+      <div id="historyContainer" class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"></div>
+    </main>
+
+    <!-- ───── Footer ────────────────────────────────────────────────── -->
+    <footer class="py-4 text-center text-sm text-gray-500">
+      © 2025 Golden Play
+    </footer>
+  </body>
 </html>
-
