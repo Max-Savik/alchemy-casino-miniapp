@@ -1,5 +1,3 @@
-// File: history.js
-
 const API = "https://alchemy-casino-miniapp.onrender.com";
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -12,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let gameHistory = null;
 
-  // 1) Пытаемся получить историю с сервера
+  // 1) Try to load full history from server
   try {
     const res = await fetch(`${API}/history`);
     if (!res.ok) throw new Error(`Server responded ${res.status}`);
@@ -20,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (serverErr) {
     console.warn('Не удалось запросить /history:', serverErr);
 
-    // 2) Фоллбэк — пробуем загрузить статичный файл history.json
+    // 2) Fallback — static JSON file
     try {
       const res2 = await fetch(`${API}/history.json`);
       if (!res2.ok) throw new Error(`history.json responded ${res2.status}`);
@@ -30,32 +28,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Если ничего не подгрузилось — показываем ошибку
+  // no data → error
   if (!Array.isArray(gameHistory)) {
-    const msg = document.createElement('p');
-    msg.textContent = "Ошибка при загрузке истории.";
-    msg.className = 'text-lg text-red-400 text-center py-10';
-    container.appendChild(msg);
-    return;
-  }
-// сортируем, чтобы новые игры шли первыми
-gameHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  // Если нет записей — пустая история
-  if (gameHistory.length === 0) {
-    const msg = document.createElement('p');
-    msg.textContent = "История пуста — пока нет завершённых игр.";
-    msg.className = 'text-lg text-gray-400 text-center py-10';
-    container.appendChild(msg);
+    container.innerHTML =
+      '<p class="text-lg text-red-400 text-center py-10">Ошибка при загрузке истории.</p>';
     return;
   }
 
-  // Рендерим каждую запись
+  // empty history
+  if (gameHistory.length === 0) {
+    container.innerHTML =
+      '<p class="text-lg text-gray-400 text-center py-10">История пуста — пока нет завершённых игр.</p>';
+    return;
+  }
+
+  // Render each record
   gameHistory.forEach(record => {
     // record = { timestamp, winner, total, participants: [ {name, nfts:[…]} ] }
     const card = document.createElement('div');
-    card.className = 'bg-gray-800 rounded-lg p-4 flex flex-col gap-4';
+    card.className =
+      'timeline-item glass rounded-xl p-6 flex flex-col gap-5 shadow-lg transition transform fade-in hover:-translate-y-0.5 hover:shadow-amber-500/40';
 
-    // ── Шапка: дата + победитель
+    // ── Header: date + winner
     const info = document.createElement('div');
     info.className = 'flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2';
 
@@ -71,34 +65,37 @@ gameHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     const dateEl = document.createElement('div');
     dateEl.textContent = dateStr;
-    dateEl.className = 'text-gray-400 text-sm';
+    dateEl.className = 'text-gray-400 text-xs sm:text-sm';
 
     const winnerEl = document.createElement('div');
     winnerEl.innerHTML = `
       <span class="text-amber-300 font-semibold">${record.winner}</span>
-      выиграл <span class="text-gray-100 font-medium">$${record.total.toFixed(2)}</span>
+      выиграл
+      <span class="text-gray-100 font-semibold">$${record.total.toFixed(2)}</span>
+      <span class="inline-block ml-1 text-amber-400">🏆</span>
     `;
-    winnerEl.className = 'text-gray-200 text-base';
+    winnerEl.className = 'text-gray-200 text-sm sm:text-base';
 
     info.appendChild(dateEl);
     info.appendChild(winnerEl);
     card.appendChild(info);
 
-    // ── Участники и их NFT
+    // ── Participants & NFTs
     const participantsWrapper = document.createElement('div');
-    participantsWrapper.className = 'flex flex-col gap-3';
+    participantsWrapper.className = 'flex flex-col gap-4';
 
     record.participants.forEach(p => {
       const pDiv = document.createElement('div');
       pDiv.className = 'flex flex-col gap-1';
 
-      const totalByPlayer = p.nfts.reduce((sum,x) => sum + x.price, 0);
+      const totalByPlayer = p.nfts.reduce((sum, x) => sum + x.price, 0);
       const pHeader = document.createElement('div');
       pHeader.innerHTML = `
         <span class="text-emerald-300 font-medium">${p.name}</span>
-        поставил <span class="text-gray-100">$${totalByPlayer.toFixed(2)}</span>
+        поставил
+        <span class="text-gray-100">$${totalByPlayer.toFixed(2)}</span>
       `;
-      pHeader.className = 'text-gray-200 text-sm';
+      pHeader.className = 'text-gray-200 text-xs sm:text-sm';
 
       const nftsWrapper = document.createElement('div');
       nftsWrapper.className = 'flex gap-2 overflow-x-auto py-1';
@@ -106,13 +103,9 @@ gameHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       p.nfts.forEach(nftObj => {
         const nftDiv = document.createElement('div');
         nftDiv.className = `
-          relative 
-          w-16 h-16 
-          rounded-md 
-          overflow-hidden 
-          shadow-md 
-          border border-gray-600 
-          flex-shrink-0
+          relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0
+          border border-gray-600 shadow transition transform
+          hover:scale-105 hover:shadow-amber-400/30
         `;
         const img = document.createElement('img');
         img.src = nftObj.img;
@@ -123,13 +116,9 @@ gameHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         const priceBadge = document.createElement('div');
         priceBadge.textContent = `$${nftObj.price}`;
         priceBadge.className = `
-          absolute bottom-0 left-0 
-          w-full 
-          bg-gray-900/80 
-          text-xs text-amber-300 
-          text-center py-0.5 
-          opacity-0 hover:opacity-100 
-          transition-opacity duration-150
+          absolute bottom-0 left-0 w-full text-xs text-amber-300
+          bg-black/60 text-center py-0.5 backdrop-blur-sm
+          opacity-0 group-hover:opacity-100 transition-opacity duration-150
         `;
         nftDiv.appendChild(priceBadge);
 
