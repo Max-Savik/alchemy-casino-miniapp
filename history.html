@@ -8,7 +8,7 @@
   <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Forum&display=swap&subset=cyrillic" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Forum&display=swap" rel="stylesheet">
 
   <!-- Анимации / кастом-CSS -->
   <style>
@@ -42,9 +42,14 @@
 .page-title{
     font-family: 'Forum', serif;
 }
+
 .history-page{
-    padding-bottom: 0 !important;   /* перестрахуемся !important */
+    --bottom-bar-h: 0px;   /* обнуляем высоту панели */
+    --safe-extra: 0px;     /* заодно нулим запас */
+    padding-bottom: 0 !important;   /* перестраховка */
 }
+
+    
   </style>
 
   <!-- Скрипт -->
