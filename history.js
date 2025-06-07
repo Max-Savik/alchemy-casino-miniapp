@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     container.appendChild(msg);
     return;
   }
-
+// сортируем, чтобы новые игры шли первыми
+gameHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   // Если нет записей — пустая история
   if (gameHistory.length === 0) {
     const msg = document.createElement('p');
