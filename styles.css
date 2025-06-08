@@ -556,27 +556,32 @@ section {
 }
 
 #historyBtn {
-  position: static;
-  margin: 0;
-  padding: 0.3rem;
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+
   display: flex;
   align-items: center;
   justify-content: center;
 
   width: 1.8rem;
   height: 1.8rem;
-  background: rgba(31,41,55,0.6);
+  padding: 0; /* внутренний отступ уже задаёт width/height */
+  
+  background: rgba(31, 41, 55, 0.6);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(245,158,11,0.7);
+  border: 1px solid rgba(245, 158, 11, 0.7);
   border-radius: 50%;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+
   transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  z-index: 10;
 }
 
 #historyBtn:hover {
-  background: rgba(31,41,55,0.8);
+  background: rgba(31, 41, 55, 0.8);
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.6);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
 }
 
 #historyBtn svg {
@@ -584,6 +589,7 @@ section {
   height: 1rem;
   stroke: #F59E0B;
 }
+
 
 
 
