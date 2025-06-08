@@ -61,17 +61,17 @@
 
 <!-- ===== CAULDRON & SPIN ===== -->
 <div class="relative flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
-  <!-- Кнопка истории -->
-  <button id="historyBtn" aria-label="История">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <path d="M21 12a9 9 0 1 1-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    </svg>
-  </button>
-
-  <!-- Таймер / статус -->
-  <div id="countdown" class="mb-2 text-2xl sm:text-3xl font-['Forum'] glow-text">
-    Ожидание игроков…
+  <!-- теперь flex-строка для кнопки + таймера -->
+  <div class="flex items-center space-x-2">
+    <button id="historyBtn" aria-label="История">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M21 12a9 9 0 1 1-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </button>
+    <div id="countdown" class="text-2xl sm:text-3xl font-['Forum'] glow-text">
+      Ожидание игроков…
+    </div>
   </div>
 
   <!-- Сам котёл с колёсиком -->
