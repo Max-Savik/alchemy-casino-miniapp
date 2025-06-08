@@ -254,6 +254,11 @@ nav li {
     width: min(306px, 81vw);
     height: min(306px, 81vw);
     margin-top:1rem;
+   border-radius: 50%;
+   overflow: visible;
+   box-shadow:
+    0 0 20px rgba(214, 176, 77, 0.7),
+    0 0 40px rgba(214, 176, 77, 0.5);
 }
 
 #cauldron {
@@ -331,12 +336,6 @@ nav li {
     pointer-events: none;
 }
 
-/* стрелка-показатель */
-#wheelSvg {
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 18px rgba(214, 176, 77, .70));
-}
 
 .pointer {
     position: absolute;
