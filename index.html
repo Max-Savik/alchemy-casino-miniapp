@@ -61,19 +61,23 @@
 
         <!-- ===== CAULDRON & SPIN ===== -->
         <div class="relative flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
-<!-- кнопка истории + таймер -->
-<div class="flex items-center gap-3 mb-2">
+<!-- кнопка ИСТОРИИ слева, таймер по центру -->
+<div class="relative w-full mb-2">
+  <!-- кнопка -->
   <button id="historyBtn"
-          class="history-btn px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full
-                 bg-gray-700/80 hover:bg-gray-600 transition-all duration-150
-                 border border-gray-500/40 shadow-sm">
+          class="history-btn absolute left-0 top-1/2 -translate-y-1/2
+                 px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full
+                 bg-gray-700/80 hover:bg-gray-600 border border-gray-500/40
+                 shadow-sm transition-all duration-150">
     История
   </button>
 
+  <!-- таймер -->
   <div id="countdown"
-       class="text-2xl sm:text-3xl font-['Forum'] glow-text whitespace-nowrap">
+       class="text-center text-2xl sm:text-3xl font-['Forum'] glow-text">
     Ожидание игроков…
   </div>
+</div>
 </div>
           <!-- ============================================== -->
 
