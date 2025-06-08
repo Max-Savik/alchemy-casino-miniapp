@@ -555,7 +555,9 @@ section {
   margin-top: 0 !important;
 }
 
-
+.history-btn:hover {
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
 
 
 
