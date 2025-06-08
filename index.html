@@ -61,25 +61,25 @@
 
         <!-- ===== CAULDRON & SPIN ===== -->
         <div class="relative flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
-          <!-- таймер / статус НАД котлом -->
-          <div id="countdown"
-               class="mb-2 text-2xl sm:text-3xl font-['Forum'] glow-text">
-            Ожидание игроков…
-          </div>
+          <!-- строка: кнопка "История" + таймер -->
+          <div class="flex items-center gap-4 mb-2">
+            <!-- КНОПКА “История” (серая) -->
+            <button id="historyBtn"
+                    class="flex items-center gap-2 px-3 py-1 rounded-md border border-gray-600/60 bg-gray-800/70 hover:bg-gray-700/80 shadow transition-all duration-200">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
+                <polyline points="3 7 3 3 7 3" />
+                <polyline points="21 17 21 21 17 21" />
+                <path d="M3 3l18 18" />
+                <path d="M21 3h-6a9 9 0 0 0-9 9v6" />
+              </svg>
+              <span class="text-sm font-semibold text-gray-200">История</span>
+            </button>
 
-          <!-- ===== КНОПКА “История” (обновлено) ===== -->
-          <button id="historyBtn"
-                  class="absolute -left-24 top-1/2 -translate-y-1/2 transform flex items-center gap-2 alch-btn border border-amber-400/60 bg-gradient-to-b from-amber-400/30 to-amber-600/30 hover:from-amber-500/40 hover:to-amber-700/40 rounded-lg px-4 py-2 shadow-lg backdrop-blur-sm transition-all duration-300">
-            <!-- иконка (clock-rotate-back) -->
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover:-rotate-6">
-              <polyline points="3 7 3 3 7 3" />
-              <polyline points="21 17 21 21 17 21" />
-              <path d="M3 3l18 18" />
-              <path d="M21 3h-6a9 9 0 0 0-9 9v6" />
-            </svg>
-            <span class="font-semibold">История</span>
-          </button>
-          <!-- ====================================== -->
+            <!-- таймер / статус -->
+            <div id="countdown" class="text-2xl sm:text-3xl font-['Forum'] glow-text whitespace-nowrap">
+              Ожидание игроков…
+            </div>
+          </div>
 
           <div id="wheelWrapper" class="relative">
             <div id="cauldron">
@@ -160,50 +160,4 @@
       <div id="profileGrid" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
     </section>
     <section id="marketSection" class="hidden px-4 py-8">…Маркет (скоро)…</section>
-    <section id="earnSection"   class="hidden px-4 py-8">…Доход (скоро)…</section>
-  </main>
-
-  <!-- НИЖНЯЯ НАВИГАЦИЯ -->
-  <nav class="bottom-nav flex justify-around">
-    <button id="navGame" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
-        <circle cx="8" cy="12" r="1.5" />
-        <path d="M12 10v4" />
-        <path d="M11 12h2" />
-        <path d="M16 11v2" />
-        <path d="M15 12h2" />
-      </svg>
-      <span class="nav-lbl">Игры</span>
-    </button>
-    <button id="navMarket" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="21" r="1.5" />
-        <circle cx="19" cy="21" r="1.5" />
-        <path d="M1 1h4l2.68 13.39a2 2 0 001.97 1.61h9.72a2 2 0 001.97-1.61L23 6H6" />
-      </svg>
-      <span class="nav-lbl">Маркет</span>
-    </button>
-    <button id="navProfile" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M4 21v-2a4 4 0 0 1 3-3.87" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-      <span class="nav-lbl">Профиль</span>
-    </button>
-    <button id="navEarn" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="8" />
-        <path d="M12 14V10" />
-        <path d="M10 12l2-2 2 2" />
-      </svg>
-      <span class="nav-lbl">Доход</span>
-    </button>
-  </nav>
-</body>
-</html>
+    <section id="earn
