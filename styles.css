@@ -590,6 +590,19 @@ section {
   stroke: #F59E0B;
 }
 
+/* Highlight для общего банка под котлом */
+#potDisplay {
+  /* фон с легкой прозрачностью */
+  @apply bg-amber-600/20;
+  /* рамка и округлые углы */
+  @apply border border-amber-500 rounded-full;
+  /* отступы внутри */
+  @apply px-4 py-2;
+  /* размер и стиль текста */
+  @apply text-2xl font-extrabold text-amber-300 glow-text;
+  /* небольшой отступ сверху */
+  margin-top: 1rem;
+}
 
 
 
