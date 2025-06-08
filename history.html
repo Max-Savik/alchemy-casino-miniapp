@@ -8,8 +8,18 @@
   <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+<!-- Вставьте в <head> history.html ДО styles.css -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+  href="https://fonts.googleapis.com/css2?
+        family=Forum&                     /* для .glow-text */
+        family=Cinzel:wght@600;800&       /* кнопки, жирные заголовки */
+        family=Cormorant+Garamond:wght@400;700&  /* тонкий и жирный вариант page-title */
+        family=Uncial+Antiqua&            /* логотип */
+        display=swap&subset=cyrillic"     /* русские буквы */
+  rel="stylesheet">
 
   <!-- Анимации / кастом-CSS -->
   <style>
@@ -65,8 +75,8 @@ html {
   <!-- HEADER -->
   <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30 backdrop-blur-md">
     <div class="header-row max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-      <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none">
-        <span class="font-['Uncial Antiqua']">☿</span>Golden&nbsp;Play
+       <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none">
+   <span class="font-['Uncial_Antiqua']">☿</span>Golden&nbsp;Play
       </a>
       <div class="flex-grow"></div>
       <button id="backBtn"
