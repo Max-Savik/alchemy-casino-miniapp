@@ -63,7 +63,7 @@
 <div class="relative flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
 
   <!-- кнопка «История» слева, таймер по центру -->
-  <div class="relative w-full mb-2">
+  <div class="relative w-full mb-2 sm:pl-40"> 
     <button id="historyBtn"
             class="history-btn absolute left-0 top-1/2 -translate-y-1/2
                    inline-flex items-center gap-1
@@ -72,11 +72,11 @@
                    text-gray-200 hover:from-amber-600 hover:to-amber-500
                    shadow-md shadow-black/40 transition duration-200">
       <!-- мини-иконка «time-rewind» -->
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 3v5h5"></path>
-        <path d="M3 3a9 9 0 1 1-3 9"></path>
-      </svg>
+ <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="3 8 3 3 8 3" />
+  <path d="M3 3a9 9 0 1 1-2 9" />
+</svg>
       История
     </button>
 
