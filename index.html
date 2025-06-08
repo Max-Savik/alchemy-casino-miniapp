@@ -59,42 +59,33 @@
       <!-- ===== FLEX-КОНТЕЙНЕР: котёл + блок ставок ===== -->
       <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 justify-center w-full max-w-7xl">
 
-<!-- ===== CAULDRON & SPIN ===== -->
-<div class="relative flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
+        <!-- ===== CAULDRON & SPIN ===== -->
+        <div class="relative flex flex-col items-center gap-6 sm:gap-8 order-1 sm:order-none">
+          <!-- таймер / статус НАД котлом -->
+          <div id="countdown"
+               class="mb-2 text-2xl sm:text-3xl font-['Forum'] glow-text">
+            Ожидание игроков…
+          </div>
 
+          <!-- ===== Здесь добавляем кнопку «История» ===== -->
+          <button id="historyBtn"
+                  class="absolute top-2 right-2 z-40 px-3 py-1 bg-gray-800/90 hover:bg-gray-700 rounded-md text-gray-200 text-xs sm:text-sm">
+            История
+          </button>
+          <!-- ============================================== -->
 
-  <!-- колесо -->
-  <div id="wheelWrapper" class="relative">
-  <!-- История -->
-  <button id="historyBtn"
-          class="history-btn absolute top-2 left-2
-                 inline-flex items-center gap-1
-                 px-4 py-1.5 text-xs sm:text-sm font-semibold tracking-wider
-                 rounded-full bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700
-                 text-gray-200 hover:from-amber-600 hover:to-amber-500
-                 shadow-md shadow-black/40 transition duration-200">
-    <svg class="w-4 h-4" …>…</svg>
-    История
-  </button>
+          <div id="wheelWrapper" class="relative">
+            <div id="cauldron">
+              <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
+              <div id="steam"></div>
+            </div>
+            <div class="pointer"></div>
+          </div>
 
-  <!-- Ожидание игроков, ровно по центру над котлом -->
-<div id="countdown"
-     class="absolute -top-12 left-1/2 transform -translate-x-1/2
-            text-center text-2xl sm:text-3xl font-['Forum'] glow-text">
-  Ожидание игроков…
-</div>
-
-  <!-- сам котёл -->
-  <div id="cauldron">
-    <svg id="wheelSvg" viewBox="0 0 400 400"></svg>
-    <div id="steam"></div>
-  </div>
-  <div class="pointer"></div>
-</div>
-
-  <!-- результат -->
-  <p id="result" class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
-</div>
+          <!-- результат -->
+          <p id="result"
+             class="mt-2 text-2xl sm:text-3xl font-['Forum'] glow-text"></p>
+        </div>
 
         <!-- ===== BET / PICKER ===== -->
         <div class="glass border-ornate alch-rounded p-6 sm:p-10 w-full max-w-md order-2 sm:order-none">
