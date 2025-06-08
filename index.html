@@ -67,12 +67,19 @@
             Ожидание игроков…
           </div>
 
-          <!-- ===== Здесь добавляем кнопку «История» ===== -->
+          <!-- ===== КНОПКА “История” (обновлено) ===== -->
           <button id="historyBtn"
-                  class="absolute top-2 right-2 z-40 px-3 py-1 bg-gray-800/90 hover:bg-gray-700 rounded-md text-gray-200 text-xs sm:text-sm">
-            История
+                  class="absolute -left-24 top-1/2 -translate-y-1/2 transform flex items-center gap-2 alch-btn border border-amber-400/60 bg-gradient-to-b from-amber-400/30 to-amber-600/30 hover:from-amber-500/40 hover:to-amber-700/40 rounded-lg px-4 py-2 shadow-lg backdrop-blur-sm transition-all duration-300">
+            <!-- иконка (clock-rotate-back) -->
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover:-rotate-6">
+              <polyline points="3 7 3 3 7 3" />
+              <polyline points="21 17 21 21 17 21" />
+              <path d="M3 3l18 18" />
+              <path d="M21 3h-6a9 9 0 0 0-9 9v6" />
+            </svg>
+            <span class="font-semibold">История</span>
           </button>
-          <!-- ============================================== -->
+          <!-- ====================================== -->
 
           <div id="wheelWrapper" class="relative">
             <div id="cauldron">
