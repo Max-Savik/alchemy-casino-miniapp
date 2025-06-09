@@ -602,6 +602,7 @@ section {
   @apply text-2xl font-extrabold text-amber-300 glow-text;
   /* небольшой отступ сверху */
   margin-top: 1rem;
+  transform: scale(0.8);
 }
 
 
