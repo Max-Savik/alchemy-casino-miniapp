@@ -601,8 +601,10 @@ section {
   /* размер и стиль текста */
   @apply text-2xl font-extrabold text-amber-300 glow-text;
   /* небольшой отступ сверху */
-  margin-top: 1rem;
-  transform: scale(0.8);
+  margin-top: 0.5rem;
+  font-size: 1.3rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 
