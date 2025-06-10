@@ -590,45 +590,6 @@ section {
   stroke: #F59E0B;
 }
 
-/* «Общий банк» — компактный, тёмный, с позолоченной рамкой */
-#potDisplay {
-  @apply inline-block font-extrabold tracking-wide uppercase;
-
-  /* ↓ вдвое меньше, чем было (0.75 rem ≈ Tailwind text-sm) */
-  font-size: 1rem;
-  padding: 0.5rem 0.9rem;
-
-  /* круглая форма-«пилюля» + граница */
-  border-radius: 9999px;
-  border: 2px solid transparent;
-
-  /* фон: тёмный дымчатый + золотой бордер-градиент */
-  background-image:
-    /* внутренний тёмно-коричневый слой с 55 % непрозрачности */
-    linear-gradient(rgba(20,15,5,0.55), rgba(20,15,5,0.55)),
-    /* внешний бордер-градиент золота (чуть скромнее) */
-    linear-gradient(135deg,
-      #d4af37 0%,   /* классическое золото */
-      #b68c14 100%  /* тёплый бронзовый отлив */
-    );
-  background-origin: padding-box, border-box;
-
-  /* едва заметное золотое свечение и внутренняя тень */
-  box-shadow:
-    0 0 4px 1px rgba(212,175,55,0.30),
-    0 0 2px 0   rgba(0,0,0,0.60) inset;
-
-  /* лёгкий blur-эффект стекла */
-  backdrop-filter: blur(6px);
-
-  /* цвет текста оставляем прежним — как у $0.00 */
-  color: rgba(255,223,128,0.90);
-}
-
-/* Число может быть чуть ярче, если нужно */
-#potDisplay #pot {
-  font-weight: 800;
-}
 
 
 
