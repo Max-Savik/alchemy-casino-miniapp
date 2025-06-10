@@ -136,7 +136,7 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
    if (tonAmount > 0) {
      player.nfts.push({
        id:    `ton-${Date.now()}`,
-       img:   "data:image/svg+xml,%3csvg%20width='32'%20height='28'%20…%3c/svg%3e",
+       img:   "https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg",
        price: tonAmount
      });
    }
