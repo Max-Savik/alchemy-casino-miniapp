@@ -595,8 +595,8 @@ section {
   @apply inline-block font-extrabold tracking-wide uppercase;
 
   /* ↓ вдвое меньше, чем было (0.75 rem ≈ Tailwind text-sm) */
-  font-size: 0.75rem;
-  padding: 0.3rem 0.6rem;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
 
   /* круглая форма-«пилюля» + граница */
   border-radius: 9999px;
