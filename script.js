@@ -54,6 +54,8 @@ const tonPickerOverlay = document.getElementById('tonPickerOverlay');
 const closeTonPickerBtn = document.getElementById('closeTonPicker');
 const tonAmountInput = document.getElementById('tonAmount');
 const placeTonBetBtn = document.getElementById('placeTonBet');
+const depositTONBtn = document.getElementById('depositTON');
+
 
 // Имя пользователя из Telegram
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
@@ -277,7 +279,7 @@ function refreshUI() {
     list.appendChild(li);
   });
 
-  pot.textContent = '$' + totalUSD.toFixed(2);
+  pot.textContent = totalUSD.toFixed(2) + ' TON';
   drawWheel();
   renderPicker();
   renderProfile();
@@ -464,14 +466,32 @@ tonAmountInput.addEventListener('input', () => {
   placeTonBetBtn.disabled = !(val > 0);
 });
 
-/* ======== Ставка TON: отправляем по сокету и закрываем пикеp ======== */
 placeTonBetBtn.addEventListener('click', () => {
   const amount = parseFloat(tonAmountInput.value);
   if (!amount || amount <= 0) {
     alert('Введите корректную сумму TON');
     return;
   }
+
+  // — Эмитим ставку на сервер
   socket.emit('placeBet', { name: myName, tonAmount: amount });
+
+  // — Локально апдейтим массив players и общий банк
+  let me = players.find(p => p.name === myName);
+  if (!me) {
+    me = {
+      name:   myName,
+      value:  0,                         // накопленная ставка в TON
+      color:  palette[players.length % palette.length],
+      nfts:   []                         // пусто, потому что ставим TON
+    };
+    players.push(me);
+  }
+  me.value    += amount;
+  totalUSD    += amount;                // переименуем в totalTON, если хочется
+  refreshUI();                          // перерисуем колесо и список участников
+
+  // — Закрываем оверлей
   tonPickerOverlay.classList.add('hidden');
   tonAmountInput.value = '';
 });
