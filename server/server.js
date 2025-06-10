@@ -132,14 +132,6 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
   // сумма NFT + TON
   const nftSum = nfts.reduce((s, x) => s + x.price, 0);
 
-   // если есть TON-ставка — заворачиваем её в «жетон» и пушим
-   if (tonAmount > 0) {
-     player.nfts.push({
-       id:    `ton-${Date.now()}`,
-       img:   "https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg",
-       price: tonAmount
-     });
-   }
   player.value     += nftSum + tonAmount;
   game.totalUSD    += nftSum + tonAmount;
   nfts.forEach(x => player.nfts.push(x));
