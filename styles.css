@@ -590,23 +590,18 @@ section {
   stroke: #F59E0B;
 }
 
-/* Highlight для общего банка под котлом */
+/* Общий банк под котлом */
 #potDisplay {
+  /* фон, рамка и скругления */
   @apply bg-amber-600/20 border border-amber-500 rounded-full;
-  @apply px-4 py-2 font-semibold tracking-wide;
-  font-size: 1.1rem;
-  /* Приглушённый янтарный цвет */
-  color: rgba(168, 134, 46, 0.7);
-  /* Лёгкий стеклянный эффект */
-  backdrop-filter: blur(6px);
-  /* Убираем glow-text */
-}
-
-/* Стили для значения банка */
-#potDisplay #pot {
-  @apply font-bold;
-  /* Немного светлее, чтобы «банк» и сумма читались отдельно */
+  /* отступы */
+  @apply px-4 py-2;
+  /* делаем весь текст жирным и большого размера */
+  @apply font-bold text-2xl;
+  /* цвет как у $0.00 */
   color: rgba(255, 223, 128, 0.9);
+  /* лёгкий стеклянный размытие */
+  backdrop-filter: blur(6px);
 }
 
 
