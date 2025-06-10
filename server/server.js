@@ -26,7 +26,10 @@ await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
 
 // ─────────────────── JSON‑history helpers ──────────────────────
 let history = [];
-
+const palette = [
+  '#fee440','#d4af37','#8ac926','#1982c4',
+  '#ffca3a','#6a4c93','#d79a59','#218380'
+];
 async function loadHistory() {
   try {
     const txt = await fs.readFile(HISTORY_FILE, "utf8");
