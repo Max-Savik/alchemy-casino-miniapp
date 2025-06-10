@@ -50,6 +50,10 @@ const navGame        = document.getElementById('navGame');
 const navMarket      = document.getElementById('navMarket');
 const navProfile     = document.getElementById('navProfile');
 const navEarn        = document.getElementById('navEarn');
+const tonPickerOverlay = document.getElementById('tonPickerOverlay');
+const closeTonPickerBtn = document.getElementById('closeTonPicker');
+const tonAmountInput = document.getElementById('tonAmount');
+const placeTonBetBtn = document.getElementById('placeTonBet');
 
 // Имя пользователя из Telegram
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
@@ -441,7 +445,36 @@ placeBetBtn.addEventListener('click', () => {
   pickerOverlay.classList.add('hidden');
   socket.emit("placeBet", { name: myName, nfts });
 });
+/* ======== Открываем TON-пикер ======== */
+depositTONBtn.addEventListener('click', () => {
+  tonAmountInput.value = '';
+  placeTonBetBtn.disabled = true;
+  tonPickerOverlay.classList.remove('hidden');
+});
 
+/* ======== Закрываем TON-пикер без ставки ======== */
+closeTonPickerBtn.addEventListener('click', () => {
+  tonPickerOverlay.classList.add('hidden');
+  tonAmountInput.value = '';
+});
+
+/* ======== Проверяем ввод суммы TON ======== */
+tonAmountInput.addEventListener('input', () => {
+  const val = parseFloat(tonAmountInput.value);
+  placeTonBetBtn.disabled = !(val > 0);
+});
+
+/* ======== Ставка TON: отправляем по сокету и закрываем пикеp ======== */
+placeTonBetBtn.addEventListener('click', () => {
+  const amount = parseFloat(tonAmountInput.value);
+  if (!amount || amount <= 0) {
+    alert('Введите корректную сумму TON');
+    return;
+  }
+  socket.emit('placeBet', { name: myName, tonAmount: amount });
+  tonPickerOverlay.classList.add('hidden');
+  tonAmountInput.value = '';
+});
 // =================== SIMPLE NAV ===================
 navGame.addEventListener('click',   () => show('game'));
 navMarket.addEventListener('click', () => show('market'));
