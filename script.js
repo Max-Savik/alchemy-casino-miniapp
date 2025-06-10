@@ -168,25 +168,42 @@ function refreshUI() {
     const li = document.createElement('li');
     li.className = 'flex flex-col gap-1 py-2';
 
-    // ── Ник + сумма + процент
-    const headerDiv = document.createElement('div');
-    headerDiv.className = 'flex items-baseline gap-2';
+    /// ── Ник + ставка в TON + процент
+const headerDiv = document.createElement('div');
+headerDiv.className = 'flex items-baseline gap-2';
 
-    const nameEl = document.createElement('span');
-    nameEl.textContent = p.name;
-    nameEl.className = 'text-amber-300 font-semibold';
+// Имя
+const nameEl = document.createElement('span');
+nameEl.textContent = p.name;
+nameEl.className = 'text-amber-300 font-semibold';
 
-    const valueEl = document.createElement('span');
-    valueEl.textContent = `$${p.value.toFixed(2)}`;
-    valueEl.className = 'text-gray-100 text-sm';
+// Сумма в TON с иконкой
+const tonWrapper = document.createElement('div');
+tonWrapper.className = 'flex items-center gap-1';
 
-    const percEl = document.createElement('span');
-    percEl.textContent = `· ${((p.value/totalUSD) * 100).toFixed(1)}%`;
-    percEl.className = 'text-emerald-400 text-xs';
+const tonIcon = document.createElement('img');
+tonIcon.src = 'https://s3.coinmarketcap.com/static/img/portraits/6304d4f7dcf54d0fb59743ba.png';
+tonIcon.alt = 'TON';
+tonIcon.width = 16;
+tonIcon.height = 16;
 
-    headerDiv.appendChild(nameEl);
-    headerDiv.appendChild(valueEl);
-    headerDiv.appendChild(percEl);
+const valueEl = document.createElement('span');
+valueEl.textContent = p.value.toFixed(2);
+valueEl.className = 'text-gray-100 text-sm';
+
+tonWrapper.appendChild(tonIcon);
+tonWrapper.appendChild(valueEl);
+
+// Процент доли банка
+const percEl = document.createElement('span');
+percEl.textContent = `· ${((p.value/totalUSD) * 100).toFixed(1)}%`;
+percEl.className = 'text-emerald-400 text-xs';
+
+// Собираем
+headerDiv.appendChild(nameEl);
+headerDiv.appendChild(tonWrapper);
+headerDiv.appendChild(percEl);
+
 
     // ── Иконки NFT (отсортированы по цене, максимум 24, с развёрткой/сокрытием)
     const iconsWrapper = document.createElement('div');
@@ -296,7 +313,6 @@ socket.on("state", s => {
     // Новый раунд: сбрасываем UI
     inventory.forEach(n => n.staked = false);
     gsap.set('#wheelSvg', { rotation: 0 });
-    document.getElementById('result').textContent = '';
     lockBets(false);
     updateStatus();
   }
@@ -329,7 +345,6 @@ socket.on("spinStart", ({ players: list, winner }) => {
 });
 
 socket.on("spinEnd", ({ winner, total }) => {
-  showResult(winner, total);
   lockBets(false);
   phase = "waiting";
   updateStatus();
@@ -374,11 +389,6 @@ function runSpinAnimation(winner){
     ease: 'power4.out',
     onComplete: () => highlightWinner(winner)
   });
-}
-
-function showResult(winner, total){
-  document.getElementById('result').textContent =
-    `${winner.name} выигрывает $${total.toFixed(2)}!`;
 }
 
 function lockBets(lock){
