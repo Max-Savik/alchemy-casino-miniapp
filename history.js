@@ -69,16 +69,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     dateEl.textContent = dateStr;
     dateEl.className   = 'text-gray-400 text-sm';
 
-    /* 👑 победитель с короной и свечением */
+    // победитель и сумма в TON
     const winnerEl = document.createElement('div');
     winnerEl.innerHTML = `
       <span class="inline-flex items-center gap-1 text-amber-300 font-bold winner-glow max-w-full break-words">
-        <svg class="w-4 h-4 -mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <svg class="w-4 h-4 -mt-0.5" xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 0 24 24" fill="currentColor">
           <path d="M4 7l3.89 7.26L12 8l4.11 6.26L20 7l-2 12H6L4 7z"/>
         </svg>
         ${record.winner}
       </span>
-      выиграл <span class="text-emerald-300 font-semibold">$${record.total.toFixed(2)}</span>
+      выиграл <span class="text-emerald-300 font-semibold">
+        ${record.total.toFixed(2)} TON
+      </span>
     `;
     winnerEl.className = 'text-base';
 
