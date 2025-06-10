@@ -596,7 +596,7 @@ section {
 
   /* ↓ вдвое меньше, чем было (0.75 rem ≈ Tailwind text-sm) */
   font-size: 1rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.9rem;
 
   /* круглая форма-«пилюля» + граница */
   border-radius: 9999px;
