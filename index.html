@@ -141,7 +141,22 @@
             </div>
           </div>
         </div>
-
+    <!-- Оверлей для TON-пика (по умолчанию скрыт) -->
+<div id="tonPickerOverlay" class="fixed inset-0 flex items-center justify-center bg-black/70 hidden z-50">
+  <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-md">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-semibold text-gray-100">Сделать ставку TON</h3>
+      <button id="closeTonPicker" class="text-gray-400 hover:text-white">✕</button>
+    </div>
+    <div class="mb-4">
+      <label for="tonAmount" class="block text-gray-200 mb-2">Сумма (TON):</label>
+      <input id="tonAmount" type="number" min="0.01" step="0.01" class="w-full p-2 rounded bg-gray-700 text-gray-200" placeholder="0.00 TON" />
+    </div>
+    <div class="text-right">
+      <button id="placeTonBet" class="px-4 py-2 bg-amber-500 text-gray-900 rounded-lg font-medium disabled:opacity-50" disabled>Поставить TON</button>
+    </div>
+  </div>
+</div>
       </div>
 
       <!-- ===== PLAYERS LIST ===== -->
