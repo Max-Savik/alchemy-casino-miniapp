@@ -115,22 +115,27 @@ function startSpin() {
 io.on("connection", socket => {
   socket.emit("state", game);
 
-  socket.on("placeBet", ({ name, nfts }) => {
-    let player = game.players.find(p => p.name === name);
-    if (!player) {
-      const palette = ["#fee440","#d4af37","#8ac926","#1982c4","#ffca3a","#6a4c93","#d79a59","#218380"];
-      player = { name, value: 0, color: palette[game.players.length % palette.length], nfts: [] };
-      game.players.push(player);
-    }
+socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
+  let player = game.players.find(p => p.name === name);
+  if (!player) {
+    player = {
+      name,
+      value: 0,
+      color: palette[game.players.length % palette.length],
+      nfts: []
+    };
+    game.players.push(player);
+  }
+  // сумма NFT + TON
+  const nftSum = nfts.reduce((s, x) => s + x.price, 0);
+  player.value     += nftSum + tonAmount;
+  game.totalUSD    += nftSum + tonAmount;
+  nfts.forEach(x => player.nfts.push(x));
 
-    const added = nfts.reduce((s,x) => s + x.price, 0);
-    player.value += added;
-    game.totalUSD += added;
-    nfts.forEach(x => player.nfts.push({ id:x.id, img:x.img, price:x.price }));
+  io.emit("state", game);
+  maybeStartCountdown();
+});
 
-    io.emit("state", game);
-    maybeStartCountdown();
-  });
 });
 
 // ──────────────────────── Bootstrap ───────────────────────────
