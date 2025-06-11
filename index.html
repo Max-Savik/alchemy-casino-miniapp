@@ -19,35 +19,35 @@
   <script src="script.js" defer></script>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
+<style>
+  /* Оверлей на всю иконку */
+  .price-badge {
+    position: absolute;
+    inset: 0;                           /* растягиваем на весь wrapper */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(31, 41, 55, 0.85);
+    color: #fbbf24;                     /* золотой цвет текста */
+    font-size: 0.75rem;                 /* чуть больше, чтобы читалось */
+    line-height: 1;
+    white-space: nowrap;
+    opacity: 0;                         /* скрыто по умолчанию */
+    transition: opacity .15s;
+    border-radius: inherit;             /* скругления от wrapper */
+  }
 
-.price-badge {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  display: inline-flex;           /* подгоняем ширину по содержимому */
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.35rem;             /* чуть больше горизонтальных отступов */
-  height: 1.3rem;                 /* можно чуть увеличить высоту */
-  box-sizing: border-box;
-  font-size: 0.65rem;             /* легкий апскейл текста */
-  line-height: 1.3rem;
-  white-space: nowrap;
-  border-radius: 0 0 0.3rem 0.3rem;/* чуть больше скругления */
-  background-color: rgba(31, 41, 55, 0.85);
-  opacity: 0;
-  transition: opacity .15s;
-}
-
-.price-badge img {
-  width: 0.35rem;   /* ещё меньше */
-  height: 0.35rem;
-  margin-left: 0.15rem;
-}
-
-
+  /* Показываем бейдж как только кликают */
+  .price-badge.show {
+    opacity: 1 !important;
+  }
+  
+  /* Убираем любую встроенную иконку в бейдже */
+  .price-badge img {
+    display: none;
+  }
 </style>
+
 </head>
 
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
