@@ -50,9 +50,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ─────────── рендер карточек ─────────── */
   gameHistory.forEach((record, idx) => {
-    const card = document.createElement('div');
-    card.className =
-      'opacity-0 bg-gray-800 rounded-lg p-4 flex flex-col gap-4 translate-y-4';
+const card = document.createElement('div');
+card.className =
+  'w-full opacity-0 bg-gray-800 rounded-lg p-4 flex flex-col gap-4 translate-y-4';
+
 
     /* ── верхняя строка: дата + победитель ── */
     const info = document.createElement('div');
