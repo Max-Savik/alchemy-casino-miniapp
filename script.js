@@ -214,39 +214,42 @@ headerDiv.appendChild(percEl);
     const maxToShow  = 24;
 
     // Утилита: создаёт «нарядную» NFT-иконку с hover-ценой
-    function makeNFTIcon(nftObj) {
-      const wrapper = document.createElement('div');
-      wrapper.className = `
-        relative 
-        w-8 h-8 
-        rounded-md 
-        overflow-hidden 
-        shadow-lg 
-        border border-gray-600 
-        hover:scale-110 
-        transition-transform duration-150
-      `;
-      const img = document.createElement('img');
-      img.src = nftObj.img;
-      img.alt = nftObj.id;
-      img.className = 'w-full h-full object-cover';
-      wrapper.appendChild(img);
+function makeNFTIcon(nftObj) {
+  // 1) Создаём обёртку иконки
+  const wrapper = document.createElement('div');
+  wrapper.className = [
+    'relative w-8 h-8 rounded-md overflow-hidden',
+    'shadow-lg border border-gray-600',
+    'hover:scale-110 transition-transform duration-150'
+  ].join(' ');
+  wrapper.style.cursor = 'pointer';
 
-      const priceBadge = document.createElement('div');
-      priceBadge.textContent = `$${nftObj.price}`;
-      priceBadge.className = `
-        absolute bottom-0 left-0 
-        w-full 
-        bg-gray-900/80 
-        text-xs text-amber-300 
-        text-center py-0.5 
-        opacity-0 hover:opacity-100 
-        transition-opacity duration-150
-      `;
-      wrapper.appendChild(priceBadge);
+  // 2) Само изображение NFT/TON
+  const img = document.createElement('img');
+  img.src = nftObj.img;
+  img.alt = nftObj.id;
+  img.className = 'w-full h-full object-cover';
+  wrapper.appendChild(img);
 
-      return wrapper;
-    }
+  // 3) Бейдж с ценой в TON, по умолчанию скрыт
+  const priceBadge = document.createElement('div');
+  priceBadge.textContent = `${nftObj.price.toFixed(2)} TON`;
+  priceBadge.className = [
+    'absolute bottom-0 left-0 w-full',
+    'bg-gray-900/80 text-xs text-amber-300 text-center py-0.5',
+    'transition-opacity duration-150'
+  ].join(' ');
+  priceBadge.style.opacity = '0';
+  wrapper.appendChild(priceBadge);
+
+  // 4) Переключаем видимость бейджа по клику
+  wrapper.addEventListener('click', () => {
+    priceBadge.style.opacity = priceBadge.style.opacity === '1' ? '0' : '1';
+  });
+
+  return wrapper;
+}
+
 
     if (sortedNFTs.length <= maxToShow || isExpanded) {
       // Показываем все NFT
