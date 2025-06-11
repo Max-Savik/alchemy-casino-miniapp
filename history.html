@@ -59,29 +59,26 @@
 html {
     padding-bottom: 0rem;
 }
-/* фиксированный маленький бейдж */
+/* === всегда показываем бейдж, делаем меньше и закругляем === */
 .price-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;            /* ширина */
-  height: 1.25rem;        /* высота */
-  font-size: 0.75rem;     /* чуть меньше текста */
-  padding: 0.125rem 0;    /* вертикальный отступ */
-  opacity: 0;             /* по умолчанию скрыт */
+  width: 2.5rem;             /* уменьшили ширину */
+  height: 1rem;              /* уменьшили высоту */
+  padding: 0;                /* убрали внутренние отступы */
+  font-size: 0.7rem;         /* чуть мельче текст */
+  border-radius: 0.25rem;    /* закругление углов */
+  background-color: rgba(31, 41, 55, 0.8); /* чуть тёмнее фон */
+  opacity: 1 !important;     /* всегда видно */
 }
+
 
 /* иконка внутри бейджа */
 .price-badge img {
   width: 0.8rem;
   height: 0.8rem;
   margin-left: 0.25rem;
-}
-
-/* hover / show-price остаются без изменений */
-.group:hover .price-badge,
-.show-price .price-badge {
-  opacity: 1 !important;
 }
 
     
