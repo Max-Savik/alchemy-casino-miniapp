@@ -232,15 +232,31 @@ function makeNFTIcon(nftObj) {
   wrapper.appendChild(img);
 
   // 3) Бейдж с ценой в TON, по умолчанию скрыт
-  const priceBadge = document.createElement('div');
-  priceBadge.textContent = `${nftObj.price.toFixed(2)} TON`;
-  priceBadge.className = [
-    'absolute bottom-0 left-0 w-full',
-    'bg-gray-900/80 text-xs text-amber-300 text-center py-0.5',
-    'transition-opacity duration-150'
-  ].join(' ');
-  priceBadge.style.opacity = '0';
-  wrapper.appendChild(priceBadge);
+const priceBadge = document.createElement('div');
+// Убираем w-full, пусть ширина будет по содержимому:
+priceBadge.className = [
+  'price-badge',
+  'absolute bottom-0 left-0',
+  'inline-flex items-center justify-center', // подгон по контенту
+  'bg-gray-900/80 text-xs text-amber-300',
+  'px-1',    // горизонтальный паддинг
+  'transition-opacity duration-150'
+].join(' ');
+priceBadge.style.opacity = '0';
+
+// вставляем число + иконку
+priceBadge.innerHTML = `
+  ${nftObj.price.toFixed(2)}
+  <img src="data:image/svg+xml,%3csvg%20width='32'%20height='28'%20viewBox='0%200%2032%2028'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M31.144%205.84244L17.3468%2027.1579C17.1784%2027.4166%2016.9451%2027.6296%2016.6686%2027.7768C16.3922%2027.9241%2016.0817%2028.0009%2015.7664%2028C15.451%2027.9991%2015.141%2027.9205%2014.8655%2027.7716C14.59%2027.6227%2014.3579%2027.4084%2014.1911%2027.1487L0.664576%205.83477C0.285316%205.23695%200.0852825%204.54843%200.0869241%203.84647C0.104421%202.81116%200.544438%201.82485%201.31047%201.10385C2.0765%200.382844%203.10602%20-0.0139909%204.17322%200.000376986H27.6718C29.9143%200.000376986%2031.7391%201.71538%2031.7391%203.83879C31.7391%204.54199%2031.5333%205.23751%2031.1424%205.84244M3.98489%205.13003L14.0503%2020.1858V3.61156H5.03732C3.99597%203.61156%203.5291%204.28098%203.98647%205.13003M17.7742%2020.1858L27.8395%205.13003C28.3032%204.28098%2027.8285%203.61156%2026.7871%203.61156H17.7742V20.1858Z'%20fill='white'/%3e%3c/svg%3e" 
+         alt="TON" class="inline-block ml-0.25" />
+`;
+
+// по клику – toggle видимости
+wrapper.addEventListener('click', () => {
+  priceBadge.style.opacity = priceBadge.style.opacity === '1' ? '0' : '1';
+});
+wrapper.appendChild(priceBadge);
+
 
   // 4) Переключаем видимость бейджа по клику
   wrapper.addEventListener('click', () => {
