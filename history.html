@@ -59,7 +59,18 @@
 html {
     padding-bottom: 0rem;
 }
-
+  /* прячем бейдж по умолчанию */
+  .price-badge {
+    opacity: 0;
+  }
+  /* на десктопе показываем при hover */
+  .group:hover .price-badge {
+    opacity: 1;
+  }
+  /* на мобильных и при клике — по классу .show-price */
+  .show-price .price-badge {
+    opacity: 1 !important;
+  }
     
   </style>
 
