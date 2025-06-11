@@ -590,7 +590,7 @@ section {
   stroke: #F59E0B;
 }
 
-<style>
+
   .price-badge {
     position: absolute;
     bottom: 0;
@@ -610,7 +610,7 @@ section {
     opacity: 0;
     transition: opacity .15s;
   }
-</style>
+
 
 
 
