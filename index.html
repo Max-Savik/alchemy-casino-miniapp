@@ -20,25 +20,35 @@
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-  .price-badge {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 1.2rem;
-    padding: 0.1rem 0;
-    box-sizing: border-box;
-    font-size: 0.65rem;
-    line-height: 1.2rem;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0 0 0.25rem 0.25rem;
-    background-color: rgba(31, 41, 55, 0.8);
-    opacity: 0;
-    transition: opacity .15s;
-  }
+/* вместо width:100% делаем auto ширину по контенту */
+.price-badge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  /* width: 100%;  Убираем */
+  display: inline-flex;           /* по содержимому */
+  align-items: center;
+  justify-content: center;
+  min-width: 1.8rem;              /* минимум под две цифры */
+  padding: 0 0.25rem;             /* горизонтальные отступы */
+  height: 1.2rem;
+  box-sizing: border-box;
+  font-size: 0.6rem;              /* чуть мельче */
+  line-height: 1.2rem;
+  white-space: nowrap;            /* не переносить */
+  border-radius: 0 0 0.25rem 0.25rem;
+  background-color: rgba(31, 41, 55, 0.8);
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+/* уменьшили иконку TON */
+.price-badge img {
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: 0.2rem;
+}
+
 </style>
 </head>
 
