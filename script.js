@@ -258,11 +258,6 @@ wrapper.addEventListener('click', () => {
 wrapper.appendChild(priceBadge);
 
 
-  // 4) Переключаем видимость бейджа по клику
-  wrapper.addEventListener('click', () => {
-    priceBadge.style.opacity = priceBadge.style.opacity === '1' ? '0' : '1';
-  });
-
   return wrapper;
 }
 
