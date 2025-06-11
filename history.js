@@ -100,37 +100,44 @@ document.addEventListener('DOMContentLoaded', async () => {
       const chance = record.total > 0 ? (totalByPlayer / record.total) * 100 : 0;
 
       const pHeader = document.createElement('div');
-      pHeader.innerHTML = `
-        <span class="text-emerald-300 font-medium">${p.name}</span>
-        поставил <span class="text-gray-100">$${totalByPlayer.toFixed(2)}</span>
-        <span class="text-gray-400">(${chance.toFixed(1)}%)</span>
-      `;
+pHeader.innerHTML = `
+  <span class="text-emerald-300 font-medium">${p.name}</span>
+  поставил <span class="text-gray-100">${totalByPlayer.toFixed(2)} TON</span>
+  <span class="text-gray-400">(${chance.toFixed(1)}%)</span>
+`;
+
       pHeader.className = 'text-sm break-words';
 
       const nftsWrapper = document.createElement('div');
       nftsWrapper.className = 'flex gap-2 overflow-x-auto py-1';
 
       p.nfts.forEach(nftObj => {
-        const nftDiv = document.createElement('div');
-        nftDiv.className = `
-          relative w-16 h-16 rounded-md overflow-hidden
-          shadow-md border border-gray-600 flex-shrink-0 group
-        `;
+const nftDiv = document.createElement('div');
+nftDiv.className = `
+  relative w-16 h-16 rounded-md overflow-hidden
+  shadow-md border border-gray-600 flex-shrink-0 group
+`;
+// чтобы реагировать на tap
+nftDiv.setAttribute('tabindex','0');
+nftDiv.addEventListener('click', () => {
+  nftDiv.classList.toggle('show-price');
+});
 
-        const img = document.createElement('img');
+const img = document.createElement('img');
         img.src = nftObj.img;
         img.alt = nftObj.id;
         img.className = 'w-full h-full object-cover';
-        nftDiv.appendChild(img);
+ nftDiv.appendChild(img);
 
-        const priceBadge = document.createElement('div');
-        priceBadge.textContent = `$${nftObj.price}`;
-        priceBadge.className = `
-          absolute bottom-0 left-0 w-full text-center text-xs pointer-events-none
-          bg-gray-900/80 text-amber-300 opacity-0 group-hover:opacity-100
-          transition-opacity duration-150
-        `;
-        nftDiv.appendChild(priceBadge);
+const priceBadge = document.createElement('div');
+priceBadge.textContent = `${nftObj.price.toFixed(2)} TON`;
+priceBadge.className = `
+  price-badge
+  absolute bottom-0 left-0 w-full text-center text-xs pointer-events-none
+  bg-gray-900/80 text-amber-300
+  transition-opacity duration-150
+`;
+nftDiv.appendChild(priceBadge);
 
         nftsWrapper.appendChild(nftDiv);
       });
