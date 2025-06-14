@@ -70,8 +70,26 @@ card.className =
     dateEl.textContent = dateStr;
     dateEl.className   = 'text-gray-400 text-sm';
 
-    // победитель и сумма в TON
-    const winnerEl = document.createElement('div');
+  const winnerEl = document.createElement('div');  // ← обязательно!
+
+    // найдём сумму ставок победителя
+    const winnerRecord = record.participants.find(p => p.name === record.winner);
+    const winnerSum = winnerRecord
+      ? winnerRecord.nfts.reduce((sum, x) => sum + x.price, 0)
+      : 0;
+    const winPct = record.total > 0
+      ? (winnerSum / record.total) * 100
+      : 0;
+
+    // форматируем общий пул и процент с разделителем тысяч
+    const formattedTotal = record.total
+      .toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formattedPct = winPct.toLocaleString('ru-RU', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    });
+
+    // генерируем HTML победителя
     winnerEl.innerHTML = `
       <span class="inline-flex items-center gap-1 text-amber-300 font-bold winner-glow max-w-full break-words">
         <svg class="w-4 h-4 -mt-0.5" xmlns="http://www.w3.org/2000/svg"
@@ -80,8 +98,9 @@ card.className =
         </svg>
         ${record.winner}
       </span>
-      выиграл <span class="text-emerald-300 font-semibold">
-        ${record.total.toFixed(2)} TON
+      выиграл 
+      <span class="text-emerald-300 font-semibold">
+        ${formattedTotal} TON (${formattedPct} %)
       </span>
     `;
     winnerEl.className = 'text-base';
