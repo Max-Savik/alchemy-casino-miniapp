@@ -130,15 +130,19 @@ function renderProfile() {
 function drawWheel() {
   svg.innerHTML = '';
   if (!totalUSD) return;
+
   let start = -90;
   players.forEach(p => {
+    // размер сектора
     const sweep = (p.value / totalUSD) * 360;
     const end = start + sweep;
+
+    // рисуем сектор
     if (players.length > 1) {
       svg.insertAdjacentHTML(
         'beforeend',
-        arc(200,200,190,start,end,p.color)
-          .replace('<path ','<path data-player="'+p.name+'" ')
+        arc(200, 200, 190, start, end, p.color)
+          .replace('<path ', '<path data-player="' + p.name + '" ')
       );
     } else {
       svg.insertAdjacentHTML(
@@ -146,16 +150,28 @@ function drawWheel() {
         `<circle cx="200" cy="200" r="190" fill="${p.color}" data-player="${p.name}"></circle>`
       );
     }
-    // подписи
+
+    // позиция и ориентация текста
     const mid = start + sweep / 2;
-    const pos = polar(200,200,120,mid);
-    const angle = mid + 90;
-    svg.insertAdjacentHTML('beforeend',`
+    const pos = polar(200, 200, 120, mid);
+    let angle = mid + 90;
+    // если текст окажется "вниз головой", переворачиваем на 180°
+    if (angle > 90 && angle < 270) {
+      angle += 180;
+    }
+
+    // добавляем подпись
+    svg.insertAdjacentHTML('beforeend', `
       <text x="${pos.x}" y="${pos.y}"
             transform="rotate(${angle} ${pos.x} ${pos.y})"
-            font-size="15" fill="#000" text-anchor="middle">
-        ${(p.name || "?").length > 14 ? p.name.slice(0,12) + "…" : p.name}
-      </text>`);
+            font-size="15"
+            fill="#000"
+            text-anchor="middle"
+            dominant-baseline="middle">
+        ${(p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name}
+      </text>
+    `);
+
     start = end;
   });
 }
