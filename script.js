@@ -253,11 +253,23 @@ function makeNFTIcon(nftObj) {
   `;
   wrapper.appendChild(priceBadge);
 
-  // вот заменённый обработчик:
-  wrapper.addEventListener('click', () => {
-    wrapper.classList.toggle('expanded');
-    priceBadge.classList.toggle('show');
+wrapper.addEventListener('click', () => {
+    // 1) Скрыть все другие
+    document.querySelectorAll('.nft-icon.expanded').forEach(el => {
+      if (el !== wrapper) {
+        el.classList.remove('expanded');
+        const badge = el.querySelector('.price-badge');
+        badge && badge.classList.remove('show');
+      }
+    });
+
+    // 2) Переключить текущее
+    const willExpand = !wrapper.classList.contains('expanded');
+    wrapper.classList.toggle('expanded', willExpand);
+    priceBadge.classList.toggle('show', willExpand);
   });
+
+
 
   return wrapper;
 }
