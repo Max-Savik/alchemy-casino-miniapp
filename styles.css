@@ -634,3 +634,8 @@ section {
   transform: scale(1.5);
   z-index: 50; /* чтобы иконка была поверх соседей */
 }
+
+.nft-icon.expanded .price-badge {
+  font-size: 0.55rem;
+  padding: 0.1rem 0.25rem;
+}
