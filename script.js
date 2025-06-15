@@ -272,6 +272,7 @@ wrapper.addEventListener('click', () => {
   const isVisible = priceBadge.classList.toggle('show');
   // добавляем/убираем класс expanded у самой карточки для масштабирования
   wrapper.classList.toggle('expanded', isVisible);
+  wrapper.appendChild(priceBadge);
 });
 
 
