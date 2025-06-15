@@ -190,8 +190,8 @@ function refreshUI() {
     li.className = 'flex flex-col gap-1 py-2';
 
     /// ── Ник + ставка в TON + процент
-const headerDiv = document.createElement('div');
-headerDiv.className = 'flex items-baseline gap-2';
+ const headerDiv = document.createElement('div');
+ headerDiv.className = 'flex items-center gap-2';
 
 // Имя
 const nameEl = document.createElement('span');
