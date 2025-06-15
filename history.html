@@ -117,13 +117,17 @@ html {
   <main class="flex-grow px-4 py-6 max-w-full sm:max-w-5xl mx-auto">
     <h1 class="page-title text-3xl mb-6 glow-text">История игр</h1>
 
-<!-- спиннер загрузки -->
+
+<!-- full-screen overlay -->
 <div
-  id="lottieContainer"
+  id="lottieOverlay"
   class="fixed inset-0 flex items-center justify-center bg-gray-900/50 z-50"
-  style="display: none;">
-  <div style="width: 200px; height: 200px;"></div>
+  style="display: none;"
+>
+  <!-- сюда подхватит анимацию -->
+  <div id="lottieContainer" class="w-52 h-52"></div>
 </div>
+
 
 
 
