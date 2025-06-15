@@ -623,4 +623,23 @@ section {
 }
 
 
+/* Класс для увеличенной иконки */
+.nft-card.expanded {
+  transform: scale(1.5);
+  z-index: 20;               /* выше прочих элементов */
+  transition: transform .2s; /* плавное появление */
+}
+
+/* Подправляем сам бейдж, чтобы он мог расти по ширине */
+.price-badge {
+  white-space: nowrap;
+  padding: 0 .25rem;
+  font-size: .75rem;
+  max-width: 100%;          /* не вылазит за границы */
+}
+
+/* Показываем бейдж */
+.price-badge.show {
+  opacity: 1 !important;
+}
 
