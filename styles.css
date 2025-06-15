@@ -622,3 +622,13 @@ section {
   transform: scale(1);
 }
 
+/* плавное увеличение */
+.nft-icon {
+  transition: transform 0.2s ease, z-index 0.2s ease;
+  transform-origin: center center;
+}
+/* класс, который будет добавляться по клику */
+.nft-icon.expanded {
+  transform: scale(1.5);
+  z-index: 50; /* чтобы иконка была поверх соседей */
+}
