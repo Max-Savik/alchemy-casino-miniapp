@@ -489,14 +489,14 @@ placeBetBtn.addEventListener('click', () => {
 });
 /* ======== Открываем TON-пикер ======== */
 depositTONBtn.addEventListener('click', () => {
+  tonPickerOverlay.classList.add('show');
   tonAmountInput.value = '';
   placeTonBetBtn.disabled = true;
-  tonPickerOverlay.classList.remove('hidden');
 });
 
 /* ======== Закрываем TON-пикер без ставки ======== */
 closeTonPickerBtn.addEventListener('click', () => {
-  tonPickerOverlay.classList.add('hidden');
+  tonPickerOverlay.classList.remove('show');
   tonAmountInput.value = '';
 });
 
