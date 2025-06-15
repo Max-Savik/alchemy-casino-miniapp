@@ -2,9 +2,29 @@
 
 const API = "https://alchemy-casino-miniapp.onrender.com";
 
+// ——— Lottie ———
+window.addEventListener('load', async () => {
+  const lottieEl = document.getElementById('lottieContainer');
+  lottieEl.style.display = '';  // показываем
+
+  try {
+    const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
+    const data = await res.json();
+    data.layers = data.layers.filter(layer => layer.nm !== 'Background');
+    lottie.loadAnimation({
+      container: lottieEl,
+      renderer:  'svg',
+      loop:      true,
+      autoplay:  true,
+      animationData: data
+    });
+  } catch (err) {
+    console.error('Ошибка Lottie:', err);
+  }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('historyContainer');
-  const loader    = document.getElementById('loader');
   const backBtn   = document.getElementById('backBtn');
 
   backBtn.addEventListener('click', () => window.location.href = 'index.html');
@@ -28,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ─────────── отображение результата ─────────── */
-  loader.classList.add('hidden');       // убираем спиннер
+  document.getElementById('lottieContainer').style.display = 'none';
   container.classList.remove('hidden'); // показываем основной блок
 
   if (!Array.isArray(gameHistory)) {
@@ -175,6 +195,8 @@ nftDiv.appendChild(priceBadge);
 
     card.appendChild(participantsWrapper);
     container.appendChild(card);
+
+    
 
     /* ── анимация появления ── */
     requestAnimationFrame(() => {
