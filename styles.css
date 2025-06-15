@@ -639,3 +639,8 @@ section {
   font-size: 0.5rem;
   padding: 0.1rem 0.25rem;
 }
+
+  #lottieContainer svg {
+    width: 300px;  /* нужный вам размер анимации */
+    height: auto;  /* сохраняем пропорции */
+  }
