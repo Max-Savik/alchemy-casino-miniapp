@@ -525,8 +525,8 @@ placeTonBetBtn.addEventListener('click', () => {
  });
 
  // Закрываем оверлей
- tonPickerOverlay.classList.add('hidden');
- tonAmountInput.value = '';
+  tonPickerOverlay.classList.remove('show');
+  tonAmountInput.value = '';
 });
 // =================== SIMPLE NAV ===================
 navGame.addEventListener('click',   () => show('game'));
