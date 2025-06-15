@@ -623,20 +623,22 @@ section {
 }
 
 
-/* Класс для увеличенной иконки */
+/* когда иконка раскрыта — масштаб и приоритет по z-index */
 .nft-card.expanded {
   transform: scale(1.5);
-  z-index: 20;               /* выше прочих элементов */
-  transition: transform .2s; /* плавное появление */
+  z-index: 20;
+  transition: transform 0.2s ease;
+  transform-origin: center center;
 }
 
-/* Подправляем сам бейдж, чтобы он мог расти по ширине */
+/* бейджу даём адекватную ширину */
 .price-badge {
   white-space: nowrap;
-  padding: 0 .25rem;
-  font-size: .75rem;
-  max-width: 100%;          /* не вылазит за границы */
+  padding: 0 0.25rem;
+  font-size: 0.75rem;
+  max-width: none;
 }
+
 
 /* Показываем бейдж */
 .price-badge.show {
