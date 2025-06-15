@@ -550,6 +550,16 @@ function show(view){
   navEarn   .classList.toggle('active', view === 'earn');
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  lottie.loadAnimation({
+    container: document.getElementById('lottieContainer'),
+    renderer: 'svg',
+    loop: true,
+    autoplay: true,
+    path: 'https://nft.fragment.com/gift/bondedring-6341.lottie.json'
+  });
+});
+
 // =================== HISTORY BUTTON ===================
 historyBtn.addEventListener('click', () => {
   window.location.href = 'history.html';
