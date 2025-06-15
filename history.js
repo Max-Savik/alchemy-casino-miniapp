@@ -13,26 +13,6 @@ window.addEventListener('load', () => {
   console.log('🕑 window.load, window.lottie =', window.lottie);
 });
 
-// ——— Lottie ———
-window.addEventListener('load', async () => {
-  const lottieEl = document.getElementById('lottieContainer');
-  lottieEl.style.display = '';  // показываем
-
-  try {
-    const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
-    const data = await res.json();
-    data.layers = data.layers.filter(layer => layer.nm !== 'Background');
-    lottie.loadAnimation({
-      container: lottieEl,
-      renderer:  'svg',
-      loop:      true,
-      autoplay:  true,
-      animationData: data
-    });
-  } catch (err) {
-    console.error('Ошибка Lottie:', err);
-  }
-});
 
 document.addEventListener('DOMContentLoaded', async () => {
   const lottieEl = document.getElementById('lottieContainer');
