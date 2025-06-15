@@ -623,7 +623,27 @@ section {
 }
 
 
-/* когда иконка раскрыта — масштаб и приоритет по z-index */
+/* бейдж */
+.price-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(31, 41, 55, 0.85);
+  color: #fbbf24;
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+  border-radius: inherit;
+}
+.price-badge.show {
+  opacity: 1 !important;
+}
+
+/* при раскрытии */
 .nft-card.expanded {
   transform: scale(1.5);
   z-index: 20;
@@ -631,17 +651,4 @@ section {
   transform-origin: center center;
 }
 
-/* бейджу даём адекватную ширину */
-.price-badge {
-  white-space: nowrap;
-  padding: 0 0.25rem;
-  font-size: 0.75rem;
-  max-width: none;
-}
-
-
-/* Показываем бейдж */
-.price-badge.show {
-  opacity: 1 !important;
-}
 
