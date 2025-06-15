@@ -2,31 +2,20 @@
 
 const API = "https://alchemy-casino-miniapp.onrender.com";
 
-// сразу при загрузке скрипта
-console.log('🕑 script start, window.lottie =', window.lottie);
-
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('🕑 DOMContentLoaded, window.lottie =', window.lottie);
-});
-
-window.addEventListener('load', () => {
-  console.log('🕑 window.load, window.lottie =', window.lottie);
-});
-
-
 document.addEventListener('DOMContentLoaded', async () => {
-  const overlay = document.getElementById('lottieOverlay');
   const lottieEl = document.getElementById('lottieContainer');
+  lottieEl.style.display = 'block';  // сразу показываем контейнер
 
-  // 1) Показываем full-screen оверлей
-  overlay.style.display = 'flex';
-
-  // 2) Загружаем и запускаем Lottie в маленький контейнер
   try {
     const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
     const data = await res.json();
-    data.layers = data.layers.filter(layer => layer.nm !== 'Background');
+    data.layers = data.layers.filter(layer =>
+  layer.nm !== 'Background' &&
+  layer.nm !== 'Color Icon'
+);
 
+
+    // Запускаем анимацию
     lottie.loadAnimation({
       container:     lottieEl,
       renderer:      'svg',
