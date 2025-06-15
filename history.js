@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const data = await res.json();
     data.layers = data.layers.filter(layer =>
   layer.nm !== 'Background' &&
-  layer.nm !== 'Pattern'
+  layer.nm !== 'Color Icon'
 );
 
 
