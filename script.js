@@ -550,13 +550,15 @@ function show(view){
   navEarn   .classList.toggle('active', view === 'earn');
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('load', async () => {
+  // показываем контейнер
+  document.getElementById('lottieContainer').style.display = '';
+
   // 1. Скачиваем оригинальный JSON
   const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
   const data = await res.json();
 
-  // 2. Отфильтровываем слои
-  // Допустим, имя слоя фона — "Background". Поменяйте на нужное из вашего JSON (посмотрите поле layer.nm).
+  // 2. Отфильтровываем слои (например, убираем фон)
   data.layers = data.layers.filter(layer => layer.nm !== 'Background');
 
   // 3. Инициализируем анимацию уже с изменённым JSON
@@ -565,9 +567,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderer: 'svg',
     loop: true,
     autoplay: true,
-    animationData: data  // вместо path
+    animationData: data
   });
 });
+
 
 
 // =================== HISTORY BUTTON ===================
