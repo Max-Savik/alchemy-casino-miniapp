@@ -15,19 +15,18 @@ window.addEventListener('load', () => {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const overlay = document.getElementById('lottieOverlay');
   const lottieEl = document.getElementById('lottieContainer');
-  lottieEl.style.display = 'block';  // сразу показываем контейнер
 
+  // 1) Показываем full-screen оверлей
+  overlay.style.display = 'flex';
+
+  // 2) Загружаем и запускаем Lottie в маленький контейнер
   try {
     const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
     const data = await res.json();
-    data.layers = data.layers.filter(layer =>
-  layer.nm !== 'Background' &&
-  layer.nm !== 'Color Icon'
-);
+    data.layers = data.layers.filter(layer => layer.nm !== 'Background');
 
-
-    // Запускаем анимацию
     lottie.loadAnimation({
       container:     lottieEl,
       renderer:      'svg',
