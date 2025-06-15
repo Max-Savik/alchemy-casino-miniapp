@@ -622,33 +622,3 @@ section {
   transform: scale(1);
 }
 
-
-/* бейдж */
-.price-badge {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(31, 41, 55, 0.85);
-  color: #fbbf24;
-  font-size: 0.75rem;
-  line-height: 1;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.15s;
-  border-radius: inherit;
-}
-.price-badge.show {
-  opacity: 1 !important;
-}
-
-/* при раскрытии */
-.nft-card.expanded {
-  transform: scale(1.5);
-  z-index: 20;
-  transition: transform 0.2s ease;
-  transform-origin: center center;
-}
-
-
