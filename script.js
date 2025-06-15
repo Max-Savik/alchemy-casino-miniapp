@@ -552,7 +552,7 @@ function show(view){
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. Скачиваем оригинальный JSON
-  const res  = await fetch('https://nft.fragment.com/gift/bondedring-6341.lottie.json');
+  const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
   const data = await res.json();
 
   // 2. Отфильтровываем слои
