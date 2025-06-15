@@ -611,7 +611,9 @@ section {
     transition: opacity .15s;
   }
 
-
+.price-badge.show {
+  opacity: 1 !important;
+}
 /* Плавное появление модалки */
 #tonPickerOverlay.show {
   opacity: 1;
