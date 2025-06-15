@@ -641,6 +641,6 @@ section {
 }
 
   #lottieContainer svg {
-    width: 300px;  /* нужный вам размер анимации */
-    height: auto;  /* сохраняем пропорции */
+    width: 300px !important;  /* нужный вам размер анимации */
+    height: auto !important;  /* сохраняем пропорции */
   }
