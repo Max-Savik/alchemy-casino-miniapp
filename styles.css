@@ -639,10 +639,3 @@ section {
   font-size: 0.5rem;
   padding: 0.1rem 0.25rem;
 }
-
-  #lottieContainer {
-    display: none;
-    width: 200px;
-    height: 200px;
-    margin: auto;
-  }
