@@ -231,49 +231,37 @@ headerDiv.appendChild(percEl);
 
     // Утилита: создаёт «нарядную» NFT-иконку с hover-ценой
 function makeNFTIcon(nftObj) {
-  // 1) Создаём обёртку иконки
   const wrapper = document.createElement('div');
   wrapper.className = [
-    'nft-icon',                     // ← добавили базовый класс
+    'nft-icon',
     'relative w-8 h-8 rounded-md overflow-hidden',
-    'shadow-lg border border-gray-600',
-    'hover:scale-110 transition-transform duration-150'
+    'shadow-lg border border-gray-600'
   ].join(' ');
   wrapper.style.cursor = 'pointer';
 
-  // 2) Само изображение NFT/TON
   const img = document.createElement('img');
   img.src = nftObj.img;
   img.alt = nftObj.id;
   img.className = 'w-full h-full object-cover';
   wrapper.appendChild(img);
 
-  // 3) Бейдж с ценой в TON
   const priceBadge = document.createElement('div');
-  priceBadge.className = [
-    'price-badge',
-    'absolute bottom-0 left-0',
-    'inline-flex items-center justify-center',
-    'bg-gray-900/80 text-xs text-amber-300',
-    'px-1',
-    'transition-opacity duration-150'
-  ].join(' ');
-  priceBadge.style.opacity = '0';
+  priceBadge.className = 'price-badge absolute bottom-0 left-0 inline-flex items-center justify-center bg-gray-900/80 text-xs text-amber-300 px-1';
   priceBadge.innerHTML = `
     ${nftObj.price.toFixed(2)}
     <img src="data:image/svg+xml,…" alt="TON" class="inline-block ml-0.25" />
   `;
+  wrapper.appendChild(priceBadge);
 
-  // по клику – показываем/скрываем цену и увеличиваем/уменьшаем иконку
+  // вот заменённый обработчик:
   wrapper.addEventListener('click', () => {
-    const isShowing = priceBadge.style.opacity === '1';
-    priceBadge.style.opacity = isShowing ? '0' : '1';
-    wrapper.classList.toggle('expanded', !isShowing);
+    wrapper.classList.toggle('expanded');
+    priceBadge.classList.toggle('show');
   });
 
-  wrapper.appendChild(priceBadge);
   return wrapper;
 }
+
 
 
 
