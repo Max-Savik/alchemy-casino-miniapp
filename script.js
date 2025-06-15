@@ -269,9 +269,10 @@ priceBadge.innerHTML = `
 
 // по клику – toggle видимости
 wrapper.addEventListener('click', () => {
-  priceBadge.style.opacity = priceBadge.style.opacity === '1' ? '0' : '1';
+  const isVisible = priceBadge.classList.toggle('show');
+  // добавляем/убираем класс expanded у самой карточки для масштабирования
+  wrapper.classList.toggle('expanded', isVisible);
 });
-wrapper.appendChild(priceBadge);
 
 
   return wrapper;
