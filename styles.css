@@ -612,6 +612,15 @@ section {
   }
 
 
+/* Плавное появление модалки */
+#tonPickerOverlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#tonPickerOverlay.show > div {
+  transform: scale(1);
+}
 
 
 
