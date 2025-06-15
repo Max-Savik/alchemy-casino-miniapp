@@ -2,6 +2,17 @@
 
 const API = "https://alchemy-casino-miniapp.onrender.com";
 
+// сразу при загрузке скрипта
+console.log('🕑 script start, window.lottie =', window.lottie);
+
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('🕑 DOMContentLoaded, window.lottie =', window.lottie);
+});
+
+window.addEventListener('load', () => {
+  console.log('🕑 window.load, window.lottie =', window.lottie);
+});
+
 // ——— Lottie ———
 window.addEventListener('load', async () => {
   const lottieEl = document.getElementById('lottieContainer');
