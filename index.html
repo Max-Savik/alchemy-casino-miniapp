@@ -170,22 +170,48 @@
             </div>
           </div>
         </div>
-    <!-- Оверлей для TON-пика (по умолчанию скрыт) -->
-<div id="tonPickerOverlay" class="fixed inset-0 flex items-center justify-center bg-black/70 hidden z-50">
-  <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-md">
+<!-- Обновлённый TON-пикер -->
+<div id="tonPickerOverlay"
+     class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 opacity-0 pointer-events-none"
+     aria-hidden="true">
+  <div
+    class="bg-gray-800 bg-opacity-80 backdrop-filter backdrop-blur-md rounded-2xl p-6 w-11/12 max-w-sm ring-1 ring-amber-500/50 shadow-2xl transform scale-95 transition-transform duration-300"
+    role="dialog" aria-modal="true" aria-labelledby="tonPickerTitle">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold text-gray-100">Сделать ставку TON</h3>
-      <button id="closeTonPicker" class="text-gray-400 hover:text-white">✕</button>
+      <h3 id="tonPickerTitle" class="text-2xl font-semibold text-amber-300">Ставка TON</h3>
+      <button id="closeTonPicker"
+              class="text-gray-400 hover:text-amber-300 transition-colors"
+              aria-label="Закрыть окно">&times;</button>
     </div>
     <div class="mb-4">
-      <label for="tonAmount" class="block text-gray-200 mb-2">Сумма (TON):</label>
-      <input id="tonAmount" type="number" min="0.01" step="0.01" class="w-full p-2 rounded bg-gray-700 text-gray-200" placeholder="0.00 TON" />
+      <label for="tonAmount"
+             class="block text-gray-200 mb-2">Сумма, TON:</label>
+      <div class="relative">
+        <input id="tonAmount"
+               type="number"
+               min="0.01" step="0.01"
+               class="w-full pr-10 p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+               placeholder="0.00" />
+        <!-- Иконка TON внутри поля -->
+        <span class="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">
+          <img src="https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg"
+               alt="TON" class="w-5 h-5" />
+        </span>
+      </div>
     </div>
     <div class="text-right">
-      <button id="placeTonBet" class="px-4 py-2 bg-amber-500 text-gray-900 rounded-lg font-medium disabled:opacity-50" disabled>Поставить TON</button>
+      <button id="placeTonBet"
+              disabled
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Поставить
+      </button>
     </div>
   </div>
 </div>
+
       </div>
 
       <!-- ===== PLAYERS LIST ===== -->
