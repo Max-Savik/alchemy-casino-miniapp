@@ -73,7 +73,12 @@ try {
 } catch (e) {
   console.warn("Не удалось прочитать gameHistory:", e);
 }
-
+function formatNumber(num) {
+  return num
+    .toFixed(2)
+    // перед каждой группой из трёх цифр (слева от раздела) вставляем пробел
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
 // Добавляем запись и сохраняем
 function addToHistory(record) {
   gameHistory.push(record);
@@ -204,7 +209,7 @@ tonIcon.width = 16;
 tonIcon.height = 16;
 
 const valueEl = document.createElement('span');
-valueEl.textContent = p.value.toFixed(2);
+valueEl.textContent = formatNumber(p.value);
 valueEl.className = 'text-gray-100 text-sm';
 
 tonWrapper.appendChild(tonIcon);
@@ -325,7 +330,7 @@ wrapper.addEventListener('click', () => {
     list.appendChild(li);
   });
 
-  pot.textContent = totalUSD.toFixed(2) + ' TON';
+  pot.textContent = formatNumber(totalUSD); + ' TON';
   drawWheel();
   renderPicker();
   renderProfile();
