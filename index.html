@@ -160,19 +160,27 @@
           </div>
         </div>
 
-     <!-- Оверлей для выбора NFT -->
+<!-- Оверлей для выбора NFT -->
 <div id="nftPickerOverlay" class="fixed inset-0 flex items-center justify-center bg-black/70 z-50 hidden">
-  <!-- Модальное окно -->
   <div class="filter-panel bg-gray-800/90 backdrop-blur-md rounded-2xl p-6 space-y-6 border border-amber-600/40 shadow-2xl w-11/12 max-w-md">
-    <!-- Заголовок и закрытие -->
+    <!-- Заголовок, кнопка сортировки и закрытие -->
     <div class="flex justify-between items-center">
       <h3 class="text-2xl font-semibold text-amber-300">Выберите NFT</h3>
-      <button id="closePicker" class="text-gray-400 hover:text-amber-300 transition" aria-label="Закрыть">
-        ✕
-      </button>
+      <div class="flex items-center gap-3">
+        <button id="toggleSort"
+                class="text-gray-300 hover:text-amber-300 transition"
+                title="Сортировать по цене">
+          ↑
+        </button>
+        <button id="closePicker"
+                class="text-gray-400 hover:text-white transition"
+                aria-label="Закрыть">
+          ✕
+        </button>
+      </div>
     </div>
 
-    <!-- Поиск по названию -->
+    <!-- Поиск -->
     <div class="flex flex-col gap-1">
       <label for="nftSearch" class="text-gray-300 text-sm">По названию</label>
       <input id="nftSearch"
@@ -196,7 +204,7 @@
       </div>
     </div>
 
-    <!-- Слайдер массового выделения -->
+    <!-- Количество -->
     <div class="flex flex-col gap-1">
       <label for="selectCount" class="text-gray-300 text-sm">Количество</label>
       <div class="flex items-center gap-3">
@@ -211,12 +219,12 @@
       </div>
     </div>
 
-    <!-- Контейнер с карточками NFT -->
+    <!-- Сетка NFT -->
     <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto p-1">
-      <!-- Тут динамически вставляются карточки через renderPicker() -->
+      <!-- сюда вставляет renderPicker() -->
     </div>
 
-    <!-- Кнопки действий -->
+    <!-- Кнопки -->
     <div class="flex justify-end gap-4">
       <button id="clearFilters"
               class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg font-medium transition">
@@ -230,6 +238,7 @@
     </div>
   </div>
 </div>
+
 
 <!-- Обновлённый TON-пикер -->
 <div id="tonPickerOverlay"
