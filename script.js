@@ -1,5 +1,30 @@
 
 // ============================ script.js ============================
+// ───── Preloader + Lottie ─────
+(async function showPreloader() {
+  const overlay   = document.getElementById('lottieOverlay');
+  const lottieEl  = document.getElementById('lottieContainer');
+  // 1) Показываем оверлей
+  overlay.style.display = 'flex';
+
+  try {
+    // 2) Загружаем JSON-анимацию
+    const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
+    const data = await res.json();
+    // 3) Убираем фон (если нужно)
+    data.layers = data.layers.filter(layer => layer.nm !== 'Background');
+    // 4) Запускаем Lottie
+    lottie.loadAnimation({
+      container:     lottieEl,
+      renderer:      'svg',
+      loop:          true,
+      autoplay:      true,
+      animationData: data
+    });
+  } catch (e) {
+    console.error('Ошибка Lottie:', e);
+  }
+})();
 
 // 1. Подключаемся к бекенду
 const socket = io("https://alchemy-casino-miniapp.onrender.com");
@@ -352,7 +377,9 @@ socket.on("state", s => {
   }
 
   refreshUI();
-
+    // ─ Скрываем preloader после первого рендера ─
+  const overlay = document.getElementById('lottieOverlay');
+  if (overlay) overlay.remove();
   if (s.phase === "countdown") {
     updateStatus(Math.ceil((s.endsAt - Date.now()) / 1000));
   } else {
