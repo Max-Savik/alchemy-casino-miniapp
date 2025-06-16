@@ -170,6 +170,43 @@
                 ✕
               </button>
             </div>
+            <!-- Фильтры -->
+<div class="mb-4 flex flex-col gap-3">
+  <!-- Поиск по имени -->
+  <input id="nftSearch"
+         type="text"
+         placeholder="Поиск NFT..."
+         class="w-full p-2 rounded bg-gray-700 text-gray-100"
+  />
+
+  <!-- Диапазон цены -->
+  <div class="flex items-center gap-2">
+    <span class="text-sm">Цена ≤ </span>
+    <input id="priceRange"
+           type="range"
+           min="0"
+           max="200"
+           step="1"
+           value="200"
+           class="flex-grow"
+    />
+    <span id="priceValue" class="w-12 text-right">200</span>
+  </div>
+
+  <!-- Слайдер для массового выделения -->
+  <div class="flex items-center gap-2">
+    <span class="text-sm">Выделить N:</span>
+    <input id="selectCount"
+           type="range"
+           min="0"
+           max="0"       <!-- заполним в JS -->
+           step="1"
+           value="0"
+           class="flex-grow"
+    />
+    <span id="countValue" class="w-8 text-right">0</span>
+  </div>
+</div>
             <!-- Контейнер для карточек NFT (заполняется renderPicker) -->
             <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
             </div>
