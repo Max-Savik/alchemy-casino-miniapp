@@ -142,6 +142,15 @@ function arc(cx,cy,r,start,end,color){
 }
 
 // ========================== РЕНДЕР-ХЕЛПЕРЫ ==========================
+// 0. Новая переменная для порядка сортировки
+let sortAsc = true;
+
+// 1. Обработчик кнопки сортировки
+document.getElementById('toggleSort').addEventListener('click', () => {
+  sortAsc = !sortAsc;
+  document.getElementById('toggleSort').textContent = sortAsc ? '↑' : '↓';
+  renderPicker();
+});
 function cardHTML(nft, extra='') {
   return `
     <div class="nft-card ${extra}" data-id="${nft.id}">
@@ -162,30 +171,50 @@ function applyFilters(nft) {
 }
 
 function renderPicker() {
-  // Собираем отфильтрованный список
+  // 2.1 фильтруем
   const filtered = inventory.filter(n => applyFilters(n));
 
-  // 2.1) Динамически обновляем max и value ползунка
+  // 2.2 обновляем max у ползунка количества
   selectCount.max = filtered.length;
-  // если текущее значение > нового max — обнуляем
   if (+selectCount.value > filtered.length) {
     selectCount.value = 0;
     selected.clear();
     countValue.textContent = '0';
   }
 
-  // 2.2) Рендерим карточки
+  // 2.3 сортируем по текущему порядку
+  const sorted = filtered.sort((a, b) =>
+    sortAsc ? a.price - b.price : b.price - a.price
+  );
+
+  // 2.4 отрисовываем карточки
   picker.innerHTML = '';
-  filtered.forEach(n => {
+  sorted.forEach(nft => {
     picker.insertAdjacentHTML(
       'beforeend',
-      cardHTML(n, selected.has(n.id) ? 'selected' : '')
+      cardHTML(nft, selected.has(nft.id) ? 'selected' : '')
     );
   });
 
-  // 2.3) Обновляем состояние кнопки «Поставить»
+  // 2.5 кнопка «Поставить»
   placeBetBtn.disabled = selected.size === 0;
 }
+
+// 3. Обработчик «Количество»
+selectCount.addEventListener('input', () => {
+  const N = +selectCount.value;
+  countValue.textContent = N;
+  selected.clear();
+
+  // снова фильтруем + сортируем
+  const sorted = inventory
+    .filter(n => applyFilters(n))
+    .sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+
+  // отмечаем первые N
+  sorted.slice(0, N).forEach(n => selected.add(n.id));
+  renderPicker();
+});
 
 
 function renderProfile() {
