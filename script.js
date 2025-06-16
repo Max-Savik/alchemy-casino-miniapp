@@ -12,7 +12,10 @@
     const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
     const data = await res.json();
     // 3) Убираем фон (если нужно)
-    data.layers = data.layers.filter(layer => layer.nm !== 'Background');
+    data.layers = data.layers.filter(layer =>
+  layer.nm !== 'Background' &&
+  layer.nm !== 'Color Icon'
+);
     // 4) Запускаем Lottie
     lottie.loadAnimation({
       container:     lottieEl,
