@@ -670,3 +670,25 @@ input[type=range]::-webkit-slider-runnable-track {
   border-radius: 3px;
   background: rgba(251,191,36,0.3);
 }
+/* 1. Оверлей над всеми элементами, включая навигацию */
+#nftPickerOverlay {
+  z-index: 9999; /* должно быть больше, чем у .bottom-nav */
+  padding-bottom: 4rem; /* отступ снизу под навигацию (примерно её высота) */
+}
+
+/* 2. Ограничиваем высоту самой панели, чтобы не выпадала за экран */
+#nftPickerOverlay .filter-panel {
+  max-height: calc(100vh - 4rem - 2rem); /* 4rem под навигацию + 2rem сверху/снизу */
+  overflow-y: auto;
+}
+
+/* 3. Поднимаем кружок ползунка чуть выше */
+input[type=range]::-webkit-slider-thumb {
+  margin-top: -6px; /* смещаем вверх на полбегунка (примерно) */
+}
+
+/* Для Firefox */
+input[type=range]::-moz-range-thumb {
+  margin-top: 0; /* Firefox не поддерживает margin на ::-moz-range-thumb, но если понадобится, можно пробовать translate */
+  transform: translateY(-2px);
+}
