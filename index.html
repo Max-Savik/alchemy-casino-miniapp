@@ -5,6 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Golden Games</title>
+  
+ <script defer src="https://cdn.jsdelivr.net/npm/lottie-web@5.9.6/build/player/lottie.min.js"></script>
 
   <!-- === внешние библиотеки === -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -52,6 +54,13 @@
 </head>
 
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
+    <div id="lottieOverlay"
+       class="fixed inset-0 z-50 bg-gray-900/90 flex items-center justify-center">
+    <div id="lottieContainer"
+         class="w-48 h-48">
+      <!-- Lottie запустится сюда -->
+    </div>
+  </div>
   <!-- ========== HEADER ========== -->
   <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
     <div class="header-row max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
