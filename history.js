@@ -136,6 +136,7 @@ card.className =
     participantsWrapper.className = 'flex flex-col gap-3';
 
     record.participants.forEach(p => {
+      p.nfts.sort((a, b) => b.price - a.price);
       const pDiv = document.createElement('div');
       pDiv.className = 'flex flex-col gap-1' + (p.name === record.winner ? ' winner-bet' : '');
 
