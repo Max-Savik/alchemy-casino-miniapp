@@ -160,24 +160,20 @@
           </div>
         </div>
 
-     <!-- Оверлей для выбора NFT -->
-<div id="nftPickerOverlay" class="fixed inset-0 flex items-center justify-center bg-black/70 z-50 hidden">
+<!-- Оверлей для выбора NFT -->
+<div id="nftPickerOverlay" class="fixed inset-0 flex items-center justify-center bg-black/70 z-50 hidden px-4 pb-16">
   <!-- Модальное окно -->
-  <div class="filter-panel bg-gray-800/90 backdrop-blur-md rounded-2xl p-6 space-y-6 border border-amber-600/40 shadow-2xl w-11/12 max-w-md">
+  <div class="bg-gray-800/90 backdrop-blur-md rounded-2xl p-6 space-y-6 border border-amber-600/40 shadow-2xl w-full max-w-md max-h-[calc(100vh-6rem)] overflow-y-auto">
     <!-- Заголовок и закрытие -->
     <div class="flex justify-between items-center">
       <h3 class="text-2xl font-semibold text-amber-300">Выберите NFT</h3>
-      <button id="closePicker" class="text-gray-400 hover:text-amber-300 transition" aria-label="Закрыть">
-        ✕
-      </button>
+      <button id="closePicker" class="text-gray-400 hover:text-amber-300 transition" aria-label="Закрыть">✕</button>
     </div>
 
     <!-- Поиск по названию -->
     <div class="flex flex-col gap-1">
       <label for="nftSearch" class="text-gray-300 text-sm">По названию</label>
-      <input id="nftSearch"
-             type="text"
-             placeholder="Введите название NFT…"
+      <input id="nftSearch" type="text" placeholder="Введите название NFT…"
              class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition" />
     </div>
 
@@ -185,38 +181,33 @@
     <div class="flex flex-col gap-1">
       <label for="priceRange" class="text-gray-300 text-sm">Максимальная цена</label>
       <div class="flex items-center gap-3">
-        <input id="priceRange"
-               type="range"
-               min="0"
-               max="200"
-               step="1"
-               value="200"
+        <input id="priceRange" type="range" min="0" max="200" step="1" value="200"
                class="flex-grow h-2 rounded-lg appearance-none bg-amber-600/30 focus:outline-none" />
         <span id="priceValue" class="w-12 text-right text-amber-300 font-semibold">200</span>
       </div>
     </div>
 
-    <!-- Слайдер массового выделения -->
+    <!-- Сортировка -->
+    <div class="flex flex-col gap-1">
+      <label for="sortSelect" class="text-gray-300 text-sm">Сортировать по цене</label>
+      <select id="sortSelect"
+              class="w-full p-2 rounded-lg bg-gray-700 text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+        <option value="asc">По возрастанию</option>
+        <option value="desc">По убыванию</option>
+      </select>
+    </div>
+
+    <!-- Количество -->
     <div class="flex flex-col gap-1">
       <label for="selectCount" class="text-gray-300 text-sm">Количество</label>
       <div class="flex items-center gap-3">
-        <input id="selectCount"
-               type="range"
-               min="0"
-               max="0"
-               step="1"
-               value="0"
+        <input id="selectCount" type="range" min="0" max="0" step="1" value="0"
                class="flex-grow h-2 rounded-lg appearance-none bg-amber-600/30 focus:outline-none" />
         <span id="countValue" class="w-8 text-right text-amber-300 font-semibold">0</span>
       </div>
     </div>
 
-    <!-- Контейнер с карточками NFT -->
-    <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto p-1">
-      <!-- Тут динамически вставляются карточки через renderPicker() -->
-    </div>
-
-    <!-- Кнопки действий -->
+    <!-- Сбросить фильтры / поставить -->
     <div class="flex justify-end gap-4">
       <button id="clearFilters"
               class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg font-medium transition">
@@ -227,6 +218,11 @@
               disabled>
         Поставить
       </button>
+    </div>
+
+    <!-- Контейнер с карточками NFT -->
+    <div id="nftPicker" class="grid grid-cols-2 gap-4 mt-4">
+      <!-- динамически заполняется через renderPicker() -->
     </div>
   </div>
 </div>
