@@ -45,6 +45,18 @@ const inventory = [
   { id:'lovepotion-11784',name:'Love Potion',   price:19,  img:'https://nft.fragment.com/gift/lovepotion-11784.medium.jpg',  staked:false },
   { id:'lovecandle-7853', name:'Love Candle',   price:16,  img:'https://nft.fragment.com/gift/lovecandle-7853.medium.jpg',   staked:false },
 ];
+// Состояние фильтров
+let filterName   = "";
+let filterMaxPr  =  Infinity;
+let selectCountN = 0;
+
+// Селекторы для элементов управления
+const nftSearch     = document.getElementById('nftSearch');
+const priceRange    = document.getElementById('priceRange');
+const priceValue    = document.getElementById('priceValue');
+const selectCount   = document.getElementById('selectCount');
+const countValue    = document.getElementById('countValue');
+
 const selected = new Set();            // NFT, выбранные перед ставкой
 const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
 
@@ -139,18 +151,30 @@ function cardHTML(nft, extra='') {
     </div>
   `;
 }
+// Устанавливаем max для слайдера количества
+selectCount.max = inventory.length;
+
+function applyFilters(nft) {
+  const nameMatch  = nft.name.toLowerCase().includes(filterName);
+  const priceMatch = nft.price <= filterMaxPr;
+  const notStaked  = !nft.staked;
+  return nameMatch && priceMatch && notStaked;
+}
 
 function renderPicker() {
   picker.innerHTML = '';
   inventory
-    .filter(n => !n.staked)
+    .filter(n => applyFilters(n))
     .forEach(n => {
       picker.insertAdjacentHTML(
         'beforeend',
         cardHTML(n, selected.has(n.id) ? 'selected' : '')
       );
     });
+  // и не забываем обновить кнопку «Поставить»
+  placeBetBtn.disabled = selected.size === 0;
 }
+
 
 function renderProfile() {
   grid.innerHTML = '';
@@ -363,6 +387,34 @@ wrapper.addEventListener('click', () => {
   renderPicker();
   renderProfile();
 }
+// Поиск по имени
+nftSearch.addEventListener('input', () => {
+  filterName = nftSearch.value.trim().toLowerCase();
+  renderPicker();
+});
+
+// Ограничение по цене
+priceRange.addEventListener('input', () => {
+  const v = +priceRange.value;
+  filterMaxPr = v;
+  priceValue.textContent = v;
+  renderPicker();
+});
+
+// Слайдер массового выделения: берем первые N в текущем списке
+selectCount.addEventListener('input', () => {
+  selectCountN = +selectCount.value;
+  countValue.textContent = selectCountN;
+  // сразу обновляем selected-набор
+  selected.clear();
+  // сортируем по цене убыванию и берём первые N
+  inventory
+    .filter(n => applyFilters(n))
+    .sort((a,b)=> b.price - a.price)
+    .slice(0, selectCountN)
+    .forEach(n => selected.add(n.id));
+  renderPicker();
+});
 
 // ========================= SOCKET EVENTS =========================
 // При подключении сразу слать текущее состояние
