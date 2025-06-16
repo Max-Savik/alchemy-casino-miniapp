@@ -142,6 +142,36 @@ function arc(cx,cy,r,start,end,color){
 }
 
 // ========================== РЕНДЕР-ХЕЛПЕРЫ ==========================
+const sortSelect = document.getElementById('sortSelect');
+
+// состояние сортировки
+let sortDirection = 'asc';
+
+// сброс фильтров
+document.getElementById('clearFilters').addEventListener('click', () => {
+  nftSearch.value = '';
+  filterName = '';
+  priceRange.value = priceRange.max;
+  filterMaxPr = +priceRange.value;
+  priceValue.textContent = priceRange.value;
+
+  sortSelect.value = 'asc';
+  sortDirection = 'asc';
+
+  selectCount.value = 0;
+  selectCountN = 0;
+  countValue.textContent = '0';
+
+  selected.clear();
+  renderPicker();
+});
+
+// сортировка по цене при выборе
+sortSelect.addEventListener('change', () => {
+  sortDirection = sortSelect.value;
+  renderPicker();
+});
+
 function cardHTML(nft, extra='') {
   return `
     <div class="nft-card ${extra}" data-id="${nft.id}">
@@ -162,31 +192,33 @@ function applyFilters(nft) {
 }
 
 function renderPicker() {
-  // Собираем отфильтрованный список
-  const filtered = inventory.filter(n => applyFilters(n));
+  // 1) фильтрация
+  let filtered = inventory.filter(n => applyFilters(n));
 
-  // 2.1) Динамически обновляем max и value ползунка
+  // 2) сортировка
+  filtered.sort((a, b) => 
+    sortDirection === 'asc' ? a.price - b.price : b.price - a.price
+  );
+
+  // 3) обновляем max ползунка «Количество»
   selectCount.max = filtered.length;
-  // если текущее значение > нового max — обнуляем
   if (+selectCount.value > filtered.length) {
     selectCount.value = 0;
     selected.clear();
     countValue.textContent = '0';
   }
 
-  // 2.2) Рендерим карточки
+  // 4) рисуем карточки
   picker.innerHTML = '';
   filtered.forEach(n => {
-    picker.insertAdjacentHTML(
-      'beforeend',
+    picker.insertAdjacentHTML('beforeend',
       cardHTML(n, selected.has(n.id) ? 'selected' : '')
     );
   });
 
-  // 2.3) Обновляем состояние кнопки «Поставить»
+  // 5) обновляем состояние кнопки
   placeBetBtn.disabled = selected.size === 0;
 }
-
 
 function renderProfile() {
   grid.innerHTML = '';
