@@ -383,7 +383,13 @@ socket.on("state", s => {
   // убираем оверлей и показываем страницу
   const overlay = document.getElementById('lottieOverlay');
   if (overlay) overlay.remove();
-  document.getElementById('mainContent').classList.remove('hidden');
+  const main = document.getElementById('mainContent');
+// немного даём браузеру применить начальное состояние
+requestAnimationFrame(() => {
+  main.classList.remove('opacity-0');
+  main.classList.add('opacity-100');
+});
+
   if (s.phase === "countdown") {
     updateStatus(Math.ceil((s.endsAt - Date.now()) / 1000));
   } else {
