@@ -162,16 +162,28 @@ function applyFilters(nft) {
 }
 
 function renderPicker() {
+  // Собираем отфильтрованный список
+  const filtered = inventory.filter(n => applyFilters(n));
+
+  // 2.1) Динамически обновляем max и value ползунка
+  selectCount.max = filtered.length;
+  // если текущее значение > нового max — обнуляем
+  if (+selectCount.value > filtered.length) {
+    selectCount.value = 0;
+    selected.clear();
+    countValue.textContent = '0';
+  }
+
+  // 2.2) Рендерим карточки
   picker.innerHTML = '';
-  inventory
-    .filter(n => applyFilters(n))
-    .forEach(n => {
-      picker.insertAdjacentHTML(
-        'beforeend',
-        cardHTML(n, selected.has(n.id) ? 'selected' : '')
-      );
-    });
-  // и не забываем обновить кнопку «Поставить»
+  filtered.forEach(n => {
+    picker.insertAdjacentHTML(
+      'beforeend',
+      cardHTML(n, selected.has(n.id) ? 'selected' : '')
+    );
+  });
+
+  // 2.3) Обновляем состояние кнопки «Поставить»
   placeBetBtn.disabled = selected.size === 0;
 }
 
@@ -403,18 +415,22 @@ priceRange.addEventListener('input', () => {
 
 // Слайдер массового выделения: берем первые N в текущем списке
 selectCount.addEventListener('input', () => {
-  selectCountN = +selectCount.value;
-  countValue.textContent = selectCountN;
-  // сразу обновляем selected-набор
+  const N = +selectCount.value;
+  countValue.textContent = N;
+
+  // очищаем прошлый выбор
   selected.clear();
-  // сортируем по цене убыванию и берём первые N
+
+  // сортируем по цене возрастанию и берём первые N
   inventory
     .filter(n => applyFilters(n))
-    .sort((a,b)=> b.price - a.price)
-    .slice(0, selectCountN)
+    .sort((a, b) => a.price - b.price) // теперь от дешёвых к дорогим
+    .slice(0, N)
     .forEach(n => selected.add(n.id));
+
   renderPicker();
 });
+
 
 // ========================= SOCKET EVENTS =========================
 // При подключении сразу слать текущее состояние
