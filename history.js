@@ -51,18 +51,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ─────────── отображение результата ─────────── */
-  // 1) Прячем Lottie
   document.getElementById('lottieContainer').style.display = 'none';
-  // 2) Показываем контейнер с историей
-  const historyContainer = document.getElementById('historyContainer');
-  historyContainer.classList.remove('hidden');
-
-  // 3) Плавно проявляем весь <main>
-  const main = document.getElementById('mainContent');
-  requestAnimationFrame(() => {
-    main.classList.remove('opacity-0');
-    main.classList.add('opacity-100');
-  });
+  container.classList.remove('hidden'); // показываем основной блок
 
   if (!Array.isArray(gameHistory)) {
     container.innerHTML =
@@ -103,7 +93,7 @@ card.className =
     dateEl.textContent = dateStr;
     dateEl.className   = 'text-gray-400 text-sm';
 
-  const winnerEl = document.createElement('div');
+  const winnerEl = document.createElement('div');  // ← обязательно!
 
     // найдём сумму ставок победителя
     const winnerRecord = record.participants.find(p => p.name === record.winner);
