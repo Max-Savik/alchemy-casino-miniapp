@@ -170,43 +170,41 @@
                 ✕
               </button>
             </div>
-            <!-- Фильтры -->
-<div class="mb-4 flex flex-col gap-3">
+<!-- Добавьте эти классы к контейнеру фильтров -->
+<div class="filter-controls glass border-ornate alch-rounded p-4 mb-4">
   <!-- Поиск по имени -->
   <input id="nftSearch"
          type="text"
-         placeholder="Поиск NFT..."
-         class="w-full p-2 rounded bg-gray-700 text-gray-100"
-  />
+         placeholder="🔍 Поиск NFT..."
+         class="w-full p-2 bg-gray-700/70 backdrop-blur-sm rounded border border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-400 text-gray-100 placeholder-gray-400 mb-3" />
 
   <!-- Диапазон цены -->
-  <div class="flex items-center gap-2">
-    <span class="text-sm">Цена ≤ </span>
+  <div class="flex items-center gap-2 mb-3">
+    <span class="text-sm text-gray-200">Цена ≤</span>
     <input id="priceRange"
            type="range"
            min="0"
            max="200"
            step="1"
            value="200"
-           class="flex-grow"
-    />
-    <span id="priceValue" class="w-12 text-right">200</span>
+           class="flex-grow h-2 bg-gray-600 rounded-lg accent-amber-400" />
+    <span id="priceValue" class="w-12 text-right text-gray-200 font-mono">200</span>
   </div>
 
-  <!-- Слайдер для массового выделения -->
+  <!-- Слайдер массового выделения -->
   <div class="flex items-center gap-2">
-    <span class="text-sm">Выделить N:</span>
+    <span class="text-sm text-gray-200">Выделить N:</span>
     <input id="selectCount"
            type="range"
            min="0"
-           max="0"       <!-- заполним в JS -->
+           max="0"
            step="1"
            value="0"
-           class="flex-grow"
-    />
-    <span id="countValue" class="w-8 text-right">0</span>
+           class="flex-grow h-2 bg-gray-600 rounded-lg accent-amber-400" />
+    <span id="countValue" class="w-8 text-right text-gray-200 font-mono">0</span>
   </div>
 </div>
+
             <!-- Контейнер для карточек NFT (заполняется renderPicker) -->
             <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
             </div>
