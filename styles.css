@@ -656,42 +656,17 @@ section {
   cursor: pointer;
 }
 
-/* Дополнительно улучшим внешний вид ползунков */
-
-/* WebKit (Chrome, Safari) */
-.filter-controls input[type="range"]::-webkit-slider-thumb {
+input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background-color: rgba(251, 191, 36, 0.9); /* amber-400 */
-  border: 2px solid rgba(31, 41, 55, 0.85);   /* match background */
+  background: #fbbf24;
   cursor: pointer;
-  transition: transform .2s;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
 }
-.filter-controls input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-
-/* Firefox */
-.filter-controls input[type="range"]::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background-color: rgba(251, 191, 36, 0.9);
-  border: 2px solid rgba(31, 41, 55, 0.85);
-  cursor: pointer;
-  transition: transform .2s;
-}
-.filter-controls input[type="range"]::-moz-range-thumb:hover {
-  transform: scale(1.2);
-}
-
-/* Трек ползунка: более тёмный, с лёгким свечением по краям */
-.filter-controls input[type="range"]::-webkit-slider-runnable-track,
-.filter-controls input[type="range"]::-moz-range-track {
+input[type=range]::-webkit-slider-runnable-track {
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
-  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
+  background: rgba(251,191,36,0.3);
 }
