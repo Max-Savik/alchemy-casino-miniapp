@@ -377,9 +377,10 @@ socket.on("state", s => {
   }
 
   refreshUI();
-    // ─ Скрываем preloader после первого рендера ─
+  // убираем оверлей и показываем страницу
   const overlay = document.getElementById('lottieOverlay');
   if (overlay) overlay.remove();
+  document.getElementById('mainContent').classList.remove('hidden');
   if (s.phase === "countdown") {
     updateStatus(Math.ceil((s.endsAt - Date.now()) / 1000));
   } else {
