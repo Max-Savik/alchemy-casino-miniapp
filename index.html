@@ -179,15 +179,6 @@
            class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition" />
   </div>
 
-  <!-- НОВАЯ КРАСИВАЯ КНОПКА СОРТИРОВКИ -->
-  <div class="flex justify-end">
-    <button id="toggleSort"
-            class="flex items-center gap-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-gray-900 rounded-full font-semibold transition-shadow shadow-lg"
-            title="Сортировать по цене">
-      <span id="sortIcon">↑</span>
-      <span>По цене</span>
-    </button>
-  </div>
 
   <!-- Диапазон цены -->
   <div class="flex flex-col gap-1">
@@ -204,20 +195,38 @@
     </div>
   </div>
 
-  <!-- Количество -->
-  <div class="flex flex-col gap-1">
-    <label for="selectCount" class="text-gray-300 text-sm">Количество</label>
-    <div class="flex items-center gap-3">
-      <input id="selectCount"
-             type="range"
-             min="0"
-             max="0"
-             step="1"
-             value="0"
-             class="flex-grow h-2 rounded-lg appearance-none bg-amber-600/30 focus:outline-none" />
-      <span id="countValue" class="w-8 text-right text-amber-300 font-semibold">0</span>
-    </div>
+  <!-- Блок «Количество» с ползунком и кнопкой сортировки -->
+<div class="flex flex-col gap-1">
+  <label for="selectCount" class="text-gray-300 text-sm">Количество</label>
+  <div class="flex items-center gap-3">
+    <!-- Сам ползунок -->
+    <input id="selectCount"
+           type="range"
+           min="0"
+           max="0"
+           step="1"
+           value="0"
+           class="flex-grow h-2 rounded-lg appearance-none bg-amber-600/30 focus:outline-none" />
+
+    <!-- Числовое значение -->
+    <span id="countValue" class="w-8 text-right text-amber-300 font-semibold">0</span>
+
+    <!-- Кнопка сортировки -->
+    <button id="toggleSort"
+            class="p-2 bg-gray-700 hover:bg-gray-600 rounded-full transition"
+            aria-label="Переключить порядок сортировки">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           class="w-4 h-4 text-amber-300"
+           fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <!-- Chevron: будет вращаться в JS -->
+        <polyline id="sortIcon"
+                  points="6 15 12 9 18 15"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
+</div>
 
   <!-- Сетка NFT -->
   <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto p-1">
