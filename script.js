@@ -145,12 +145,7 @@ function arc(cx,cy,r,start,end,color){
 // 0. Новая переменная для порядка сортировки
 let sortAsc = true;
 
-// 1. Обработчик кнопки сортировки
-document.getElementById('toggleSort').addEventListener('click', () => {
-  sortAsc = !sortAsc;
-  document.getElementById('toggleSort').textContent = sortAsc ? '↑' : '↓';
-  renderPicker();
-});
+
 function cardHTML(nft, extra='') {
   return `
     <div class="nft-card ${extra}" data-id="${nft.id}">
