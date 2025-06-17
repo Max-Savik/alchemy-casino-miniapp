@@ -695,3 +695,10 @@ input[type=range]::-moz-range-thumb {
 #toggleSort svg {
   transform-origin: center;
 }
+
+@media (max-height: 600px) {
+  .filter-panel {
+    transform: scale(0.9);
+    transform-origin: top center;
+  }
+}
