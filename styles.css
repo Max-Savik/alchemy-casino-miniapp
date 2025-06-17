@@ -692,3 +692,7 @@ input[type=range]::-moz-range-thumb {
   margin-top: 0; /* Firefox не поддерживает margin на ::-moz-range-thumb, но если понадобится, можно пробовать translate */
   transform: translateY(-2px);
 }
+
+#toggleSort svg {
+  transform-origin: center;
+}
