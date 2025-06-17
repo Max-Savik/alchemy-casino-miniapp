@@ -460,12 +460,6 @@ selectCount.addEventListener('input', () => {
   renderPicker();
 });
 
-document.getElementById('toggleSort').addEventListener('click', () => {
-  sortAsc = !sortAsc;
-  document.getElementById('sortIcon').style.transform = sortAsc ? 'rotate(180deg)' : 'rotate(0deg)';
-  renderPicker();
-});
-
 // ========================= SOCKET EVENTS =========================
 // При подключении сразу слать текущее состояние
 socket.on("state", s => {
@@ -672,6 +666,17 @@ placeTonBetBtn.addEventListener('click', () => {
   tonPickerOverlay.classList.remove('show');
   tonAmountInput.value = '';
 });
+
+const toggleBtn = document.getElementById('toggleSort');
+const svgIcon   = toggleBtn.querySelector('svg');
+
+toggleBtn.addEventListener('click', () => {
+  sortAsc = !sortAsc;
+  // поворачиваем SVG на 180° или сбрасываем
+  svgIcon.classList.toggle('rotate-180', !sortAsc);
+  renderPicker();
+});
+
 // =================== SIMPLE NAV ===================
 navGame.addEventListener('click',   () => show('game'));
 navMarket.addEventListener('click', () => show('market'));
