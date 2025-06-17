@@ -162,81 +162,81 @@
 
 <!-- Оверлей для выбора NFT -->
 <div id="nftPickerOverlay" class="fixed inset-0 flex items-center justify-center bg-black/70 z-50 hidden">
-  <div class="filter-panel bg-gray-800/90 backdrop-blur-md rounded-2xl p-6 space-y-6 border border-amber-600/40 shadow-2xl w-11/12 max-w-md">
-    <!-- Заголовок, кнопка сортировки и закрытие -->
-    <div class="flex justify-between items-center">
-      <h3 class="text-2xl font-semibold text-amber-300">Выберите NFT</h3>
-      <div class="flex items-center gap-3">
-        <button id="toggleSort"
-                class="text-gray-300 hover:text-amber-300 transition"
-                title="Сортировать по цене">
-          ↑
-        </button>
-        <button id="closePicker"
-                class="text-gray-400 hover:text-white transition"
-                aria-label="Закрыть">
-          ✕
-        </button>
-      </div>
-    </div>
+<!-- начало фильтрового блока -->
+<div class="filter-panel bg-gray-800/90 backdrop-blur-md rounded-2xl p-6 space-y-6 border border-amber-600/40 shadow-2xl w-11/12 max-w-md">
+  <!-- Заголовок и закрытие -->
+  <div class="flex justify-between items-center">
+    <h3 class="text-2xl font-semibold text-amber-300">Выберите NFT</h3>
+    <button id="closePicker" class="text-gray-400 hover:text-white transition" aria-label="Закрыть">✕</button>
+  </div>
 
-    <!-- Поиск -->
-    <div class="flex flex-col gap-1">
-      <label for="nftSearch" class="text-gray-300 text-sm">По названию</label>
-      <input id="nftSearch"
-             type="text"
-             placeholder="Введите название NFT…"
-             class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition" />
-    </div>
+  <!-- Поиск по названию -->
+  <div class="flex flex-col gap-1">
+    <label for="nftSearch" class="text-gray-300 text-sm">По названию</label>
+    <input id="nftSearch"
+           type="text"
+           placeholder="Введите название NFT…"
+           class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition" />
+  </div>
 
-    <!-- Диапазон цены -->
-    <div class="flex flex-col gap-1">
-      <label for="priceRange" class="text-gray-300 text-sm">Максимальная цена</label>
-      <div class="flex items-center gap-3">
-        <input id="priceRange"
-               type="range"
-               min="0"
-               max="200"
-               step="1"
-               value="200"
-               class="flex-grow h-2 rounded-lg appearance-none bg-amber-600/30 focus:outline-none" />
-        <span id="priceValue" class="w-12 text-right text-amber-300 font-semibold">200</span>
-      </div>
-    </div>
+  <!-- НОВАЯ КРАСИВАЯ КНОПКА СОРТИРОВКИ -->
+  <div class="flex justify-end">
+    <button id="toggleSort"
+            class="flex items-center gap-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-gray-900 rounded-full font-semibold transition-shadow shadow-lg"
+            title="Сортировать по цене">
+      <span id="sortIcon">↑</span>
+      <span>По цене</span>
+    </button>
+  </div>
 
-    <!-- Количество -->
-    <div class="flex flex-col gap-1">
-      <label for="selectCount" class="text-gray-300 text-sm">Количество</label>
-      <div class="flex items-center gap-3">
-        <input id="selectCount"
-               type="range"
-               min="0"
-               max="0"
-               step="1"
-               value="0"
-               class="flex-grow h-2 rounded-lg appearance-none bg-amber-600/30 focus:outline-none" />
-        <span id="countValue" class="w-8 text-right text-amber-300 font-semibold">0</span>
-      </div>
-    </div>
-
-    <!-- Сетка NFT -->
-    <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto p-1">
-      <!-- сюда вставляет renderPicker() -->
-    </div>
-
-    <!-- Кнопки -->
-    <div class="flex justify-end gap-4">
-      <button id="clearFilters"
-              class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg font-medium transition">
-        Сбросить фильтры
-      </button>
-      <button id="placeBet"
-              class="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-gray-900 rounded-lg font-semibold transition disabled:opacity-50"
-              disabled>
-        Поставить
-      </button>
+  <!-- Диапазон цены -->
+  <div class="flex flex-col gap-1">
+    <label for="priceRange" class="text-gray-300 text-sm">Максимальная цена</label>
+    <div class="flex items-center gap-3">
+      <input id="priceRange"
+             type="range"
+             min="0"
+             max="200"
+             step="1"
+             value="200"
+             class="flex-grow h-2 rounded-lg appearance-none bg-amber-600/30 focus:outline-none" />
+      <span id="priceValue" class="w-12 text-right text-amber-300 font-semibold">200</span>
     </div>
   </div>
+
+  <!-- Количество -->
+  <div class="flex flex-col gap-1">
+    <label for="selectCount" class="text-gray-300 text-sm">Количество</label>
+    <div class="flex items-center gap-3">
+      <input id="selectCount"
+             type="range"
+             min="0"
+             max="0"
+             step="1"
+             value="0"
+             class="flex-grow h-2 rounded-lg appearance-none bg-amber-600/30 focus:outline-none" />
+      <span id="countValue" class="w-8 text-right text-amber-300 font-semibold">0</span>
+    </div>
+  </div>
+
+  <!-- Сетка NFT -->
+  <div id="nftPicker" class="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto p-1">
+    <!-- renderPicker() -->
+  </div>
+
+  <!-- Кнопки действий -->
+  <div class="flex justify-end gap-4">
+    <button id="clearFilters"
+            class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg font-medium transition">
+      Сбросить фильтры
+    </button>
+    <button id="placeBet"
+            class="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-gray-900 rounded-lg font-semibold transition disabled:opacity-50"
+            disabled>
+      Поставить
+    </button>
+  </div>
+</div>
 </div>
 
 
