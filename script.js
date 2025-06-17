@@ -460,6 +460,11 @@ selectCount.addEventListener('input', () => {
   renderPicker();
 });
 
+document.getElementById('toggleSort').addEventListener('click', () => {
+  sortAsc = !sortAsc;
+  document.getElementById('sortIcon').style.transform = sortAsc ? 'rotate(180deg)' : 'rotate(0deg)';
+  renderPicker();
+});
 
 // ========================= SOCKET EVENTS =========================
 // При подключении сразу слать текущее состояние
