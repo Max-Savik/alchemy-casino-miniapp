@@ -655,6 +655,10 @@ section {
   background: #fbbf24;
   cursor: pointer;
 }
+#nftPicker {
+  max-height: none !important;
+  overflow: visible !important;
+}
 
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -673,6 +677,8 @@ input[type=range]::-webkit-slider-runnable-track {
 /* 1. Оверлей над всеми элементами, включая навигацию */
 #nftPickerOverlay {
   z-index: 9999; /* должно быть больше, чем у .bottom-nav */
+  padding-top: 4rem;   /* высота шапки */
+  padding-bottom: 4rem;/* высота нижней навигации */
 }
 
 /* 2. Ограничиваем высоту самой панели, чтобы не выпадала за экран */
@@ -694,6 +700,16 @@ input[type=range]::-moz-range-thumb {
 
 #toggleSort svg {
   transform-origin: center;
+}
+.filter-panel {
+  padding: 1.5rem !important;      /* раньше было p-6 (~1.5rem→1.5rem) */
+  gap: 1rem !important;            /* раньше space-y-6 */
+}
+
+/* 2) Отказываемся от внутренних скроллов */
+.filter-panel {
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 @media (max-height: 600px) {
