@@ -698,7 +698,7 @@ input[type=range]::-moz-range-thumb {
 
 @media (max-height: 600px) {
   .filter-panel {
-    transform: scale(0.9);
+    transform: scale(0.8);
     transform-origin: top center;
   }
 }
@@ -712,7 +712,6 @@ input[type=range]::-moz-range-thumb {
 
 /* 2) Ограничение высоты самого окна, чтобы оно целиком помещалось */
 #nftPickerOverlay .filter-panel {
-  max-height: calc(100vh - 8rem);    /* вычитаем шапку+отступ сверху + навигацию+отступ снизу */
   overflow-y: auto;                  /* если всё же длиннее — появляется скролл */
 }
 
