@@ -712,6 +712,7 @@ input[type=range]::-moz-range-thumb {
   overflow: visible !important;
 }
 
+
 @media (max-height: 600px) {
   .filter-panel {
     transform: scale(0.9);
