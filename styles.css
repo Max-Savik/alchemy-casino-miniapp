@@ -696,13 +696,6 @@ input[type=range]::-moz-range-thumb {
   transform-origin: center;
 }
 
-@media (max-height: 600px) {
-  .filter-panel {
-    transform: scale(0.8);
-    transform-origin: top center;
-  }
-}
-
 /* 1) Расположение модалки чуть ниже шапки и над навигацией */
 #nftPickerOverlay {
   align-items: flex-start;           /* прижмёт окно к верху, а не по центру */
