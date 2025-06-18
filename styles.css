@@ -696,24 +696,3 @@ input[type=range]::-moz-range-thumb {
   transform-origin: center;
 }
 
-/* 1) Расположение модалки чуть ниже шапки и над навигацией */
-#nftPickerOverlay {
-  align-items: flex-start;           /* прижмёт окно к верху, а не по центру */
-  justify-content: center;
-  z-index: 9999;                     /* поверх всего */
-}
-
-/* 2) Ограничение высоты самого окна, чтобы оно целиком помещалось */
-#nftPickerOverlay .filter-panel {
-  overflow-y: auto;                  /* если всё же длиннее — появляется скролл */
-}
-
-/* 3) Убираем margin у body, чтобы fullscreen-overlay реально влезал */
-body {
-  margin-bottom: 0 !important;
-}
-
-/* 4) Гарантируем, что нижняя навигация под модалкой */
-.bottom-nav {
-  z-index: 1000;                     /* меньше, чем у #nftPickerOverlay */
-}
