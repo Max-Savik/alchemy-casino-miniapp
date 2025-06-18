@@ -677,7 +677,6 @@ input[type=range]::-webkit-slider-runnable-track {
 
 /* 2. Ограничиваем высоту самой панели, чтобы не выпадала за экран */
 #nftPickerOverlay .filter-panel {
-  max-height: calc(100vh - 4rem - 2rem); /* 4rem под навигацию + 2rem сверху/снизу */
   overflow-y: auto;
 }
 
