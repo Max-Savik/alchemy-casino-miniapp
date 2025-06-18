@@ -707,7 +707,6 @@ input[type=range]::-moz-range-thumb {
 #nftPickerOverlay {
   align-items: flex-start;           /* прижмёт окно к верху, а не по центру */
   justify-content: center;
-  padding: 4rem 0 4rem;              /* 4rem — примерно высота шапки; снизу место под навигацию */
   z-index: 9999;                     /* поверх всего */
 }
 
