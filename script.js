@@ -56,6 +56,7 @@ const priceRange    = document.getElementById('priceRange');
 const priceValue    = document.getElementById('priceValue');
 const selectCount   = document.getElementById('selectCount');
 const countValue    = document.getElementById('countValue');
+const clearFiltersBtn = document.getElementById('clearFilters');
 
 const selected = new Set();            // NFT, выбранные перед ставкой
 const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
@@ -452,6 +453,35 @@ selectCount.addEventListener('input', () => {
     .slice(0, N)
     .forEach(n => selected.add(n.id));
 
+  renderPicker();
+});
+
+// Сброс всех фильтров и перерисовка
+clearFiltersBtn.addEventListener('click', () => {
+  // 1) Очистить текст поиска
+  filterName = "";
+  nftSearch.value = "";
+
+  // 2) вернуть цену на максимум
+  filterMaxPr = Infinity;
+  priceRange.value = priceRange.max;
+  priceValue.textContent = priceRange.value;
+
+  // 3) обнулить селектор количества
+  selectCountN = 0;
+  selectCount.value = 0;
+  countValue.textContent = '0';
+
+  // 4) Сбросить порядок сортировки (если нужно)
+  sortAsc = true;
+  document.getElementById('toggleSort')
+          .querySelector('svg')
+          .classList.remove('rotate-180');
+
+  // 5) Очистить выбранные NFT
+  selected.clear();
+
+  // 6) Перерисовать окно выбора
   renderPicker();
 });
 
