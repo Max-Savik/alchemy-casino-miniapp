@@ -696,3 +696,13 @@ input[type=range]::-moz-range-thumb {
   transform-origin: center;
 }
 
+@media (max-width: 640px) {
+  .filter-panel {
+    max-width: 20rem;      /* вместо 28rem (max-w-md) */
+    padding: 1rem;         /* уменьшить внутренние отступы */
+  }
+  #nftPicker {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important; /* 1 колонка */
+    gap: 0.5rem !important;   /* чуть меньше отступы */
+  }
+}
