@@ -622,27 +622,31 @@ function highlightWinner(winner){
   });
 }
 
-function runSpinAnimation(winner, spins){
-  // 1) вычисляем средний угол победителя
+function runSpinAnimation(winner, spins) {
+  // 1) находим середину нужного сектора
   const idx = players.indexOf(winner);
   let start = -90, mid = 0;
-  players.forEach((p,i) => {
-    const sweep = (p.value / totalUSD) * 360;
+  for (let i = 0; i < players.length; i++) {
+    const sweep = (players[i].value / totalUSD) * 360;
     if (i === idx) mid = start + sweep / 2;
     start += sweep;
-  });
+  }
 
-  // 2) сколько добавить: целые обороты минус смещение под «стрелку»
+  // 2) на сколько нужно повернуть от нуля:
   const delta = 360 * spins - mid;
 
-  // 3) анимируем уже из текущего положения
+  // 3) увеличиваем накопленный угол
+  cumulativeRotation += delta;
+
+  // 4) анимируем до этого абсолютного угла
   gsap.to('#wheelSvg', {
     duration: 6,
-    rotation: `+=${delta}`,
+    rotation: cumulativeRotation,    // вот здесь уже абсолютный угол
     ease: 'power4.out',
     onComplete: () => highlightWinner(winner)
   });
 }
+
 
 
 
