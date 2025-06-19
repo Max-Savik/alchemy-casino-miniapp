@@ -499,7 +499,10 @@ socket.on("state", s => {
     lockBets(false);
     updateStatus();
   }
-
+  if (s.commitHash) {
+    document.getElementById("fairness").textContent =
+      `Commit: ${s.commitHash}`;
+  }
   refreshUI();
   // убираем оверлей и показываем страницу
   const overlay = document.getElementById('lottieOverlay');
@@ -518,7 +521,11 @@ requestAnimationFrame(() => {
   }
 });
 
-socket.on("countdownStart", ({ endsAt }) => {
+socket.on("countdownStart", ({ endsAt, commitHash  }) => {
+    if (commitHash) {
+    document.getElementById("fairness").textContent =
+      `Commit: ${commitHash}`;
+  }
   phase = "countdown";
   updateStatus(Math.ceil((endsAt - Date.now()) / 1000));
 });
@@ -536,7 +543,7 @@ socket.on("spinStart", ({ players: list, winner }) => {
   runSpinAnimation(winner);
 });
 
-socket.on("spinEnd", ({ winner, total }) => {
+socket.on("spinEnd", ({ winner, total, seed  }) => {
   lockBets(false);
   phase = "waiting";
   updateStatus();
@@ -552,7 +559,44 @@ socket.on("spinEnd", ({ winner, total }) => {
     }))
   };
   addToHistory(record);
+    const el = document.getElementById("fairness");
+  el.textContent = `Seed: ${seed}`;
+    // добавляем кнопку «Проверить честность»
+  const btn = document.createElement("button");
+  btn.textContent = "Проверить честность";
+  btn.className = "mt-2 px-2 py-1 text-sm bg-gray-200 rounded";
+  btn.onclick = () => verifyFairness(seed);
+  el.appendChild(btn);
 });
+
+// npm-style sha256 или из SubtleCrypto
+async function sha256hex(str) {
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function verifyFairness(seed) {
+  const h = await sha256hex(seed);
+  if (h !== document.getElementById("fairness").textContent.replace("Seed: ", "")) {
+    return alert("Что-то не сходится: хэш не совпадает.");
+  }
+  // воспроизведём выбор
+  // 1) получим псевдослучай
+  const hash16 = h.substr(0, 16);
+  const rnd = parseInt(hash16, 16) / 0xffffffffffffffff;
+  const total = window.totalUSD;         // сохраните глобально
+  const ticket = rnd * total;
+  // 2) найдём победителя
+  let acc = 0, picked;
+  window.players.forEach(p => {
+    acc += p.value;
+    if (!picked && ticket <= acc) picked = p;
+  });
+  alert(`Ожидаемый победитель: ${picked.name}`);
+}
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
 function highlightWinner(winner){
