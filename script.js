@@ -1,5 +1,8 @@
-
 // ============================ script.js ============================
+
+// накопленный общий угол (в градусах)
+var cumulativeRotation = 0;
+
 // ───── Preloader + Lottie ─────
 (async function showPreloader() {
   const overlay   = document.getElementById('lottieOverlay');
@@ -65,7 +68,7 @@ const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#
 let players   = [];
 let totalUSD  = 0;
 let phase     = "waiting";              // waiting | countdown | spinning
-let cumulativeRotation = 0;
+
 // Храним развернутых игроков (по имени) для истории NFT 
 const expandedPlayers = new Set();
 
@@ -554,7 +557,7 @@ socket.on("spinStart", ({ players: list, winner, spins, seed, commitHash }) => {
   fairEl.dataset.commit = commitHash;
 
   // Запускаем анимацию, передав spins
-  runSpinAnimation(winner, spins);
+  (winner, spins);
 });
 
 socket.on("spinEnd", ({ winner, total, seed  }) => {
@@ -623,33 +626,29 @@ function highlightWinner(winner){
 }
 
 function runSpinAnimation(winner, spins) {
-  // 1) найдем середину сектора победителя
-  const idx = players.indexOf(winner);
+  // считаем середину сектора
   let start = -90, mid = 0;
-  players.forEach((p, i) => {
+  players.forEach((p,i) => {
     const sweep = (p.value / totalUSD) * 360;
-    if (i === idx) mid = start + sweep / 2;
+    if (i === players.indexOf(winner)) mid = start + sweep/2;
     start += sweep;
   });
 
-  // 2) Приращение — целые обороты минус смещение
+  // на сколько повернуть
   const delta = 360 * spins - mid;
 
-  // 3) Накопим общее вращение
+  // накопим
   cumulativeRotation += delta;
 
-  // 4) Анимируем до этого абсолютного угла
+  // анимируем до абсолютного угла
   gsap.to('#wheelSvg', {
     duration: 6,
     rotation: cumulativeRotation,
     transformOrigin: '50% 50%',
     ease: 'power4.out',
-    onComplete: () => highlightWinner(winner),
+    onComplete: () => highlightWinner(winner)
   });
 }
-
-
-
 
 
 function lockBets(lock){
