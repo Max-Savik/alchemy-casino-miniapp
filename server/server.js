@@ -123,11 +123,17 @@ function maybeStartCountdown() {
 function startSpin() {
   game.phase = "spinning";
   const winner = weightedPickBySeed(game.seed);
-     io.emit("spinStart", {
-    players: game.players,
+
+  // Детерминируем число оборотов
+  const spins = 6 + (parseInt(game.seed.substr(0,2), 16) % 4);
+
+  io.emit("spinStart", {
+    players:    game.players,
     winner,
-    commitHash: game.commitHash   // ещё раз на всякий
-   });
+    spins,                // ← новый параметр
+    seed:       game.seed,     // тоже удобнее передать сразу
+    commitHash: game.commitHash
+  });
 
   setTimeout(() => {
       io.emit("spinEnd", {
