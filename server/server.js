@@ -181,5 +181,6 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
 // ──────────────────────── Bootstrap ───────────────────────────
 (async () => {
   await loadHistory();
+  resetRound();      
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
