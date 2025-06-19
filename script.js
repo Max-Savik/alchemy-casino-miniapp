@@ -65,7 +65,7 @@ const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#
 let players   = [];
 let totalUSD  = 0;
 let phase     = "waiting";              // waiting | countdown | spinning
-
+let cumulativeRotation = 0;
 // Храним развернутых игроков (по имени) для истории NFT 
 const expandedPlayers = new Set();
 
@@ -623,29 +623,31 @@ function highlightWinner(winner){
 }
 
 function runSpinAnimation(winner, spins) {
-  // 1) находим середину нужного сектора
+  // 1) найдем середину сектора победителя
   const idx = players.indexOf(winner);
   let start = -90, mid = 0;
-  for (let i = 0; i < players.length; i++) {
-    const sweep = (players[i].value / totalUSD) * 360;
+  players.forEach((p, i) => {
+    const sweep = (p.value / totalUSD) * 360;
     if (i === idx) mid = start + sweep / 2;
     start += sweep;
-  }
+  });
 
-  // 2) на сколько нужно повернуть от нуля:
+  // 2) Приращение — целые обороты минус смещение
   const delta = 360 * spins - mid;
 
-  // 3) увеличиваем накопленный угол
+  // 3) Накопим общее вращение
   cumulativeRotation += delta;
 
-  // 4) анимируем до этого абсолютного угла
+  // 4) Анимируем до этого абсолютного угла
   gsap.to('#wheelSvg', {
     duration: 6,
-    rotation: cumulativeRotation,    // вот здесь уже абсолютный угол
+    rotation: cumulativeRotation,
+    transformOrigin: '50% 50%',
     ease: 'power4.out',
-    onComplete: () => highlightWinner(winner)
+    onComplete: () => highlightWinner(winner),
   });
 }
+
 
 
 
