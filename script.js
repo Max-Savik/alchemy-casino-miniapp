@@ -626,21 +626,25 @@ function highlightWinner(winner){
 }
 
 function runSpinAnimation(winner, spins) {
-  // считаем середину сектора
+  // 1) считаем середину сектора победителя
   let start = -90, mid = 0;
   players.forEach((p,i) => {
     const sweep = (p.value / totalUSD) * 360;
-    if (i === players.indexOf(winner)) mid = start + sweep/2;
+    if (p === winner) mid = start + sweep / 2;
     start += sweep;
   });
 
-  // на сколько повернуть
-  const delta = 360 * spins - mid;
+  // 2) Вращаем так, чтобы середина сектора оказалась под стрелкой (стрелка смотрит вверх = 0°)
+  //    У нас есть два смещения:
+  //      • каждый полный оборот = 360 * spins,
+  //      • нужно докрутить от середины сектора до «12-часовой» позиции (0°), а сектор считал от –90°
+  //    Значит: +90° (перевести –90° в 0°) и – mid
+  const delta = 360 * spins + (90 - mid);
 
-  // накопим
+  // 3) наращиваем накопленное вращение
   cumulativeRotation += delta;
 
-  // анимируем до абсолютного угла
+  // 4) анимируем до этого абсолютного угла
   gsap.to('#wheelSvg', {
     duration: 6,
     rotation: cumulativeRotation,
@@ -649,6 +653,7 @@ function runSpinAnimation(winner, spins) {
     onComplete: () => highlightWinner(winner)
   });
 }
+
 
 
 function lockBets(lock){
