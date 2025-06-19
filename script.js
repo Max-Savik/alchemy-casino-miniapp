@@ -626,12 +626,11 @@ function highlightWinner(winner){
 }
 
 function runSpinAnimation(winner, spins) {
-  // 1) найдем сектор победителя
-  let startAngle = -90;     // мы рисуем с –90°
-  let sliceSize  = 0;
-  // сначала находим индекс и размер
+  // 1) Найти угол начала и ширину сектора победителя
+  let startAngle = -90;
+  let sliceSize = 0;
   for (let p of players) {
-    const sweep = (p.value / totalUSD) * 360;
+    const sweep = (p.value/totalUSD) * 360;
     if (p === winner) {
       sliceSize = sweep;
       break;
@@ -639,22 +638,24 @@ function runSpinAnimation(winner, spins) {
     startAngle += sweep;
   }
 
-  // 2) возьмем случайный угол внутри этого сектора, отступив
-  //    по 5° от краёв, чтобы не приклеиваться вплотную
+  // 2) Случайный угол внутри сектора (с отступами 5° от краёв)
   const minOffset = 5;
   const maxOffset = sliceSize - 5;
-  const randomOffset = minOffset + Math.random() * (maxOffset - minOffset);
+  const randomOffset = minOffset + Math.random()*(maxOffset - minOffset);
 
-  // 3) получим итоговый «целевой» угол сектора
+  // 3) Итоговый угол внутри круга
   const targetSectorAngle = startAngle + randomOffset;
 
-  // 4) рассчитываем приращение к накопленному (с полными оборотами)
-  const delta = spins * 360 - targetSectorAngle;
+  // 4) Учитываем, что стрелка у нас указывает вниз = 90°
+  const arrowAngle = 90;
 
-  // 5) наращиваем накопленный угол
+  // 5) Считаем приращение от текущих cumulativeRotation
+  const delta = spins*360 + (arrowAngle - targetSectorAngle);
+
+  // 6) Наращиваем накопленное
   cumulativeRotation += delta;
 
-  // 6) анимируем к этому абсолютному углу
+  // 7) Запускаем анимацию
   gsap.to('#wheelSvg', {
     duration: 6,
     rotation: cumulativeRotation,
