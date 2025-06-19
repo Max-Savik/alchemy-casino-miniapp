@@ -499,7 +499,6 @@ socket.on("state", s => {
   if (players.length === 0) {
     // Новый раунд: сбрасываем UI
     inventory.forEach(n => n.staked = false);
-    gsap.set('#wheelSvg', { rotation: 0 });
     lockBets(false);
     updateStatus();
   }
@@ -633,19 +632,18 @@ function runSpinAnimation(winner, spins){
     start += sweep;
   });
 
-  // 2) считаем, насколько относительно нужно добавить
-  //    (стрелка смотрит на 0°, поэтому минус mid)
+  // 2) сколько добавить: целые обороты минус смещение под «стрелку»
   const delta = 360 * spins - mid;
 
-  // 3) запускаем относительную анимацию
+  // 3) анимируем уже из текущего положения
   gsap.to('#wheelSvg', {
     duration: 6,
     rotation: `+=${delta}`,
-    transformOrigin: '50% 50%',
     ease: 'power4.out',
     onComplete: () => highlightWinner(winner)
   });
 }
+
 
 
 function lockBets(lock){
