@@ -539,13 +539,19 @@ socket.on("countdownTick", ({ remaining }) => {
   updateStatus(Math.ceil(remaining / 1000));
 });
 
-socket.on("spinStart", ({ players: list, winner }) => {
+socket.on("spinStart", ({ players: list, winner, spins, seed, commitHash }) => {
   players  = list;
   totalUSD = list.reduce((a,b) => a + b.value, 0);
   phase    = "spinning";
   lockBets(true);
   updateStatus();
-  runSpinAnimation(winner);
+
+  // Сохраняем для последующей проверки
+  fairEl.dataset.seed = seed;
+  fairEl.dataset.commit = commitHash;
+
+  // Запускаем анимацию, передав spins
+  runSpinAnimation(winner, spins);
 });
 
 socket.on("spinEnd", ({ winner, total, seed  }) => {
@@ -615,7 +621,8 @@ function highlightWinner(winner){
   });
 }
 
-function runSpinAnimation(winner){
+function runSpinAnimation(winner, spins){
+  // вычисляем средний угол победителя как раньше …
   const idx = players.indexOf(winner);
   let start = -90, mid = 0;
   players.forEach((p,i) => {
@@ -623,8 +630,7 @@ function runSpinAnimation(winner){
     if (i === idx) mid = start + sweep / 2;
     start += sweep;
   });
-  const seed = fairEl.dataset.seed;
-  const spins = 6 + (parseInt(seed.substr(0,2),16) % 4)
+
   const target = 360 * spins + (360 - mid);
   gsap.to('#wheelSvg', {
     duration: 6,
