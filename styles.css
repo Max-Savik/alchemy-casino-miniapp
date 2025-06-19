@@ -262,6 +262,11 @@ nav li {
     0 0 20px rgba(214, 176, 77, 0.35),
     0 0 40px rgba(214, 176, 77, 0.2);
 }
+/* Чтобы GSAP правильно понимал, где центр SVG */
+#wheelSvg {
+  transform-box: fill-box;       /* использовать «контейнер» SVG как область трансформации */
+  transform-origin: center center;
+}
 
 #cauldron {
     position: relative;
