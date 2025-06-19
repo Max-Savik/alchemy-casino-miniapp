@@ -492,6 +492,9 @@ socket.on("state", s => {
   totalUSD = s.totalUSD;
   phase    = s.phase;
 
+  window.players  = s.players;
+  window.totalUSD = s.totalUSD;
+
   if (players.length === 0) {
     // Новый раунд: сбрасываем UI
     inventory.forEach(n => n.staked = false);
@@ -525,6 +528,7 @@ socket.on("countdownStart", ({ endsAt, commitHash  }) => {
     if (commitHash) {
     document.getElementById("fairness").textContent =
       `Commit: ${commitHash}`;
+    fairEl.dataset.commit = commitHash;  
   }
   phase = "countdown";
   updateStatus(Math.ceil((endsAt - Date.now()) / 1000));
@@ -547,6 +551,7 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
   lockBets(false);
   phase = "waiting";
   updateStatus();
+  fairEl.dataset.seed = seed;
 
   // Собираем полную информацию о раунде:
   const record = {
@@ -579,6 +584,8 @@ async function sha256hex(str) {
 }
 
 async function verifyFairness(seed) {
+  const commit = fairEl.dataset.commit;
+  const seed   = fairEl.dataset.seed;
   const h = await sha256hex(seed);
   if (h !== document.getElementById("fairness").textContent.replace("Seed: ", "")) {
     return alert("Что-то не сходится: хэш не совпадает.");
@@ -619,6 +626,7 @@ function runSpinAnimation(winner){
   });
   const spins = 6 + Math.floor(Math.random() * 4);
   const target = 360 * spins + (360 - mid);
+  const hash2 = crypto.subtle ? /* SubtleCrypto-версия */ : /* fallback */;
   gsap.to('#wheelSvg', {
     duration: 6,
     rotation: target,
