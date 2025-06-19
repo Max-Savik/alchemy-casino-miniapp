@@ -624,7 +624,10 @@ function highlightWinner(winner){
 }
 
 function runSpinAnimation(winner, spins){
-  // вычисляем средний угол победителя как раньше …
+  // сброс
+  gsap.set('#wheelSvg', { rotation: 0 });
+
+  // находим средний угол сектора победителя
   const idx = players.indexOf(winner);
   let start = -90, mid = 0;
   players.forEach((p,i) => {
@@ -633,7 +636,9 @@ function runSpinAnimation(winner, spins){
     start += sweep;
   });
 
-  const target = 360 * spins + (360 - mid);
+  // так как стрелка у тебя смотрит на 0° (вверх), просто вычитаем mid
+  const target = 360 * spins - mid;
+
   gsap.to('#wheelSvg', {
     duration: 6,
     rotation: target,
@@ -641,6 +646,7 @@ function runSpinAnimation(winner, spins){
     onComplete: () => highlightWinner(winner)
   });
 }
+
 
 function lockBets(lock){
   placeBetBtn.disabled = lock;
