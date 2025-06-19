@@ -623,6 +623,7 @@ function runSpinAnimation(winner){
     if (i === idx) mid = start + sweep / 2;
     start += sweep;
   });
+  const seed = fairEl.dataset.seed;
   const spins = 6 + (parseInt(seed.substr(0,2),16) % 4)
   const target = 360 * spins + (360 - mid);
   gsap.to('#wheelSvg', {
