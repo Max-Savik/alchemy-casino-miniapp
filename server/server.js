@@ -7,6 +7,7 @@
 // ────────────────────────────────────────────────────────────────
 
 import express from "express";
+import crypto from "crypto";  
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
@@ -57,11 +58,26 @@ const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
 // ───────────────────── Game state (1 round) ────────────────────
-let game = { players: [], totalUSD: 0, phase: "waiting", endsAt: null };
+let game = {
+  players: [],
+  totalUSD: 0,
+  phase: "waiting",
+  endsAt: null,
+  seed: null,           // крипто-сид
+  commitHash: null      // sha256(seed)
+};
 
 // ───────────────────── Helper functions ────────────────────────
-function weightedPick() {
-  const ticket = Math.random() * game.totalUSD;
+// Дет. выбор на основе seed
+function weightedPickBySeed(seed) {
+  // получаем псевдослучай [0,1) из sha256(seed + "spin")
+  const hash = crypto
+    .createHash("sha256")
+    .update(seed + "spin")
+    .digest("hex")
+    .substr(0, 16);
+  const rnd = parseInt(hash, 16) / 0xffffffffffffffff;
+  const ticket = rnd * game.totalUSD;
   let acc = 0;
   for (const p of game.players) {
     acc += p.value;
@@ -71,7 +87,16 @@ function weightedPick() {
 }
 
 function resetRound() {
-  game = { players: [], totalUSD: 0, phase: "waiting", endsAt: null };
+  // 1) Новый сид для следующего раунда
+  const seed = crypto.randomBytes(16).toString("hex");
+  game = {
+    players: [],
+    totalUSD: 0,
+    phase: "waiting",
+    endsAt: null,
+    seed,
+    commitHash: crypto.createHash("sha256").update(seed).digest("hex")
+  };
   io.emit("state", game);
 }
 
@@ -79,7 +104,10 @@ function maybeStartCountdown() {
   if (game.phase !== "waiting" || game.players.length < 2) return;
   game.phase = "countdown";
   game.endsAt = Date.now() + 45_000;
-  io.emit("countdownStart", { endsAt: game.endsAt });
+  io.emit("countdownStart", {
+    endsAt: game.endsAt,
+    commitHash: game.commitHash      // публикуем хэш заранее
+  });
 
   const t = setInterval(() => {
     const left = game.endsAt - Date.now();
@@ -94,11 +122,19 @@ function maybeStartCountdown() {
 
 function startSpin() {
   game.phase = "spinning";
-  const winner = weightedPick();
-  io.emit("spinStart", { players: game.players, winner });
+  const winner = weightedPickBySeed(game.seed);
+     io.emit("spinStart", {
+    players: game.players,
+    winner,
+    commitHash: game.commitHash   // ещё раз на всякий
+   });
 
   setTimeout(() => {
-    io.emit("spinEnd", { winner, total: game.totalUSD });
+      io.emit("spinEnd", {
+      winner,
+      total: game.totalUSD,
+      seed: game.seed            // теперь раскрываем сид
+     });
 
     // ───── persist round to mounted disk ─────
     history.push({
