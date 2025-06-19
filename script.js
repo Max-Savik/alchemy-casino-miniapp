@@ -57,6 +57,7 @@ const priceValue    = document.getElementById('priceValue');
 const selectCount   = document.getElementById('selectCount');
 const countValue    = document.getElementById('countValue');
 const clearFiltersBtn = document.getElementById('clearFilters');
+const fairEl = document.getElementById("fairness");
 
 const selected = new Set();            // NFT, выбранные перед ставкой
 const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
@@ -583,7 +584,7 @@ async function sha256hex(str) {
     .join("");
 }
 
-async function verifyFairness(seed) {
+async function verifyFairness() {
   const commit = fairEl.dataset.commit;
   const seed   = fairEl.dataset.seed;
   const h = await sha256hex(seed);
