@@ -539,7 +539,11 @@ socket.on("countdownTick", ({ remaining }) => {
   updateStatus(Math.ceil(remaining / 1000));
 });
 
+let lastSpin = { players: [], seed: null };
+
 socket.on("spinStart", ({ players: list, winner, spins, seed, commitHash }) => {
+    lastSpin.players = list.map(p => ({ name: p.name, value: p.value }));
+  lastSpin.seed    = seed;
   players  = list;
   totalUSD = list.reduce((a,b) => a + b.value, 0);
   phase    = "spinning";
@@ -581,33 +585,31 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
   el.appendChild(btn);
 });
 
-// npm-style sha256 или из SubtleCrypto
-async function sha256hex(str) {
-  const buf = new TextEncoder().encode(str);
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
+async function sha256Hex(str) {
+  const buf = new TextEncoder().encode(str + "spin");
+  const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+  // берём первые 8 байт для 64-битного числа
+  const view = new DataView(hashBuf);
+  const hi = view.getUint32(0), lo = view.getUint32(4);
+  const rnd = (BigInt(hi) << 32n | BigInt(lo)) / (2n**64n - 1n);
+  return rnd; // число в [0,1)
+}
+async function weightedPickBySeed(seed, players) {
+  const rnd = await sha256Hex(seed);
+  const total = players.reduce((s,p) => s + p.value, 0);
+  const ticket = Number(rnd) * total;
+  let acc = 0;
+  for (const p of players) {
+    acc += p.value;
+    if (ticket <= acc) return p;
+  }
+  return players[players.length - 1];
 }
 
 async function verifyFairness() {
-  const commit = fairEl.dataset.commit;
-  const seed   = fairEl.dataset.seed;
-  const h = await sha256hex(seed);
-  if (h !== commit) return alert("Хэши не совпадают");
-  // воспроизведём выбор
-  // 1) получим псевдослучай
-  const hash16 = h.substr(0, 16);
-  const rnd = parseInt(hash16, 16) / 0xffffffffffffffff;
-  const total = window.totalUSD;         // сохраните глобально
-  const ticket = rnd * total;
-  // 2) найдём победителя
-  let acc = 0, picked;
-  window.players.forEach(p => {
-    acc += p.value;
-    if (!picked && ticket <= acc) picked = p;
-  });
-  alert(`Ожидаемый победитель: ${picked.name}`);
+  if (!lastSpin.seed) return alert("Нет данных о последнем спине.");
+  const winner = await weightedPickBySeed(lastSpin.seed, lastSpin.players);
+  alert(`Ожидаемый победитель: ${winner.name}`);
 }
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
