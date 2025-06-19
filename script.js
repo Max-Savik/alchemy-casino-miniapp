@@ -557,7 +557,7 @@ socket.on("spinStart", ({ players: list, winner, spins, seed, commitHash }) => {
   fairEl.dataset.commit = commitHash;
 
   // Запускаем анимацию, передав spins
-  (winner, spins);
+  runSpinAnimation(winner, spins);
 });
 
 socket.on("spinEnd", ({ winner, total, seed  }) => {
