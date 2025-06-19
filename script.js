@@ -588,9 +588,7 @@ async function verifyFairness() {
   const commit = fairEl.dataset.commit;
   const seed   = fairEl.dataset.seed;
   const h = await sha256hex(seed);
-  if (h !== document.getElementById("fairness").textContent.replace("Seed: ", "")) {
-    return alert("Что-то не сходится: хэш не совпадает.");
-  }
+  if (h !== commit) return alert("Хэши не совпадают");
   // воспроизведём выбор
   // 1) получим псевдослучай
   const hash16 = h.substr(0, 16);
@@ -625,9 +623,8 @@ function runSpinAnimation(winner){
     if (i === idx) mid = start + sweep / 2;
     start += sweep;
   });
-  const spins = 6 + Math.floor(Math.random() * 4);
+  const spins = 6 + (parseInt(seed.substr(0,2),16) % 4)
   const target = 360 * spins + (360 - mid);
-  const hash2 = crypto.subtle ? /* SubtleCrypto-версия */ : /* fallback */;
   gsap.to('#wheelSvg', {
     duration: 6,
     rotation: target,
