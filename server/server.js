@@ -99,6 +99,15 @@ function resetRound() {
   };
   io.emit("state", game);
 }
+// ───── utility: детерминированное float-rand из seed + salt ─────
+function rand01(seed, salt){
+  const h = crypto
+      .createHash("sha256")
+      .update(seed + salt)
+      .digest("hex")
+      .slice(0, 16);           // 64-бит = 16 hex
+  return parseInt(h, 16) / 0xffffffffffffffff;
+}
 
 function maybeStartCountdown() {
   if (game.phase !== "waiting" || game.players.length < 2) return;
@@ -127,10 +136,15 @@ function startSpin() {
   // Детерминируем число оборотов
   const spins = 6 + (parseInt(game.seed.substr(0,2), 16) % 4);
 
+  // угловой размер сектора победителя
+  const sliceDeg = (winner.value / game.totalUSD) * 360;
+  const offset   = 5 + rand01(game.seed, "offset") * (sliceDeg - 10); // 5° отступ от краёв
+  
   io.emit("spinStart", {
     players:    game.players,
     winner,
-    spins,                // ← новый параметр
+    spins,               
+    offsetDeg:  offset,
     seed:       game.seed,     // тоже удобнее передать сразу
     commitHash: game.commitHash
   });
