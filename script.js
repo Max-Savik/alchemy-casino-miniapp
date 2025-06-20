@@ -643,7 +643,7 @@ function runSpinAnimation(winner, spins, offsetDeg) {
 
   /* 4. Стрелка «смотрит» строго вверх ⇒ -90° в той же системе,
         потому что мы рисуем сектора от -90°.                  */
-  const arrowAngle = -90;
+  const arrowAngle = 0;
 
   /* 5. Минимальная корректура, чтобы совместить target и стрелку */
   let baseCorrection = (arrowAngle - targetSectorAngle - currentWheelDeg) % 360;
