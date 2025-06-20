@@ -543,7 +543,7 @@ socket.on("countdownTick", ({ remaining }) => {
 
 let lastSpin = { players: [], seed: null };
 
-socket.on("spinStart", ({ players: list, winner, spins, seed, commitHash }) => {
+socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitHash }) => {
     lastSpin.players = list.map(p => ({ name: p.name, value: p.value }));
   lastSpin.seed    = seed;
   players  = list;
@@ -557,7 +557,7 @@ socket.on("spinStart", ({ players: list, winner, spins, seed, commitHash }) => {
   fairEl.dataset.commit = commitHash;
 
   // Запускаем анимацию, передав spins
-  runSpinAnimation(winner, spins);
+  runSpinAnimation(winner, spins, offsetDeg);
 });
 
 socket.on("spinEnd", ({ winner, total, seed  }) => {
@@ -625,7 +625,7 @@ function highlightWinner(winner){
   });
 }
 
-function runSpinAnimation(winner, spins) {
+function runSpinAnimation(winner, spins, offsetDeg) {
   // 1) Найти угол старта и ширину сектора победителя
   let startAngle = -90;      // первый сектор рисуется от –90° (вверх)
   let sliceSize  = 0;
@@ -638,11 +638,7 @@ function runSpinAnimation(winner, spins) {
     startAngle += sweep;
   }
 
-  // 2) Выбрать случайный угол *внутри* этого сектора,
-  //    отступив по 5° от краёв, чтобы не попасть в швы
-  const minOffset    = 5;
-  const maxOffset    = sliceSize - 5;
-  const randomOffset = minOffset + Math.random() * (maxOffset - minOffset);
+  const randomOffset = offsetDeg;
 
   // 3) Вычислить угол центра "точки попадания" в системе –90°=вверх
   const targetSectorAngle = startAngle + randomOffset;
