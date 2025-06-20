@@ -626,29 +626,34 @@ function highlightWinner(winner){
 }
 
 function runSpinAnimation(winner, spins, offsetDeg) {
-  /* === ищем сектор победителя, как и раньше === */
-  let startAngle = -90;
+  /* 1. Находим начало сектора победителя в старой системе колеса */
+  let startAngle = -90;                     // первый сектор начинается «вверх»
   for (const p of players) {
     const sweep = (p.value / totalUSD) * 360;
     if (p.name === winner.name) break;
     startAngle += sweep;
   }
-  const targetSectorAngle = startAngle + offsetDeg;   // куда хотим «положить» стрелку
-  const arrowAngle        = -90;                      // сама стрелка
 
-  /* === учтём, что колесо уже повернуто === */
-  const currentWheelDeg = ((cumulativeRotation % 360) + 360) % 360; // 0…359
+  /* 2. Конкретная «точка попадания» внутри сектора */
+  const targetSectorAngle = startAngle + offsetDeg;   //  градусы колеса (до поворота)
 
-  // сколько ещё надо докрутить, чтобы сектор(!) оказался под стрелкой
-  let correction = arrowAngle - ((targetSectorAngle + currentWheelDeg) % 360);
+  /* 3. Где сейчас находится колесо? */
+  const currentWheelDeg =
+    ((cumulativeRotation % 360) + 360) % 360;         // всегда 0-359
 
-  // пусть едем только вперёд (по часовой) – добавим 360°, если нужно
-  if (correction < 0) correction += 360;
+  /* 4. Стрелка «смотрит» строго вверх ⇒ -90° в той же системе,
+        потому что мы рисуем сектора от -90°.                  */
+  const arrowAngle = -90;
 
-  // финальное приращение = полные обороты + корректировка
-  const delta = spins * 360 + correction;
+  /* 5. Минимальная корректура, чтобы совместить target и стрелку */
+  let baseCorrection = (arrowAngle - targetSectorAngle - currentWheelDeg) % 360;
+  if (baseCorrection < 0) baseCorrection += 360;      // делаем её неотрицательной
 
-  cumulativeRotation += delta;        // копим полный угол
+  /* 6. Итоговое приращение = полные обороты + корректура */
+  const delta = spins * 360 + baseCorrection;
+
+  /* 7. Запоминаем и анимируем */
+  cumulativeRotation += delta;
 
   gsap.to('#wheelSvg', {
     rotation: cumulativeRotation,
@@ -658,7 +663,6 @@ function runSpinAnimation(winner, spins, offsetDeg) {
     onComplete: () => highlightWinner(winner)
   });
 }
-
 
 function lockBets(lock){
   placeBetBtn.disabled = lock;
