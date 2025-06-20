@@ -626,44 +626,38 @@ function highlightWinner(winner){
 }
 
 function runSpinAnimation(winner, spins, offsetDeg) {
-  // 1) Найти угол старта и ширину сектора победителя
-  let startAngle = -90;      // первый сектор рисуется от –90° (вверх)
-  let sliceSize  = 0;
+  /* === ищем сектор победителя, как и раньше === */
+  let startAngle = -90;
   for (const p of players) {
     const sweep = (p.value / totalUSD) * 360;
-    if (p.name === winner.name) {
-      sliceSize = sweep;
-      break;
-    }
+    if (p.name === winner.name) break;
     startAngle += sweep;
   }
+  const targetSectorAngle = startAngle + offsetDeg;   // куда хотим «положить» стрелку
+  const arrowAngle        = -90;                      // сама стрелка
 
-  const randomOffset = offsetDeg;
+  /* === учтём, что колесо уже повернуто === */
+  const currentWheelDeg = ((cumulativeRotation % 360) + 360) % 360; // 0…359
 
-  // 3) Вычислить угол центра "точки попадания" в системе –90°=вверх
-  const targetSectorAngle = startAngle + randomOffset;
+  // сколько ещё надо докрутить, чтобы сектор(!) оказался под стрелкой
+  let correction = arrowAngle - ((targetSectorAngle + currentWheelDeg) % 360);
 
-  // 4) Угол нашей стрелки (вверх) тоже –90°
-  const arrowAngle = -90;
+  // пусть едем только вперёд (по часовой) – добавим 360°, если нужно
+  if (correction < 0) correction += 360;
 
-  // 5) Считаем приращение: spins×360 плюс корректировка
-  const delta = spins * 360 + (arrowAngle - targetSectorAngle);
+  // финальное приращение = полные обороты + корректировка
+  const delta = spins * 360 + correction;
 
-  // 6) Наращиваем накопленное
-  cumulativeRotation += delta;
+  cumulativeRotation += delta;        // копим полный угол
 
-  // 7) Анимируем SVG-колесо
   gsap.to('#wheelSvg', {
-    duration: 6,
     rotation: cumulativeRotation,
-    transformOrigin: '50% 50%',
+    duration: 6,
     ease: 'power4.out',
+    transformOrigin: '50% 50%',
     onComplete: () => highlightWinner(winner)
   });
 }
-
-
-
 
 
 function lockBets(lock){
