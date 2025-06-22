@@ -198,9 +198,63 @@ nftDiv.appendChild(priceBadge);
     });
 
     card.appendChild(participantsWrapper);
-    container.appendChild(card);
 
-    
+    /* ─────────── FAIRNESS BLOCK ─────────── */
+  if (record.seed && record.commitHash) {
+    const fair = document.createElement('details');
+    fair.className =
+      'bg-gray-900/50 rounded-md p-3 text-sm text-gray-300 select-text';
+
+    // Заголовок раскрывающегося блока
+    fair.innerHTML = `
+      <summary class="cursor-pointer text-amber-400 focus:outline-none">
+        Проверить честность
+      </summary>
+
+      <div class="mt-2 space-y-2">
+        <div><span class="text-gray-400">Commit&nbsp;(SHA-256):</span><br>
+             <code class="break-all">${record.commitHash}</code></div>
+
+        <div><span class="text-gray-400">Seed:</span><br>
+             <code class="break-all">${record.seed}</code></div>
+
+        <button class="verify-btn mt-1 px-2 py-1 bg-gray-700 hover:bg-gray-600
+                       rounded text-xs">
+          Верифицировать сейчас
+        </button>
+
+        <p class="verify-result text-xs text-emerald-400 hidden">
+          ✅&nbsp;hash совпал, сид честный
+        </p>
+        <p class="verify-result text-xs text-red-400 hidden">
+          ⚠️&nbsp;hash НЕ совпадает!
+        </p>
+      </div>
+    `;
+    card.appendChild(fair);
+
+    /*  — маленькая встройка SHA-256 в браузере —  */
+    fair.querySelector('.verify-btn').addEventListener('click', async () => {
+      const resOk   = fair.querySelectorAll('.verify-result')[0];
+      const resBad  = fair.querySelectorAll('.verify-result')[1];
+      resOk.classList.add('hidden');
+      resBad.classList.add('hidden');
+
+      const enc     = new TextEncoder().encode(record.seed);
+      const digest  = await crypto.subtle.digest('SHA-256', enc);
+      const hex     = Array.from(new Uint8Array(digest))
+                           .map(b => b.toString(16).padStart(2, '0'))
+                           .join('');
+
+      if (hex === record.commitHash.toLowerCase()) {
+        resOk.classList.remove('hidden');
+      } else {
+        resBad.classList.remove('hidden');
+      }
+    });
+  }
+
+  container.appendChild(card);  
 
     /* ── анимация появления ── */
     requestAnimationFrame(() => {
