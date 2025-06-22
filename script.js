@@ -102,7 +102,6 @@ const depositTONBtn = document.getElementById('depositTON');
 /* === Fair Play UI === */
 const fairBtn      = document.getElementById('fairBtn');
 const fairPanel    = document.getElementById('fairPanel');
-const commitShort  = document.getElementById('commitShort');
 const commitFull   = document.getElementById('commitFull');
 
 // Имя пользователя из Telegram
@@ -286,7 +285,6 @@ fairBtn.onclick = () => {
 // вывод commit-hash (короткий в кнопке, полный внутри)
 function setCommit(hash) {
   if (!hash) return;
-  commitShort.textContent = hash.slice(0, 6);
   commitFull.textContent  = hash;
 }
 
