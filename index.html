@@ -135,11 +135,15 @@
   <button id="fairBtn"
           class="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800/80
                  ring-1 ring-amber-500/40 hover:bg-gray-800/95 transition">
-    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"
-         stroke="#fbbf24" stroke-width="2" stroke-linecap="round"
-         stroke-linejoin="round">
-      <polyline points="6 9 12 15 18 9"/>
-    </svg>
+<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"
+     stroke="#fbbf24" stroke-width="2" stroke-linecap="round"
+     stroke-linejoin="round">
+  <!-- Задний документ -->
+  <path d="M5 15V5a2 2 0 0 1 2-2h8" />
+  <!-- Передний документ -->
+  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+</svg>
+
     <span id="commitShort" class="font-mono tracking-tight"></span>
   </button>
 
