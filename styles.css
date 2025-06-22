@@ -700,5 +700,6 @@ input[type=range]::-moz-range-thumb {
   transform-origin: center;
 }
 
-#fairPlay code { font-size: .7rem }
-#fairBtn.open svg { transform: rotate(180deg); }
+#fairCommit { backdrop-filter: blur(4px); }
+#copyCommit:active svg { transform: scale(0.9); }
+
