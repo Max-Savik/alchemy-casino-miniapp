@@ -699,3 +699,6 @@ input[type=range]::-moz-range-thumb {
 #toggleSort svg {
   transform-origin: center;
 }
+
+#fairPlay code { font-size: .7rem }
+#fairBtn.open svg { transform: rotate(180deg); }
