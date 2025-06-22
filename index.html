@@ -131,10 +131,11 @@
   </div>
 <!-- FAIR PLAY WIDGET -->
 <div id="fairPlay"
-     class="fixed top-2 right-2 select-none text-xs relative">
+     class="absolute top-2 right-2 z-20 select-none text-xs">
   <button id="fairBtn"
-          class="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800/80
-                 ring-1 ring-amber-500/40 hover:bg-gray-800/95 transition">
+                      class="flex items-center gap-1 px-2 py-1 rounded-lg
+                   bg-gray-800/80 ring-1 ring-amber-500/40
+                   hover:bg-gray-800/95 transition">
     <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"
          stroke="#fbbf24" stroke-width="2" stroke-linecap="round"
          stroke-linejoin="round">
@@ -146,8 +147,8 @@
   <!-- разворачиваемый блок -->
   <div id="fairPanel"
             class="hidden absolute top-full right-0 mt-1 w-72 p-3 space-y-2
-            bg-gray-900/95 rounded-xl ring-1 ring-amber-500/40
-            shadow-lg backdrop-blur-sm">
+                bg-gray-900/95 rounded-xl ring-1 ring-amber-500/40
+                shadow-lg backdrop-blur-sm">
 <p class="flex items-center gap-2">
   <span class="text-gray-400">Commit:</span>
   <code id="commitFull" class="break-all text-amber-300"></code>
