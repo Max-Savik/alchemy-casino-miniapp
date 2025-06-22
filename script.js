@@ -104,8 +104,6 @@ const fairBtn      = document.getElementById('fairBtn');
 const fairPanel    = document.getElementById('fairPanel');
 const commitShort  = document.getElementById('commitShort');
 const commitFull   = document.getElementById('commitFull');
-const seedVal      = document.getElementById('seedVal');
-const verifyBtn    = document.getElementById('verifyBtn');
 
 // Имя пользователя из Telegram
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
@@ -292,7 +290,6 @@ function setCommit(hash) {
   commitFull.textContent  = hash;
 }
 
-verifyBtn.onclick = () => verifyFairness(seedVal.textContent || null);
 
 // Обновляем UI: участников, колесо, picker, профиль
 function refreshUI() {
@@ -548,10 +545,21 @@ socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitH
   lockBets(true);
   updateStatus();
 
-  // Сохраняем для последующей проверки
-  seedVal.textContent = ""; 
   if (commitHash) setCommit(commitHash);
 
+const copyBtn = document.getElementById('copyCommit');
+if (copyBtn) {
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(commitFull.textContent)
+      .then(() => {
+        copyBtn.classList.add('text-emerald-400');
+        setTimeout(() => copyBtn.classList.remove('text-emerald-400'), 700);
+      })
+      .catch(() => alert('Не удалось скопировать'));
+  });
+}
+
+  
   // Запускаем анимацию, передав spins
   runSpinAnimation(winner, spins, offsetDeg);
 });
@@ -572,7 +580,6 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
     }))
   };
   addToHistory(record);
-  seedVal.textContent = seed;
 });
 
 // ───── byte-array → hex string helper ─────
