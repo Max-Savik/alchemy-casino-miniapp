@@ -157,12 +157,22 @@ function startSpin() {
      });
 
     // ───── persist round to mounted disk ─────
-    history.push({
-      timestamp: new Date().toISOString(),
-      winner: winner.name,
-      total: game.totalUSD,
-      participants: game.players.map(p => ({ name: p.name, nfts: p.nfts }))
-    });
+
+history.push({
+  timestamp: new Date().toISOString(),
+  winner:     winner.name,
+  total:      game.totalUSD,
+
+  /* === provable-fair data === */
+  commitHash: game.commitHash,   // sha256(seed)
+  seed:       game.seed,         // публикуем сид после спина
+
+  participants: game.players.map(p => ({
+    name: p.name,
+    nfts: p.nfts
+  }))
+});
+
     saveHistory().catch(console.error);
     // ─────────────────────────────────────────
 
