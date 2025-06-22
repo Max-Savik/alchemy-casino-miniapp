@@ -620,10 +620,11 @@ async function weightedPick(seed, players) {
   return players.at(-1);
 }
 
-async function verifyFairness() {
+async function verifyFairness(seedOverride = null) {
   if (!lastSpin.seed) return alert("Нет данных о последнем спине.");
 
-  const expected = await weightedPick(lastSpin.seed, lastSpin.players);
+  const seed = seedOverride || lastSpin.seed;
+  const expected = await weightedPick(seed, lastSpin.players);
 
   alert(
     `Ожидаемый победитель: ${expected.name}\n` +
@@ -632,6 +633,7 @@ async function verifyFairness() {
       : "✘ Не совпадает!")
   );
 }
+
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
 function highlightWinner(winner){
