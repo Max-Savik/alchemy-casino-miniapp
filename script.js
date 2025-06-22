@@ -546,6 +546,7 @@ let lastSpin = { players: [], seed: null };
 socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitHash }) => {
     lastSpin.players = list.map(p => ({ name: p.name, value: p.value }));
   lastSpin.seed    = seed;
+  lastSpin.serverWinner = winner.name; 
   players  = list;
   totalUSD = list.reduce((a,b) => a + b.value, 0);
   phase    = "spinning";
