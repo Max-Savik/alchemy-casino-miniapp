@@ -471,7 +471,6 @@ clearFiltersBtn.addEventListener('click', () => {
   priceValue.textContent = priceRange.value;
 
   // 3) обнулить селектор количества
-  selectCountN = 0;
   selectCount.value = 0;
   countValue.textContent = '0';
 
@@ -545,20 +544,6 @@ socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitH
   lockBets(true);
   updateStatus();
 
-  if (commitHash) setCommit(commitHash);
-
-const copyBtn = document.getElementById('copyCommit');
-if (copyBtn) {
-  copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(commitFull.textContent)
-      .then(() => {
-        copyBtn.classList.add('text-emerald-400');
-        setTimeout(() => copyBtn.classList.remove('text-emerald-400'), 700);
-      })
-      .catch(() => alert('Не удалось скопировать'));
-  });
-}
-
   
   // Запускаем анимацию, передав spins
   runSpinAnimation(winner, spins, offsetDeg);
@@ -614,19 +599,6 @@ async function weightedPick(seed, players) {
   return players.at(-1);
 }
 
-async function verifyFairness(seedOverride = null) {
-  if (!lastSpin.seed) return alert("Нет данных о последнем спине.");
-
-  const seed = seedOverride || lastSpin.seed;
-  const expected = await weightedPick(seed, lastSpin.players);
-
-  alert(
-    `Ожидаемый победитель: ${expected.name}\n` +
-    (expected.name === lastSpin.serverWinner
-      ? "✔ Совпадает с сервером"
-      : "✘ Не совпадает!")
-  );
-}
 
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
@@ -850,3 +822,17 @@ gsap.fromTo('#steam', { scale: .6, opacity: 0 }, {
 // ======================= INIT =======================
 show('game');
 refreshUI();
+
+
+// Навешиваем один раз
+const copyBtn = document.getElementById('copyCommit');
+if (copyBtn) {
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(commitFull.textContent)
+      .then(() => {
+        copyBtn.classList.add('text-emerald-400');
+        setTimeout(() => copyBtn.classList.remove('text-emerald-400'), 700);
+      })
+      .catch(() => alert('Не удалось скопировать'));
+  });
+}
