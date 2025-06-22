@@ -587,31 +587,49 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
   el.appendChild(btn);
 });
 
-async function sha256Hex(str) {
-  const buf = new TextEncoder().encode(str + "spin");
-  const hashBuf = await crypto.subtle.digest("SHA-256", buf);
-  // берём первые 8 байт для 64-битного числа
-  const view = new DataView(hashBuf);
-  const hi = view.getUint32(0), lo = view.getUint32(4);
-  const rnd = (BigInt(hi) << 32n | BigInt(lo)) / (2n**64n - 1n);
-  return rnd; // число в [0,1)
+// ───── byte-array → hex string helper ─────
+function bufToHex(buf) {
+  return [...new Uint8Array(buf)]
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
 }
-async function weightedPickBySeed(seed, players) {
-  const rnd = await sha256Hex(seed);
-  const total = players.reduce((s,p) => s + p.value, 0);
-  const ticket = Number(rnd) * total;
+
+/**
+ * Тот же самый rnd, что на сервере:
+ *   rnd = int( first16hex( sha256(seed + "spin") ) ) / 0xffffffffffffffff
+ */
+async function rndFromSeed(seed) {
+  const data = new TextEncoder().encode(seed + "spin");
+  const hashBuf = await crypto.subtle.digest("SHA-256", data);
+  const hex     = bufToHex(hashBuf).slice(0, 16); // первые 64 бита
+  return parseInt(hex, 16) / 0xffffffffffffffff;
+}
+
+/*  пересчитываем победителя 1-в-1 с сервером  */
+async function weightedPick(seed, players) {
+  const rnd   = await rndFromSeed(seed);
+  const total = players.reduce((s, p) => s + p.value, 0);
+  const ticket = rnd * total;
+
   let acc = 0;
   for (const p of players) {
     acc += p.value;
     if (ticket <= acc) return p;
   }
-  return players[players.length - 1];
+  return players.at(-1);
 }
 
 async function verifyFairness() {
   if (!lastSpin.seed) return alert("Нет данных о последнем спине.");
-  const winner = await weightedPickBySeed(lastSpin.seed, lastSpin.players);
-  alert(`Ожидаемый победитель: ${winner.name}`);
+
+  const expected = await weightedPick(lastSpin.seed, lastSpin.players);
+
+  alert(
+    `Ожидаемый победитель: ${expected.name}\n` +
+    (expected.name === lastSpin.serverWinner
+      ? "✔ Совпадает с сервером"
+      : "✘ Не совпадает!")
+  );
 }
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
