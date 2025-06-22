@@ -703,3 +703,4 @@ input[type=range]::-moz-range-thumb {
 #fairCommit { backdrop-filter: blur(4px); }
 #copyCommit:active svg { transform: scale(0.9); }
 
+#fairBtn {padding-right: 0.5rem;}
