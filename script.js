@@ -51,7 +51,6 @@ const inventory = [
 // Состояние фильтров
 let filterName   = "";
 let filterMaxPr  =  Infinity;
-let selectCountN = 0;
 
 // Селекторы для элементов управления
 const nftSearch     = document.getElementById('nftSearch');
@@ -60,7 +59,6 @@ const priceValue    = document.getElementById('priceValue');
 const selectCount   = document.getElementById('selectCount');
 const countValue    = document.getElementById('countValue');
 const clearFiltersBtn = document.getElementById('clearFilters');
-const fairEl = document.getElementById("fairness");
 
 const selected = new Set();            // NFT, выбранные перед ставкой
 const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
@@ -101,6 +99,13 @@ const tonAmountInput = document.getElementById('tonAmount');
 const placeTonBetBtn = document.getElementById('placeTonBet');
 const depositTONBtn = document.getElementById('depositTON');
 
+/* === Fair Play UI === */
+const fairBtn      = document.getElementById('fairBtn');
+const fairPanel    = document.getElementById('fairPanel');
+const commitShort  = document.getElementById('commitShort');
+const commitFull   = document.getElementById('commitFull');
+const seedVal      = document.getElementById('seedVal');
+const verifyBtn    = document.getElementById('verifyBtn');
 
 // Имя пользователя из Telegram
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
@@ -274,6 +279,21 @@ function drawWheel() {
   });
 }
 
+// переключаем панель
+fairBtn.onclick = () => {
+  fairPanel.classList.toggle('hidden');
+  fairBtn.classList.toggle('open');
+};
+
+// вывод commit-hash (короткий в кнопке, полный внутри)
+function setCommit(hash) {
+  if (!hash) return;
+  commitShort.textContent = hash.slice(0, 6);
+  commitFull.textContent  = hash;
+}
+
+verifyBtn.onclick = () => verifyFairness(seedVal.textContent || null);
+
 // Обновляем UI: участников, колесо, picker, профиль
 function refreshUI() {
   list.innerHTML = '';
@@ -423,7 +443,7 @@ wrapper.addEventListener('click', () => {
     list.appendChild(li);
   });
 
-  pot.textContent = formatNumber(totalUSD); + ' TON';
+  pot.textContent = `${formatNumber(totalUSD)} TON`;
   drawWheel();
   renderPicker();
   renderProfile();
@@ -439,24 +459,6 @@ priceRange.addEventListener('input', () => {
   const v = +priceRange.value;
   filterMaxPr = v;
   priceValue.textContent = v;
-  renderPicker();
-});
-
-// Слайдер массового выделения: берем первые N в текущем списке
-selectCount.addEventListener('input', () => {
-  const N = +selectCount.value;
-  countValue.textContent = N;
-
-  // очищаем прошлый выбор
-  selected.clear();
-
-  // сортируем по цене возрастанию и берём первые N
-  inventory
-    .filter(n => applyFilters(n))
-    .sort((a, b) => a.price - b.price) // теперь от дешёвых к дорогим
-    .slice(0, N)
-    .forEach(n => selected.add(n.id));
-
   renderPicker();
 });
 
@@ -505,10 +507,7 @@ socket.on("state", s => {
     lockBets(false);
     updateStatus();
   }
-  if (s.commitHash) {
-    document.getElementById("fairness").textContent =
-      `Commit: ${s.commitHash}`;
-  }
+  if (s.commitHash) setCommit(s.commitHash);
   refreshUI();
   // убираем оверлей и показываем страницу
   const overlay = document.getElementById('lottieOverlay');
@@ -528,11 +527,7 @@ requestAnimationFrame(() => {
 });
 
 socket.on("countdownStart", ({ endsAt, commitHash  }) => {
-    if (commitHash) {
-    document.getElementById("fairness").textContent =
-      `Commit: ${commitHash}`;
-    fairEl.dataset.commit = commitHash;  
-  }
+    if (commitHash) setCommit(commitHash);
   phase = "countdown";
   updateStatus(Math.ceil((endsAt - Date.now()) / 1000));
 });
@@ -554,8 +549,8 @@ socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitH
   updateStatus();
 
   // Сохраняем для последующей проверки
-  fairEl.dataset.seed = seed;
-  fairEl.dataset.commit = commitHash;
+  seedVal.textContent = ""; 
+  if (commitHash) setCommit(commitHash);
 
   // Запускаем анимацию, передав spins
   runSpinAnimation(winner, spins, offsetDeg);
@@ -565,7 +560,6 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
   lockBets(false);
   phase = "waiting";
   updateStatus();
-  fairEl.dataset.seed = seed;
 
   // Собираем полную информацию о раунде:
   const record = {
@@ -578,14 +572,7 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
     }))
   };
   addToHistory(record);
-    const el = document.getElementById("fairness");
-  el.textContent = `Seed: ${seed}`;
-    // добавляем кнопку «Проверить честность»
-  const btn = document.createElement("button");
-  btn.textContent = "Проверить честность";
-  btn.className = "mt-2 px-2 py-1 text-sm bg-gray-200 rounded";
-  btn.onclick = () => verifyFairness(seed);
-  el.appendChild(btn);
+  seedVal.textContent = seed;
 });
 
 // ───── byte-array → hex string helper ─────
