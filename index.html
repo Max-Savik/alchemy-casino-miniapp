@@ -129,26 +129,39 @@
     </div>
     <div class="pointer"></div>
   </div>
-<!-- FAIR COMMIT BADGE -->
-<div id="fairCommit"
-     class="absolute top-0 right-0 mt-2 mr-2 flex items-center gap-1
-            px-2 py-1 rounded-lg bg-gray-800/80 ring-1 ring-amber-500/40
-            text-xs font-mono select-none">
-  <span id="commitText"></span>
-
-  <!-- Кнопка копирования -->
-  <button id="copyCommit"
-          class="p-0.5 hover:bg-gray-700 rounded transition"
-          title="Скопировать">
-    <!-- any 14×14 copy icon -->
-    <svg width="14" height="14" fill="none" stroke="#fbbf24" stroke-width="2"
-         stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="8" height="8"/>
-      <polyline points="7 3 7 1 13 1 13 7 11 7"/>
+<!-- FAIR PLAY WIDGET -->
+<div id="fairPlay"
+     class="absolute top-0 right-0 mt-2 mr-2 select-none text-xs">
+  <button id="fairBtn"
+          class="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800/80
+                 ring-1 ring-amber-500/40 hover:bg-gray-800/95 transition">
+    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"
+         stroke="#fbbf24" stroke-width="2" stroke-linecap="round"
+         stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
     </svg>
+    <span id="commitShort" class="font-mono tracking-tight"></span>
   </button>
-</div>
 
+  <!-- разворачиваемый блок -->
+  <div id="fairPanel"
+       class="hidden mt-1 w-72 p-3 space-y-2 bg-gray-900/95 rounded-xl
+              ring-1 ring-amber-500/40 shadow-lg backdrop-blur-sm">
+    <p class="flex flex-col">
+      <span class="text-gray-400">Commit:</span>
+      <code id="commitFull" class="break-all text-amber-300"></code>
+    </p>
+    <p class="flex flex-col">
+      <span class="text-gray-400">Seed:</span>
+      <code id="seedVal" class="break-all text-emerald-400"></code>
+    </p>
+    <button id="verifyBtn"
+            class="w-full px-3 py-1.5 rounded-lg bg-amber-500/90
+                   hover:bg-amber-500 text-gray-900 font-semibold">
+      Проверить честность
+    </button>
+  </div>
+</div>
 
 <div
   id="potDisplay"
