@@ -147,19 +147,22 @@
   <div id="fairPanel"
        class="hidden mt-1 w-72 p-3 space-y-2 bg-gray-900/95 rounded-xl
               ring-1 ring-amber-500/40 shadow-lg backdrop-blur-sm">
-    <p class="flex flex-col">
-      <span class="text-gray-400">Commit:</span>
-      <code id="commitFull" class="break-all text-amber-300"></code>
-    </p>
-    <p class="flex flex-col">
-      <span class="text-gray-400">Seed:</span>
-      <code id="seedVal" class="break-all text-emerald-400"></code>
-    </p>
-    <button id="verifyBtn"
-            class="w-full px-3 py-1.5 rounded-lg bg-amber-500/90
-                   hover:bg-amber-500 text-gray-900 font-semibold">
-      Проверить честность
-    </button>
+<p class="flex items-center gap-2">
+  <span class="text-gray-400">Commit:</span>
+  <code id="commitFull" class="break-all text-amber-300"></code>
+
+  <!-- НОВАЯ кнопка -->
+  <button id="copyCommit"
+          class="shrink-0 hover:opacity-80 transition">
+    <!-- любой компактный clipboard-svg -->
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 2H8a2 2 0 0 0-2 2v4h2V4h8v4h2V4a2 2 0 0 0-2-2z"/>
+      <rect x="8" y="8" width="12" height="14" rx="2" ry="2"/>
+    </svg>
+  </button>
+</p>
   </div>
 </div>
 
