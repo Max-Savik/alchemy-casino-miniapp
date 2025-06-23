@@ -4,7 +4,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Админ – Golden Play</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="admin.js"></script>
+   <!-- 1. Telegram Web App API -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- 2. Ваш JS модулями (или defer, но после Telegram) -->
+  <script type="module" src="admin.js"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 p-4">
   <h1 class="text-3xl mb-6 font-['Cormorant_Garamond']">Панель администратора</h1>
@@ -24,6 +28,5 @@
     <table id="table" class="w-full text-sm border-separate border-spacing-y-2"></table>
   </div>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </body>
 </html>
