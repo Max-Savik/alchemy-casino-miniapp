@@ -2,23 +2,32 @@
 const API = 'https://alchemy-casino-miniapp.onrender.com';
 
 (async () => {
-  // ждём initData
+  // 1) ждём появления initData
   while (!window.Telegram?.WebApp?.initData) {
     await new Promise(r => setTimeout(r, 50));
   }
   const initDataRaw = window.Telegram.WebApp.initData;
-  const headers = { 'X-Tg-Init-Data-B64': btoa(initDataRaw) };   // 👈 base64!
+  const b64 = btoa(initDataRaw);
 
-  const apiFetch = (path, opt = {}) =>
-  fetch(`${API}${path}`, { ...opt, headers });
+  // 2) хелпер. Передаёт заголовок + возвращает fetch Promise
+  const apiFetch = (path, opts = {}) =>
+    fetch(`${API}${path}`, {
+      ...opts,
+      headers: { 'X-Tg-Init-Data-B64': b64 }
+    });
 
-  const res = await fetch(`${API}/admin/history`, { headers });
-  if (res.status === 401 || res.status === 403) {
+  // 3) запрос истории
+  const res = await apiFetch('/admin/history');
+  if (!res.ok) {
+    // если хоть что-то пошло не так — показываем «Доступ запрещён»
     document.getElementById('notAdmin').classList.remove('hidden');
     return;
   }
+
+  // 4) теперь безопасно парсим JSON
   const history = await res.json();
   document.getElementById('panel').classList.remove('hidden');
+
 
   /* ---------- таблица ---------- */
   const tbody = document.getElementById('table');
