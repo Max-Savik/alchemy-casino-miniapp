@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Админ – Golden Play</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="admin.js"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 p-4">
+  <h1 class="text-3xl mb-6 font-['Cormorant_Garamond']">Панель администратора</h1>
+
+  <div id="notAdmin" class="hidden text-red-400">Доступ запрещён</div>
+
+  <div id="panel" class="hidden space-y-6">
+    <div class="flex gap-3">
+      <button id="download" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1 rounded">
+        Скачать JSON
+      </button>
+      <button id="clear" class="bg-red-600 hover:bg-red-500 px-3 py-1 rounded">
+        Очистить историю
+      </button>
+    </div>
+
+    <table id="table" class="w-full text-sm border-separate border-spacing-y-2"></table>
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</body></html>
