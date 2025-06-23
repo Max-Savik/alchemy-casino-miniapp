@@ -1,14 +1,18 @@
+const API = 'https://alchemy-casino-miniapp.onrender.com';
+
 (async () => {
-  const initDataRaw = window.Telegram?.WebApp?.initData || '';
-  if (!initDataRaw) return;
+  // ждём, пока Telegram.WebApp появится
+  while (!window.Telegram?.WebApp?.initData) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+  const initDataRaw = window.Telegram.WebApp.initData;
 
-// admin.js
-const API = 'https://alchemy-casino-miniapp.onrender.com';   // тот же, что в history.js
+  /* ---------- удобный хелпер ---------- */
+  const qs = new URLSearchParams({ initData: initDataRaw }).toString();
+  const apiFetch = (path, opt = {}) => fetch(`${API}${path}?${qs}`, opt);
 
-const headers = { 'X-Telegram-Init-Data': initDataRaw };
-
-// ───── загрузка
-const res = await fetch(`${API}/admin/history`, { headers });
+  /* ---------- загрузка ---------- */
+  const res = await apiFetch('/admin/history');
   if (res.status === 401 || res.status === 403) {
     document.getElementById('notAdmin').classList.remove('hidden');
     return;
@@ -16,43 +20,44 @@ const res = await fetch(`${API}/admin/history`, { headers });
   const history = await res.json();
   document.getElementById('panel').classList.remove('hidden');
 
-  // заполнение таблицы
+  /* ---------- таблица ---------- */
   const tbody = document.getElementById('table');
+  if (!history.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="4" class="py-8 text-center text-gray-400">История пуста</td></tr>';
+  }
   history.forEach((rec, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="pr-3">${new Date(rec.timestamp).toLocaleString('ru')}</td>
       <td class="pr-3 text-amber-300">${rec.winner}</td>
       <td class="pr-3">${rec.total.toFixed(2)} TON</td>
-      <td>
-        <button data-idx="${i}" class="del bg-red-600 hover:bg-red-500 px-2 py-0.5 rounded">🗑</button>
-      </td>`;
+      <td><button data-idx="${i}"
+                  class="del bg-red-600 hover:bg-red-500 px-2 py-0.5 rounded">🗑</button></td>`;
     tbody.appendChild(tr);
   });
 
-  // скачать JSON
+  /* ---------- кнопки ---------- */
   document.getElementById('download').onclick = () => {
-    const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'history.json';
+    const blob = new Blob([JSON.stringify(history, null, 2)],
+                          { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob), download: 'history.json'
+    });
     a.click();
   };
 
-  // очистка истории
   document.getElementById('clear').onclick = async () => {
-    if (!confirm('Очистить всю историю безвозвратно?')) return;
-    await fetch(`${API}/admin/history/clear`, { method: 'POST', headers });
+    if (!confirm('Очистить всю историю?')) return;
+    await apiFetch('/admin/history/clear', { method: 'POST' });
     location.reload();
   };
 
-  // удаление одной записи
   tbody.addEventListener('click', async e => {
-    if (e.target.matches('.del')) {
-      const idx = e.target.dataset.idx;
-      if (!confirm('Удалить запись?')) return;
-      await fetch(`${API}/admin/history/${idx}`, { method: 'DELETE', headers });
-      location.reload();
-    }
+    if (!e.target.matches('.del')) return;
+    const idx = e.target.dataset.idx;
+    if (!confirm('Удалить запись?')) return;
+    await apiFetch(`/admin/history/${idx}`, { method: 'DELETE' });
+    location.reload();
   });
 })();
