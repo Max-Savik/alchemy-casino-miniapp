@@ -8,8 +8,12 @@ const admins = ADMIN_IDS.split(',').map(x => x.trim());
 
 /** Проверяем, что запрос от Telegram и user.id — админ */
 export function verifyAdmin(req, res, next) {
-  const initData = req.headers['x-telegram-init-data'] || '';
+  const initData = req.headers['x-telegram-init-data']
+                || req.query.initData
+                || '';
+
   try {
+    // если пришло из query, оно уже декодировано Express-ом
     const url = new URLSearchParams(initData);
     const hash = url.get('hash');
     url.delete('hash');
