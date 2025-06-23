@@ -7,28 +7,25 @@ const { TELEGRAM_BOT_TOKEN, ADMIN_IDS = '' } = process.env;
 const admins = ADMIN_IDS.split(',').map(x => x.trim());
 
 export function verifyAdmin(req, res, next) {
-  // ① берём initData либо из заголовка, либо из query
   let raw = req.headers['x-telegram-init-data']
-         || req.query.initData
-         || '';
-
-  // ② если пришло из query → Express уже один раз раскодировал %3D → '='
-  //    но внутри всё ещё закодировано вторым слоем.  Декодируем сами ↓
-  if (req.query.initData) raw = decodeURIComponent(raw);
+          || req.query.initData
+          || '';
+  if (req.query.initData) raw = decodeURIComponent(raw);     // ← снимаем 1 слой
 
   try {
-    const url = new URLSearchParams(raw);      // теперь строка правильная
+    const url  = new URLSearchParams(raw);
     const hash = url.get('hash');
     url.delete('hash');
 
+    /* ---------- HMAC проверки ---------- */
     const dataCheckString = [...url.entries()]
-      .map(([k, v]) => `${k}=${v}`)
+      .map(([k, v]) => `${k}=${v}`)     // NB: user-value остаётся %7B…%7D
       .sort()
       .join('\n');
 
     const secretKey = crypto
       .createHmac('sha256', 'WebAppData')
-      .update(TELEGRAM_BOT_TOKEN)
+      .update(process.env.TELEGRAM_BOT_TOKEN)
       .digest();
 
     const calcHash = crypto
@@ -38,15 +35,18 @@ export function verifyAdmin(req, res, next) {
 
     if (calcHash !== hash) return res.status(401).end('bad hash');
 
-    const user = JSON.parse(url.get('user') || '{}');
+    /* ---------- достаём объект user ---------- */
+    const userRaw = url.get('user') || '%7B%7D';              // %7B%7D = {}
+    const user    = JSON.parse(decodeURIComponent(userRaw));  // ← снимаем ОДИН слой
     if (!admins.includes(String(user.id))) {
       return res.status(403).end('not an admin');
     }
 
-    req.tgUser = user;
+    req.tgUser = user;        // логировать удобно
     next();
   } catch (e) {
     console.error('initData parse error:', e);
     res.status(400).end('bad initData');
   }
 }
+
