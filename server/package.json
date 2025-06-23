@@ -1,10 +1,14 @@
 {
   "name": "golden-jackpot-server",
   "version": "1.0.0",
-  "scripts": { "start": "node server.js" },
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "express": "^4.19.2",
-    "cors": "^2.8.5", 
-    "socket.io": "^4.7.2"
+    "cors": "^2.8.5",
+    "socket.io": "^4.7.2",
+    "dotenv": "^16.4.1"
   }
 }
