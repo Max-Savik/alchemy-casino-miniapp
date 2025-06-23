@@ -180,6 +180,29 @@ history.push({
   }, 6_000);
 }
 
+import { verifyAdmin } from './auth.js';
+
+app.get('/admin/history', verifyAdmin, (req, res) => {
+  res.json(history);                       // просто отдаём текущий массив
+});
+
+app.post('/admin/history/clear', verifyAdmin, async (req, res) => {
+  history = [];
+  await saveHistory();
+  res.json({ ok: true });
+});
+
+app.delete('/admin/history/:idx', verifyAdmin, async (req, res) => {
+  const i = Number(req.params.idx);
+  if (Number.isNaN(i) || i < 0 || i >= history.length)
+    return res.status(400).end('bad index');
+
+  history.splice(i, 1);
+  await saveHistory();
+  res.json({ ok: true });
+});
+
+
 // ───────────────────── Socket handlers ─────────────────────────
 io.on("connection", socket => {
   socket.emit("state", game);
