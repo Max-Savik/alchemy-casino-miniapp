@@ -834,3 +834,22 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
+(() => {
+  // ⚠️  НЕ ради защиты — только UX.  Полная проверка делается на сервере.
+  const adminIds = ['1279332372'];  
+
+  const tg = window.Telegram?.WebApp;
+  const uid = tg?.initDataUnsafe?.user?.id;
+  if (!uid) return;              // сайт не в WebApp → нет данных
+
+  if (adminIds.includes(String(uid))) {
+    const btn = document.getElementById('adminBtn');
+    btn.classList.remove('hidden');
+    btn.onclick = () => {
+      // передаём initData, чтобы сервер сразу проверил подпись
+      const qs = new URLSearchParams({ initData: tg.initData }).toString();
+      window.location.href = `admin.html?${qs}`;
+    };
+  }
+})();
