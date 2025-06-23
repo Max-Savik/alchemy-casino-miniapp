@@ -9,6 +9,9 @@ const API = 'https://alchemy-casino-miniapp.onrender.com';
   const initDataRaw = window.Telegram.WebApp.initData;
   const headers = { 'X-Tg-Init-Data-B64': btoa(initDataRaw) };   // 👈 base64!
 
+  const apiFetch = (path, opt = {}) =>
+  fetch(`${API}${path}`, { ...opt, headers });
+
   const res = await fetch(`${API}/admin/history`, { headers });
   if (res.status === 401 || res.status === 403) {
     document.getElementById('notAdmin').classList.remove('hidden');
