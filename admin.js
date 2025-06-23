@@ -2,11 +2,13 @@
   const initDataRaw = window.Telegram?.WebApp?.initData || '';
   if (!initDataRaw) return;
 
-  // поместим initData в заголовок
-  const headers = { 'X-Telegram-Init-Data': initDataRaw };
+// admin.js
+const API = 'https://alchemy-casino-miniapp.onrender.com';   // тот же, что в history.js
 
-  // проверяем право доступа
-  const res = await fetch('/admin/history', { headers });
+const headers = { 'X-Telegram-Init-Data': initDataRaw };
+
+// ───── загрузка
+const res = await fetch(`${API}/admin/history`, { headers });
   if (res.status === 401 || res.status === 403) {
     document.getElementById('notAdmin').classList.remove('hidden');
     return;
@@ -40,7 +42,7 @@
   // очистка истории
   document.getElementById('clear').onclick = async () => {
     if (!confirm('Очистить всю историю безвозвратно?')) return;
-    await fetch('/admin/history/clear', { method: 'POST', headers });
+    await fetch(`${API}/admin/history/clear`, { method: 'POST', headers });
     location.reload();
   };
 
@@ -49,7 +51,7 @@
     if (e.target.matches('.del')) {
       const idx = e.target.dataset.idx;
       if (!confirm('Удалить запись?')) return;
-      await fetch(`/admin/history/${idx}`, { method: 'DELETE', headers });
+      await fetch(`${API}/admin/history/${idx}`, { method: 'DELETE', headers });
       location.reload();
     }
   });
