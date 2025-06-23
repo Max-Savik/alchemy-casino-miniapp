@@ -35,7 +35,7 @@ async function loadHistory() {
   try {
     const txt = await fs.readFile(HISTORY_FILE, "utf8");
     history = JSON.parse(txt);
-    console.log(Loaded ${history.length} history records.);
+    console.log(`Loaded ${history.length} history records.`);
   } catch (e) {
     if (e.code !== "ENOENT") console.error("History read error:", e);
     history = []; // файл ещё не создан – начинаем с пустого массива
