@@ -6,15 +6,18 @@ dotenv.config();
 const { TELEGRAM_BOT_TOKEN, ADMIN_IDS = '' } = process.env;
 const admins = ADMIN_IDS.split(',').map(x => x.trim());
 
-/** Проверяем, что запрос от Telegram и user.id — админ */
 export function verifyAdmin(req, res, next) {
-  const initData = req.headers['x-telegram-init-data']
-                || req.query.initData
-                || '';
+  // ① берём initData либо из заголовка, либо из query
+  let raw = req.headers['x-telegram-init-data']
+         || req.query.initData
+         || '';
+
+  // ② если пришло из query → Express уже один раз раскодировал %3D → '='
+  //    но внутри всё ещё закодировано вторым слоем.  Декодируем сами ↓
+  if (req.query.initData) raw = decodeURIComponent(raw);
 
   try {
-    // если пришло из query, оно уже декодировано Express-ом
-    const url = new URLSearchParams(initData);
+    const url = new URLSearchParams(raw);      // теперь строка правильная
     const hash = url.get('hash');
     url.delete('hash');
 
@@ -23,7 +26,6 @@ export function verifyAdmin(req, res, next) {
       .sort()
       .join('\n');
 
-    // 🔑 секрет = HMAC(botToken, 'WebAppData')
     const secretKey = crypto
       .createHmac('sha256', 'WebAppData')
       .update(TELEGRAM_BOT_TOKEN)
@@ -41,11 +43,10 @@ export function verifyAdmin(req, res, next) {
       return res.status(403).end('not an admin');
     }
 
-    req.tgUser = user;           // можно логировать, если нужно
+    req.tgUser = user;
     next();
   } catch (e) {
     console.error('initData parse error:', e);
     res.status(400).end('bad initData');
   }
 }
-
