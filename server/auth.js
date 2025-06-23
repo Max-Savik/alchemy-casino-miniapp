@@ -3,53 +3,46 @@ import dotenv  from 'dotenv';
 dotenv.config();
 
 const { TELEGRAM_BOT_TOKEN, ADMIN_IDS = '' } = process.env;
-const admins = ADMIN_IDS.split(',').map(s => s.trim());
+const admins = ADMIN_IDS.split(',').map(x => x.trim());
 
 export function verifyAdmin(req, res, next) {
-  /* 1. Берём initData: заголовок → query → '' */
-  let raw = req.headers['x-telegram-init-data']
-         || req.query.initData
-         || '';
+  /* 1. Берём base64-заголовок */
+  const b64 = req.headers['x-tg-init-data-b64'];
+  if (!b64) return res.status(400).end('missing initData');
 
-  /* 2. Если пришёл через query, снимаем ОДИН слой кодировки */
-  if (req.query.initData) {
-    try { raw = decodeURIComponent(raw); }               // user=%7B…%7D&hash=…
-    catch { return res.status(400).end('bad initData'); }
+  let raw;
+  try {
+    raw = Buffer.from(b64, 'base64').toString('utf8');   // ← точная строка от Telegram
+  } catch {
+    return res.status(400).end('bad initData');
   }
 
   try {
-    /* 3. Разобрали строку 👉 key=value */
     const url  = new URLSearchParams(raw);
     const hash = url.get('hash');
     url.delete('hash');
 
-    /* 4. Готовим data_check_string (значения ещё URL-encoded!) */
+    /* -- HMAC -- */
     const dcs = [...url.entries()]
-      .map(([k, v]) => `${k}=${v}`)
+      .map(([k,v]) => `${k}=${v}`)
       .sort()
       .join('\n');
 
-    const secretKey = crypto
+    const secret = crypto
       .createHmac('sha256', 'WebAppData')
       .update(TELEGRAM_BOT_TOKEN)
       .digest();
 
-    const calcHash = crypto
-      .createHmac('sha256', secretKey)
-      .update(dcs)
-      .digest('hex');
+    const calc  = crypto.createHmac('sha256', secret).update(dcs).digest('hex');
+    if (calc !== hash) return res.status(401).end('bad hash');
 
-    if (calcHash !== hash) return res.status(401).end('bad hash');
-
-    /* 5. Извлекаем user: ДЕКОДИРУЕМ ОДИН РАЗ перед JSON.parse */
-    const userJson = decodeURIComponent(url.get('user') || '%7B%7D');
-    const user     = JSON.parse(userJson);
-
+    /* -- user -- */
+    const user = JSON.parse(decodeURIComponent(url.get('user') || '%7B%7D'));
     if (!admins.includes(String(user.id))) {
       return res.status(403).end('not an admin');
     }
 
-    req.tgUser = user;            // можно логировать, если хотите
+    req.tgUser = user;
     next();
   } catch (e) {
     console.error('initData parse error:', e);
