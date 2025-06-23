@@ -1,18 +1,15 @@
+// admin.js
 const API = 'https://alchemy-casino-miniapp.onrender.com';
 
 (async () => {
-  // ждём, пока Telegram.WebApp появится
+  // ждём initData
   while (!window.Telegram?.WebApp?.initData) {
     await new Promise(r => setTimeout(r, 50));
   }
   const initDataRaw = window.Telegram.WebApp.initData;
+  const headers = { 'X-Tg-Init-Data-B64': btoa(initDataRaw) };   // 👈 base64!
 
-  /* ---------- удобный хелпер ---------- */
-  const qs = new URLSearchParams({ initData: initDataRaw }).toString();
-  const apiFetch = (path, opt = {}) => fetch(`${API}${path}?${qs}`, opt);
-
-  /* ---------- загрузка ---------- */
-  const res = await apiFetch('/admin/history');
+  const res = await fetch(`${API}/admin/history`, { headers });
   if (res.status === 401 || res.status === 403) {
     document.getElementById('notAdmin').classList.remove('hidden');
     return;
