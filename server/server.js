@@ -22,6 +22,13 @@ const PORT      = process.env.PORT || 3000;
 const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render disk
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 
+import dotenv from 'dotenv';
+dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
+
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
+if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
+
+
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
 
@@ -179,6 +186,48 @@ history.push({
     setTimeout(resetRound, 6_000);
   }, 6_000);
 }
+
+// ─── middleware для /admin/* ──────────────
+function adminAuth(req, res, next) {
+  const token = req.get('X-Admin-Token');
+  if (token !== ADMIN_TOKEN) return res.sendStatus(403);
+  next();
+}
+
+// ─── admin-роуты ──────────────────────────
+const admin = express.Router();
+admin.use(adminAuth);
+
+// 1) Скачать history.json
+admin.get('/history/download', async (req, res) => {
+  await saveHistory();                       // убедимся, что последнее состояние записано
+  res.download(HISTORY_FILE, 'history.json');
+});
+
+// 2) Очистить историю (с резервной копией)
+admin.post('/history/clear', async (req, res) => {
+  const backup = HISTORY_FILE + '.' + Date.now() + '.bak';
+  await fs.copyFile(HISTORY_FILE, backup).catch(() => {});  // silently skip if нет файла
+  history = [];
+  await saveHistory();
+  res.json({ ok: true, backup });
+});
+
+// 3) Краткая статистика (топ победителей)
+admin.get('/history/top', (req, res) => {
+  const topN = Number(req.query.n || 10);
+  const map = new Map();
+  for (const rec of history) {
+    map.set(rec.winner, (map.get(rec.winner) || 0) + rec.total);
+  }
+  const top = [...map.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([name, sum]) => ({ name, sum }));
+  res.json(top);
+});
+
+app.use('/admin', admin);
 
 // ───────────────────── Socket handlers ─────────────────────────
 io.on("connection", socket => {
