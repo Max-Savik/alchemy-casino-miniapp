@@ -227,6 +227,76 @@ admin.get('/history/top', (req, res) => {
   res.json(top);
 });
 
+/* 4) Игровая статистика конкретного игрока
+   GET /admin/history/player?name=Alice */
+admin.get('/history/player', (req, res) => {
+  const qName = (req.query.name || '').trim();
+  if (!qName) return res.status(400).json({ error: 'name empty' });
+
+  let games = 0, wins = 0;
+  for (const rec of history) {
+    if (rec.participants.some(p => p.name === qName)) games++;
+    if (rec.winner === qName) wins++;
+  }
+  const winPct = games ? (wins / games) * 100 : 0;
+  res.json({ name: qName, games, wins, winPct });
+});
+
+/* 5) Сделать «голый» backup history.json */
+admin.post('/history/backup', async (_req, res) => {
+  const backup = HISTORY_FILE + '.' + Date.now() + '.bak';
+  await fs.copyFile(HISTORY_FILE, backup);
+  res.json({ backup: path.basename(backup) });
+});
+
+/* 6) Prune — удалить записи старше N дней (с бэкапом)           
+   POST /admin/history/prune?days=30 */
+admin.post('/history/prune', async (req, res) => {
+  const days = Number(req.query.days);
+  if (!days || days <= 0) return res.status(400).json({ error: 'days required' });
+
+  // 1) backup
+  const backup = HISTORY_FILE + '.' + Date.now() + '.bak';
+  await fs.copyFile(HISTORY_FILE, backup).catch(() => {});
+  
+  // 2) prune
+  const cutoff = Date.now() - days * 86_400_000;
+  const before = history.length;
+  history = history.filter(r => new Date(r.timestamp).getTime() >= cutoff);
+  await saveHistory();
+
+  res.json({
+    removed: before - history.length,
+    left: history.length,
+    backup: path.basename(backup)
+  });
+});
+
+/* 7) Restore бэкапа
+   POST /admin/history/restore?id=history.json.1719226800000.bak */
+admin.post('/history/restore', async (req, res) => {
+  const id = (req.query.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'id required' });
+
+  const file = path.join(DATA_DIR, id);
+  try {
+    const txt = await fs.readFile(file, 'utf8');
+    history = JSON.parse(txt);
+    await saveHistory();      // перезаписываем актуальный history.json
+    res.json({ ok: true, restored: id, count: history.length });
+  } catch (e) {
+    res.status(404).json({ error: 'backup not found' });
+  }
+});
+
+/* 8) Скачать любой backup по id
+   GET /admin/history/download?id=history.json.1719226800000.bak      */
+admin.get('/history/download', async (req, res) => {
+  const id = (req.query.id || '').trim() || 'history.json';
+  const file = path.join(DATA_DIR, id);
+  res.download(file).catch(() => res.sendStatus(404));
+});
+
 app.use('/admin', admin);
 
 // ───────────────────── Socket handlers ─────────────────────────
