@@ -28,6 +28,39 @@ dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
 
+const BOT_TOKEN = process.env.BOT_TOKEN;
+if (!BOT_TOKEN) throw new Error('BOT_TOKEN not set');
+
+function verifyInitData(initData) {
+  try {
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    if (!hash) return null;
+
+    const dataCheck = [...params.entries()]
+      .filter(([k]) => k !== 'hash')
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n');
+
+    const secret = crypto
+      .createHash('sha256')
+      .update(BOT_TOKEN)
+      .digest();
+
+    const check = crypto
+      .createHmac('sha256', secret)
+      .update(dataCheck)
+      .digest('hex');
+
+    if (check !== hash) return null;
+    const userStr = params.get('user');
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
+    return null;
+  }
+}
+
 
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
@@ -63,6 +96,14 @@ app.get("/history", (req, res) => res.json(history));
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
+
+io.use((socket, next) => {
+  const initData = socket.handshake.query.initData || '';
+  const user = verifyInitData(initData);
+  if (!user) return next(new Error('auth failed'));
+  socket.user = user;
+  next();
+});
 
 // ───────────────────── Game state (1 round) ────────────────────
 let game = {
@@ -278,6 +319,8 @@ admin.post('/history/restore', async (req, res) => {
   const id = (req.query.id || '').trim();
   if (!id) return res.status(400).json({ error: 'id required' });
 
+  if (id !== path.basename(id)) return res.status(400).json({ error: 'invalid id' });
+
   const file = path.join(DATA_DIR, id);
   try {
     const txt = await fs.readFile(file, 'utf8');
@@ -293,6 +336,7 @@ admin.post('/history/restore', async (req, res) => {
    GET /admin/history/download?id=history.json.1719226800000.bak      */
 admin.get('/history/download', async (req, res) => {
   const id = (req.query.id || '').trim() || 'history.json';
+  if (id !== path.basename(id)) return res.status(400).json({ error: 'invalid id' });
   const file = path.join(DATA_DIR, id);
   res.download(file).catch(() => res.sendStatus(404));
 });
@@ -303,7 +347,14 @@ app.use('/admin', admin);
 io.on("connection", socket => {
   socket.emit("state", game);
 
-socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
+socket.on("placeBet", ({ nfts = [], tonAmount = 0 }) => {
+  const user = socket.user || {};
+  const name = user.username || [user.first_name, user.last_name].filter(Boolean).join(' ');
+
+  if (!Array.isArray(nfts)) nfts = [];
+  nfts = nfts.filter(x => x && typeof x.id === 'string' && typeof x.price === 'number' && x.price >= 0);
+  tonAmount = typeof tonAmount === 'number' && tonAmount > 0 ? tonAmount : 0;
+
   let player = game.players.find(p => p.name === name);
   if (!player) {
     player = {
@@ -317,8 +368,8 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
   // сумма NFT + TON
   const nftSum = nfts.reduce((s, x) => s + x.price, 0);
 
-  player.value     += nftSum + tonAmount;
-  game.totalUSD    += nftSum + tonAmount;
+  player.value  += nftSum + tonAmount;
+  game.totalUSD += nftSum + tonAmount;
   nfts.forEach(x => player.nfts.push(x));
 
   io.emit("state", game);
