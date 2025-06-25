@@ -74,6 +74,16 @@ app.use(cors());
 app.use(express.static(__dirname));   // раздаём фронт
 app.get("/history", (req, res) => res.json(history));
 
+  // ── Новый роут: получить баланс пользователя ─────────────────
+  // GET /balance?name=<username>
+  app.get('/balance', (req, res) => {
+    const name = (req.query.name||'').trim();
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const bal = balances.get(name) || 0n;
+    // возвращаем в строковом виде, чтобы не потерять BigInt
+    res.json({ balance: bal.toString() });
+  });
+
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
@@ -364,16 +374,18 @@ socket.on('depositTonHash', async ({name, hash, amount})=>{
 });
 
 async function waitTxConfirm(hash){
-  let attempts = 12;
-  while(attempts--){
-    const r = await axios.get(
-      `${process.env.TON_API}/blockchain/messages/${hash}/transaction`,
-      { headers:{'X-API-Key':process.env.TON_API_KEY}}
-    ).catch(()=>null);
-    if(r?.data?.transaction) return true;
-    await new Promise(r=>setTimeout(r, 5000));
+  const url = `${process.env.TON_API}/v2/blockchain/transactions/${hash}`;
+  for(let i=0; i<12; i++){
+    const resp = await axios.get(url, {
+      headers: {'X-API-Key': process.env.TON_API_KEY}
+    }).catch(()=>null);
+    if (resp?.data?.status === 'applied') {
+      return true;
+    }
+    // ждём 5 секунд и пробуем снова
+    await new Promise(r => setTimeout(r, 5000));
   }
-  throw 'TX_NOT_FOUND';
+  throw new Error('TX_NOT_CONFIRMED');
 }
 
 app.post('/withdraw', async (req,res)=>{
