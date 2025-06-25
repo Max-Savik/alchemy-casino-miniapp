@@ -21,10 +21,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT      = process.env.PORT || 3000;
 const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render disk
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
-const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
-
-const SERVER_WALLET = process.env.SERVER_WALLET || '';
-const WALLET_SECRET = process.env.WALLET_SECRET || '';
 
 import dotenv from 'dotenv';
 dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
@@ -59,53 +55,11 @@ async function saveHistory() {
   await fs.rename(tmp, HISTORY_FILE);
 }
 
-// ─────────────────── Balances helpers ──────────────────────────
-let balances = {};
-async function loadBalances() {
-  try {
-    const txt = await fs.readFile(BALANCES_FILE, 'utf8');
-    balances = JSON.parse(txt);
-    console.log(`Loaded balances for ${Object.keys(balances).length} users.`);
-  } catch (e) {
-    if (e.code !== 'ENOENT') console.error('Balances read error:', e);
-    balances = {};
-  }
-}
-
-async function saveBalances() {
-  const tmp = BALANCES_FILE + '.tmp';
-  await fs.writeFile(tmp, JSON.stringify(balances, null, 2));
-  await fs.rename(tmp, BALANCES_FILE);
-}
-
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
 app.use(cors());
-app.use(express.json());
 app.use(express.static(__dirname));   // раздаём фронт
 app.get("/history", (req, res) => res.json(history));
-
-// ----- TON balance endpoints -----
-app.post('/deposit', async (req, res) => {
-  const { user, amount } = req.body || {};
-  const val = Number(amount);
-  if (!user || !val || val <= 0) return res.status(400).json({ error: 'invalid params' });
-  balances[user] = (balances[user] || 0) + val;
-  await saveBalances();
-  res.json({ ok: true, balance: balances[user] });
-});
-
-app.post('/withdraw', async (req, res) => {
-  const { user, amount, address } = req.body || {};
-  const val = Number(amount);
-  if (!user || !address || !val || val <= 0) return res.status(400).json({ error: 'invalid params' });
-  if ((balances[user] || 0) < val) return res.status(400).json({ error: 'insufficient balance' });
-
-  // TODO: send TON from SERVER_WALLET to address using WALLET_SECRET
-  balances[user] -= val;
-  await saveBalances();
-  res.json({ ok: true, balance: balances[user] });
-});
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
@@ -376,7 +330,6 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
 // ──────────────────────── Bootstrap ───────────────────────────
 (async () => {
   await loadHistory();
-  await loadBalances();
-  resetRound();
+  resetRound();      
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
