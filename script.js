@@ -41,11 +41,7 @@ if (!tgUser.id) {
 }
 
 const tgInitRaw = window.Telegram.WebApp.initData;
-const socket = io("https://alchemy-casino-miniapp.onrender.com", {
-  auth: {   // <— отправится внутри JSON, без двойного кодирования
-    initDataB64: btoa(tgInitRaw)
-  }
-});
+const socket = io("https://alchemy-casino-miniapp.onrender.com", {transports: ["websocket"], // ⬅ без XHR-polling auth: { initDataB64: btoa(tgInitRaw) }});
 
 socket.on('connect_error', err => {
   console.error('Socket error:', err);
