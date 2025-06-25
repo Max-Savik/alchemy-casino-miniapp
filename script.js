@@ -118,11 +118,6 @@ const fairPanel    = document.getElementById('fairPanel');
 const commitFull   = document.getElementById('commitFull');
 
 // Имя пользователя из Telegram
-const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
-if (!tgUser.id) {
-  alert('Это мини-приложение Telegram. Запустите его внутри клиента Telegram.');
-  throw new Error('Telegram user not found');
-}
 const myName =
   tgUser.username
     || [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
