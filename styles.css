@@ -629,6 +629,17 @@ section {
   transform: scale(1);
 }
 
+/* Плавное появление модалок пополнения и вывода */
+#depositOverlay.show,
+#withdrawOverlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+#depositOverlay.show > div,
+#withdrawOverlay.show > div {
+  transform: scale(1);
+}
+
 /* плавное увеличение */
 .nft-icon {
   transition: transform 0.2s ease, z-index 0.2s ease;

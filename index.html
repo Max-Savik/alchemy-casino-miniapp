@@ -12,6 +12,8 @@
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <!-- TonConnect for wallet integration -->
+  <script src="https://unpkg.com/@tonconnect/ui@0.0.9/dist/tonconnect-ui.min.js"></script>
 
   <link
     href="https://fonts.googleapis.com/css2?family=Forum&family=Cinzel:wght@600;800&family=Uncial+Antiqua&display=swap"
@@ -76,6 +78,20 @@
                alt="TON" width="16" height="16" loading="lazy" />
           <span id="tonBalance" class="text-sm font-semibold">7.23</span>
         </div>
+        <!-- пополнить -->
+        <button id="addTon" class="wallet-btn flex items-center gap-1 flex-none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <!-- вывод -->
+        <button id="withdrawTon" class="wallet-btn flex items-center gap-1 flex-none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b1405" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14" />
+            <path d="M12 5l7 7-7 7" />
+          </svg>
+        </button>
         <!-- кнопка Wallet -->
         <button id="connectWallet" class="wallet-btn flex items-center gap-1 flex-none">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -400,5 +416,52 @@
       <span class="nav-lbl">Доход</span>
     </button>
   </nav>
+
+  <!-- ======== Deposit TON modal ======== -->
+  <div id="depositOverlay" class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 opacity-0 pointer-events-none" aria-hidden="true">
+    <div class="bg-gray-800 bg-opacity-80 backdrop-filter backdrop-blur-md rounded-2xl p-6 w-11/12 max-w-sm ring-1 ring-amber-500/50 shadow-2xl transform scale-95 transition-transform duration-300" role="dialog" aria-modal="true" aria-labelledby="depositTitle">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="depositTitle" class="text-2xl font-semibold text-amber-300">Пополнить TON</h3>
+        <button id="closeDeposit" class="text-gray-400 hover:text-amber-300 transition-colors text-4xl leading-none" aria-label="Закрыть окно">&times;</button>
+      </div>
+      <div class="mb-4">
+        <label for="depositAmount" class="block text-gray-200 mb-2">Сумма, TON:</label>
+        <input id="depositAmount" type="number" min="0.01" step="0.01" class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400" placeholder="0.00" />
+      </div>
+      <div class="text-right">
+        <button id="confirmDeposit" disabled class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14m-7-7h14" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Отправить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== Withdraw TON modal ======== -->
+  <div id="withdrawOverlay" class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 opacity-0 pointer-events-none" aria-hidden="true">
+    <div class="bg-gray-800 bg-opacity-80 backdrop-filter backdrop-blur-md rounded-2xl p-6 w-11/12 max-w-sm ring-1 ring-amber-500/50 shadow-2xl transform scale-95 transition-transform duration-300" role="dialog" aria-modal="true" aria-labelledby="withdrawTitle">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="withdrawTitle" class="text-2xl font-semibold text-amber-300">Вывести TON</h3>
+        <button id="closeWithdraw" class="text-gray-400 hover:text-amber-300 transition-colors text-4xl leading-none" aria-label="Закрыть окно">&times;</button>
+      </div>
+      <div class="mb-4">
+        <label for="withdrawAmount" class="block text-gray-200 mb-2">Сумма, TON:</label>
+        <input id="withdrawAmount" type="number" min="0.01" step="0.01" class="w-full p-3 mb-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400" placeholder="0.00" />
+        <label for="withdrawAddress" class="block text-gray-200 mb-2">Адрес:</label>
+        <input id="withdrawAddress" type="text" class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400" placeholder="EQ..." />
+      </div>
+      <div class="text-right">
+        <button id="confirmWithdraw" disabled class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Отправить
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
