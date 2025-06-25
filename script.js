@@ -32,8 +32,9 @@ var cumulativeRotation = 0;
   }
 })();
 
-// 1. Подключаемся к бекенду
-const socket = io("https://alchemy-casino-miniapp.onrender.com");
+// 1. Подключаемся к бекенду с Telegram initData
+const tgInit = window?.Telegram?.WebApp?.initData || '';
+const socket = io("https://alchemy-casino-miniapp.onrender.com", { query: { initData: tgInit } });
 
 // 2. Локальное состояние
 const inventory = [
@@ -106,6 +107,10 @@ const commitFull   = document.getElementById('commitFull');
 
 // Имя пользователя из Telegram
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
+if (!tgUser.id) {
+  alert('Это мини-приложение Telegram. Запустите его внутри клиента Telegram.');
+  throw new Error('Telegram user not found');
+}
 const myName =
   tgUser.username
     || [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
@@ -715,7 +720,7 @@ placeBetBtn.addEventListener('click', () => {
   renderProfile();
   renderPicker();
   pickerOverlay.classList.add('hidden');
-  socket.emit("placeBet", { name: myName, nfts });
+  socket.emit("placeBet", { nfts });
 });
 /* ======== Открываем TON-пикер ======== */
 depositTONBtn.addEventListener('click', () => {
@@ -751,7 +756,6 @@ placeTonBetBtn.addEventListener('click', () => {
  };
 
  socket.emit('placeBet', {
-   name: myName,
    nfts: [tonToken],   // сервер сохранит именно этот объект
  });
 

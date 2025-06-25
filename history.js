@@ -112,21 +112,23 @@ card.className =
       maximumFractionDigits: 1
     });
 
-    // генерируем HTML победителя
-    winnerEl.innerHTML = `
-      <span class="inline-flex items-center gap-1 text-amber-300 font-bold winner-glow max-w-full break-words">
-        <svg class="w-4 h-4 -mt-0.5" xmlns="http://www.w3.org/2000/svg"
-             viewBox="0 0 24 24" fill="currentColor">
-          <path d="M4 7l3.89 7.26L12 8l4.11 6.26L20 7l-2 12H6L4 7z"/>
-        </svg>
-        ${record.winner}
-      </span>
-      выиграл 
-      <span class="text-emerald-300 font-semibold">
-        ${formattedTotal} TON (${formattedPct} %)
-      </span>
-    `;
+    // генерируем DOM победителя, избегая innerHTML
+    const winnerSpan = document.createElement('span');
+    winnerSpan.className = 'inline-flex items-center gap-1 text-amber-300 font-bold winner-glow max-w-full break-words';
+    winnerSpan.innerHTML = `
+      <svg class="w-4 h-4 -mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M4 7l3.89 7.26L12 8l4.11 6.26L20 7l-2 12H6L4 7z"/>
+      </svg>`;
+    const nameNode = document.createElement('span');
+    nameNode.textContent = record.winner;
+    winnerSpan.appendChild(nameNode);
+
+    const prizeSpan = document.createElement('span');
+    prizeSpan.className = 'text-emerald-300 font-semibold';
+    prizeSpan.textContent = `${formattedTotal} TON (${formattedPct} %)`;
+
     winnerEl.className = 'text-base';
+    winnerEl.append(winnerSpan, ' выиграл ', prizeSpan);
 
     info.append(dateEl, winnerEl);
     card.appendChild(info);
@@ -144,11 +146,17 @@ card.className =
       const chance = record.total > 0 ? (totalByPlayer / record.total) * 100 : 0;
 
       const pHeader = document.createElement('div');
-pHeader.innerHTML = `
-  <span class="text-emerald-300 font-medium">${p.name}</span>
-  поставил <span class="text-gray-100">${totalByPlayer.toFixed(2)} TON</span>
-  <span class="text-gray-400">(${chance.toFixed(1)}%)</span>
-`;
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'text-emerald-300 font-medium';
+      nameSpan.textContent = p.name;
+      const betSpan = document.createElement('span');
+      betSpan.className = 'text-gray-100';
+      betSpan.textContent = `${totalByPlayer.toFixed(2)} TON`;
+      const pctSpan = document.createElement('span');
+      pctSpan.className = 'text-gray-400';
+      pctSpan.textContent = `(${chance.toFixed(1)}%)`;
+
+      pHeader.append(nameSpan, ' поставил ', betSpan, ' ', pctSpan);
 
       pHeader.className = 'text-sm break-words';
 
