@@ -32,9 +32,21 @@ var cumulativeRotation = 0;
   }
 })();
 
-// 1. Подключаемся к бекенду с Telegram initData
-const tgInit = window?.Telegram?.WebApp?.initData || '';
+// 1. Проверяем, что мини-приложение запущено в Telegram
+const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
+if (!tgUser.id) {
+  alert('Это мини-приложение Telegram. Запустите его внутри клиента Telegram.');
+  throw new Error('Telegram user not found');
+}
+
+const tgInit = window.Telegram.WebApp.initData || '';
 const socket = io("https://alchemy-casino-miniapp.onrender.com", { query: { initData: tgInit } });
+
+socket.on('connect_error', err => {
+  console.error('Socket error:', err);
+  alert('Не удалось подключиться к серверу: ' + err.message);
+});
+
 
 // 2. Локальное состояние
 const inventory = [
