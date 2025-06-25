@@ -101,16 +101,18 @@ io.use((socket, next) => {
   try {
     const b64 = socket.handshake.auth.initDataB64;
     if (!b64) throw new Error("initData missing");
-    const raw = Buffer.from(b64, "base64").toString("utf8");
 
-    // здесь тот самый HMAC-sha256 / checkInitData
-    const data = checkInitData(raw, process.env.BOT_TOKEN);
-    socket.user = data;         // кладём данные в socket
+    const raw  = Buffer.from(b64, "base64").toString("utf8");
+    const user = checkInitData(raw, BOT_TOKEN);   // ← вернёт user или null
+    if (!user) throw new Error("bad initData");
+
+    socket.tgUser = user;          // кладём телеграм-юзера
     next();
   } catch (err) {
-    next(err);                          // «auth failed» прилетит клиенту
+    next(err);                      // клиент получит connect_error
   }
 });
+
 
 
 // ───────────────────── Game state (1 round) ────────────────────
@@ -355,35 +357,43 @@ app.use('/admin', admin);
 io.on("connection", socket => {
   socket.emit("state", game);
 
-socket.on("placeBet", ({ nfts = [], tonAmount = 0 }) => {
-  const user = socket.user || {};
-  const name = user.username || [user.first_name, user.last_name].filter(Boolean).join(' ');
+  socket.on("placeBet", (payload = {}) => {
+    // ---------- безопасное извлечение ----------
+    const tg = socket.tgUser;                 // гарантировано есть
+    const uid = tg.id;                        // уникальный ключ
+    const displayName =
+          tg.username ||
+          [tg.first_name, tg.last_name].filter(Boolean).join(" ") ||
+          `ID_${uid}`;
 
-  if (!Array.isArray(nfts)) nfts = [];
-  nfts = nfts.filter(x => x && typeof x.id === 'string' && typeof x.price === 'number' && x.price >= 0);
-  tonAmount = typeof tonAmount === 'number' && tonAmount > 0 ? tonAmount : 0;
+    // ---------- нормализуем вход ----------
+    const nfts      = Array.isArray(payload.nfts) ? payload.nfts : [];
+    const tonAmount = typeof payload.tonAmount === "number" && payload.tonAmount > 0
+                      ? payload.tonAmount
+                      : 0;
 
-  let player = game.players.find(p => p.name === name);
-  if (!player) {
-    player = {
-      name,
-      value: 0,
-      color: palette[game.players.length % palette.length],
-      nfts: []
-    };
-    game.players.push(player);
-  }
-  // сумма NFT + TON
-  const nftSum = nfts.reduce((s, x) => s + x.price, 0);
+    // ---------- ищем игрока по uid ----------
+    let player = game.players.find(p => p.uid === uid);
+    if (!player) {
+      player = {
+        uid,                    // ← добавляем
+        name:  displayName,
+        value: 0,
+        color: palette[game.players.length % palette.length],
+        nfts:  []
+      };
+      game.players.push(player);
+    }
 
-  player.value  += nftSum + tonAmount;
-  game.totalUSD += nftSum + tonAmount;
-  nfts.forEach(x => player.nfts.push(x));
+    // ---------- прибавляем ставку ----------
+    const nftSum = nfts.reduce((s, x) => s + (x?.price || 0), 0);
+    player.value  += nftSum + tonAmount;
+    game.totalUSD += nftSum + tonAmount;
+    nfts.forEach(x => player.nfts.push(x));
 
-  io.emit("state", game);
-  maybeStartCountdown();
-});
-
+    io.emit("state", game);
+    maybeStartCountdown();
+  });
 });
 
 // ──────────────────────── Bootstrap ───────────────────────────
