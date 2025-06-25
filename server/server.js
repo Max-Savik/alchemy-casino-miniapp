@@ -34,7 +34,35 @@ import { mnemonicToWalletKey } from "@ton/crypto";
 import axios from "axios";
 
 const ton = new TonClient({ endpoint: process.env.TON_API });
-const serviceKey = await mnemonicToWalletKey(process.env.SERVICE_WALLET_MNEMONIC.split(' '));
+// ─── helper: читаем сид-фразу из ENV или secret-файла ──────────
+async function loadMnemonic() {
+  // 1) .env или переменные окружения
+  if (process.env.SERVICE_WALLET_MNEMONIC?.trim()) {
+    return process.env.SERVICE_WALLET_MNEMONIC.trim();
+  }
+  // 2) Secret File в Render
+  try {
+    const txt = await fs.readFile(
+      "/etc/secrets/service_wallet_mnemonic",
+      "utf8"
+    );
+    return txt.trim();
+  } catch {
+    throw new Error(
+      "SERVICE_WALLET_MNEMONIC not set (env var or secret file)"
+    );
+  }
+}
+
+const MNEMONIC = await loadMnemonic();                // ← строка из 24 слов
+const serviceKey = await mnemonicToWalletKey(
+  MNEMONIC.split(" ")
+);
+const serviceWallet = WalletContractV4.create({
+  workchain: 0,
+  publicKey: serviceKey.publicKey,
+});
+
 const serviceWallet = WalletContractV4.create({
   workchain: 0,
   publicKey: serviceKey.publicKey,
