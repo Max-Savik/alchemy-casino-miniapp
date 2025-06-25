@@ -34,7 +34,7 @@ import { mnemonicToWalletKey } from "@ton/crypto";
 import axios from "axios";
 
 const ton = new TonClient({ endpoint: process.env.TON_API });
-const serviceKey = await mnemonicToWalletKey(process.env.SERVICE_WALLET_PK.split(' '));
+const serviceKey = await mnemonicToWalletKey(process.env.SERVICE_WALLET_MNEMONIC.split(' '));
 const serviceWallet = WalletContractV4.create({
   workchain: 0,
   publicKey: serviceKey.publicKey,
@@ -69,6 +69,7 @@ async function saveHistory() {
 
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
+app.use(express.json());
 app.use(cors());
 app.use(express.static(__dirname));   // раздаём фронт
 app.get("/history", (req, res) => res.json(history));
@@ -381,7 +382,7 @@ app.post('/withdraw', async (req,res)=>{
     subBalance(name, BigInt(amount));
 
     // 1 TON ≈ 0.05 TON комиссия → добавьте safety-margin
-    const fee   = 0.05e9;                             // 0.05 TON
+    const fee = 50_000_000n;                             // 0.05 TON
     const value = BigInt(amount) - BigInt(fee);
 
     const seqno = await ton.runMethod(serviceWallet.address, 'seqno')
