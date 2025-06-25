@@ -33,11 +33,12 @@ if (!BOT_TOKEN) throw new Error('BOT_TOKEN not set');
 
 function verifyInitData(initData) {
   try {
-    const params = new URLSearchParams(initData);
+    const pairs = initData.split('&').map(p => p.split('='));
+    const params = new Map(pairs.map(([k, v = '']) => [k, v]));
     const hash = params.get('hash');
     if (!hash) return null;
 
-    const dataCheck = [...params.entries()]
+    const dataCheck = pairs
       .filter(([k]) => k !== 'hash')
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([k, v]) => `${k}=${v}`)
@@ -55,7 +56,7 @@ function verifyInitData(initData) {
 
     if (check !== hash) return null;
     const userStr = params.get('user');
-    return userStr ? JSON.parse(userStr) : null;
+    return userStr ? JSON.parse(decodeURIComponent(userStr)) : null;
   } catch {
     return null;
   }
