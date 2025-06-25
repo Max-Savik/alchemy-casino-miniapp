@@ -390,12 +390,11 @@ async function waitTxConfirm(hash){
 
 app.post('/withdraw', async (req,res)=>{
   try{
-    const {name, amount, toAddr} = req.body;          // nanoTON
-    subBalance(name, BigInt(amount));
+    const { name, amount, toAddr } = req.body;   // amount — строка или число
+    subBalance(name, BigInt(amount));            // вычитаем всю сумму из баланса
 
-    // 1 TON ≈ 0.05 TON комиссия → добавьте safety-margin
-    const fee = 50_000_000n;                             // 0.05 TON
-    const value = BigInt(amount) - BigInt(fee);
+    const fee   = 50_000_000n;                   // 0.05 TON в nanoTON
+    const value = BigInt(amount) - fee;          // отправляем пользователю fee меньше
 
     const seqno = await ton.runMethod(serviceWallet.address, 'seqno')
                            .then(r=>r.stack.readNumber());
