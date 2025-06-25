@@ -62,7 +62,6 @@ function verifyInitData(initData) {
   }
 }
 
-
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
 
