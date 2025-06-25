@@ -37,8 +37,8 @@ const socket = io("https://alchemy-casino-miniapp.onrender.com");
 
 /* ===== TON Connect ===== */
 const tonConnectUI = new TonConnectUI({
-  manifestUrl: 'https://YOUR-DOMAIN/tonconnect-manifest.json',
-  buttonRootId: 'connectWallet'      // <button id="connectWallet">
+  manifestUrl: 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
+  buttonRootId: 'connectWallet'
 });
 
 let walletInfo = null;
