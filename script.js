@@ -1,6 +1,5 @@
 // ============================ script.js ============================
 
-
 // накопленный общий угол (в градусах)
 var cumulativeRotation = 0;
 
@@ -33,27 +32,8 @@ var cumulativeRotation = 0;
   }
 })();
 
-// 1. Проверяем, что мини-приложение запущено в Telegram
-const tgUser =
-  (window.Telegram &&
-   Telegram.WebApp &&
-   Telegram.WebApp.initDataUnsafe &&
-   Telegram.WebApp.initDataUnsafe.user)
-    || {};
-
-if (!tgUser.id) {
-  alert('Это мини-приложение Telegram. Запустите его внутри клиента Telegram.');
-  throw new Error('Telegram user not found');
-}
-
-const tgInitRaw = window.Telegram.WebApp.initData;
-const socket = io("https://alchemy-casino-miniapp.onrender.com", {
-  transports: ["websocket"],
-  auth: {
-    initDataB64: btoa(tgInitRaw)
-  }
-});
-
+// 1. Подключаемся к бекенду
+const socket = io("https://alchemy-casino-miniapp.onrender.com");
 
 // 2. Локальное состояние
 const inventory = [
@@ -125,6 +105,7 @@ const fairPanel    = document.getElementById('fairPanel');
 const commitFull   = document.getElementById('commitFull');
 
 // Имя пользователя из Telegram
+const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
 const myName =
   tgUser.username
     || [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
@@ -734,7 +715,7 @@ placeBetBtn.addEventListener('click', () => {
   renderProfile();
   renderPicker();
   pickerOverlay.classList.add('hidden');
-  socket.emit("placeBet", { nfts });
+  socket.emit("placeBet", { name: myName, nfts });
 });
 /* ======== Открываем TON-пикер ======== */
 depositTONBtn.addEventListener('click', () => {
@@ -770,6 +751,7 @@ placeTonBetBtn.addEventListener('click', () => {
  };
 
  socket.emit('placeBet', {
+   name: myName,
    nfts: [tonToken],   // сервер сохранит именно этот объект
  });
 
