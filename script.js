@@ -98,6 +98,26 @@ const closeTonPickerBtn = document.getElementById('closeTonPicker');
 const tonAmountInput = document.getElementById('tonAmount');
 const placeTonBetBtn = document.getElementById('placeTonBet');
 const depositTONBtn = document.getElementById('depositTON');
+// Wallet integration elements
+const connectWalletBtn  = document.getElementById('connectWallet');
+const addTonBtn         = document.getElementById('addTon');
+const withdrawTonBtn    = document.getElementById('withdrawTon');
+const tonBalanceEl      = document.getElementById('tonBalance');
+const depositOverlay    = document.getElementById('depositOverlay');
+const closeDepositBtn   = document.getElementById('closeDeposit');
+const depositAmountInput= document.getElementById('depositAmount');
+const confirmDepositBtn = document.getElementById('confirmDeposit');
+const withdrawOverlay   = document.getElementById('withdrawOverlay');
+const closeWithdrawBtn  = document.getElementById('closeWithdraw');
+const withdrawAmountInput = document.getElementById('withdrawAmount');
+const withdrawAddressInput = document.getElementById('withdrawAddress');
+const confirmWithdrawBtn = document.getElementById('confirmWithdraw');
+
+// TonConnect
+const tonConnectUI = new TonConnectUI.TonConnectUI({
+  manifestUrl: 'tonconnect-manifest.json'
+});
+const SERVER_WALLET = 'EQ_SERVER_WALLET_PLACEHOLDER';
 
 /* === Fair Play UI === */
 const fairBtn      = document.getElementById('fairBtn');
@@ -758,6 +778,84 @@ placeTonBetBtn.addEventListener('click', () => {
  // Закрываем оверлей
   tonPickerOverlay.classList.remove('show');
   tonAmountInput.value = '';
+});
+
+// ======== Wallet connect & balance ========
+connectWalletBtn.addEventListener('click', async () => {
+  await tonConnectUI.connectWallet();
+});
+
+addTonBtn.addEventListener('click', () => {
+  depositOverlay.classList.add('show');
+  depositAmountInput.value = '';
+  confirmDepositBtn.disabled = true;
+});
+
+closeDepositBtn.addEventListener('click', () => {
+  depositOverlay.classList.remove('show');
+});
+
+depositAmountInput.addEventListener('input', () => {
+  const val = parseFloat(depositAmountInput.value);
+  confirmDepositBtn.disabled = !(val > 0);
+});
+
+confirmDepositBtn.addEventListener('click', async () => {
+  const amount = parseFloat(depositAmountInput.value);
+  if (!amount || amount <= 0) return;
+  try {
+    await tonConnectUI.sendTransaction({
+      validUntil: Math.floor(Date.now() / 1000) + 60,
+      messages: [{ address: SERVER_WALLET, amount: String(Math.floor(amount * 1e9)) }]
+    });
+    const res = await fetch('/deposit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: myName, amount })
+    });
+    const data = await res.json();
+    if (data.ok) tonBalanceEl.textContent = data.balance.toFixed(2);
+  } catch (e) {
+    alert('Deposit failed');
+  }
+  depositOverlay.classList.remove('show');
+});
+
+withdrawTonBtn.addEventListener('click', () => {
+  withdrawOverlay.classList.add('show');
+  withdrawAmountInput.value = '';
+  withdrawAddressInput.value = '';
+  confirmWithdrawBtn.disabled = true;
+});
+
+closeWithdrawBtn.addEventListener('click', () => {
+  withdrawOverlay.classList.remove('show');
+});
+
+function checkWithdraw() {
+  const val = parseFloat(withdrawAmountInput.value);
+  confirmWithdrawBtn.disabled = !(val > 0 && withdrawAddressInput.value.trim());
+}
+withdrawAmountInput.addEventListener('input', checkWithdraw);
+withdrawAddressInput.addEventListener('input', checkWithdraw);
+
+confirmWithdrawBtn.addEventListener('click', async () => {
+  const amount = parseFloat(withdrawAmountInput.value);
+  const address = withdrawAddressInput.value.trim();
+  if (!amount || amount <= 0 || !address) return;
+  try {
+    const res = await fetch('/withdraw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: myName, amount, address })
+    });
+    const data = await res.json();
+    if (data.ok) tonBalanceEl.textContent = data.balance.toFixed(2);
+    else alert(data.error || 'Withdraw failed');
+  } catch (e) {
+    alert('Withdraw failed');
+  }
+  withdrawOverlay.classList.remove('show');
 });
 
 const toggleBtn = document.getElementById('toggleSort');
