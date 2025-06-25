@@ -34,7 +34,13 @@ var cumulativeRotation = 0;
 })();
 
 // 1. Проверяем, что мини-приложение запущено в Telegram
-const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
+const tgUser =
+  (window.Telegram &&
+   Telegram.WebApp &&
+   Telegram.WebApp.initDataUnsafe &&
+   Telegram.WebApp.initDataUnsafe.user)
+    || {};
+
 if (!tgUser.id) {
   alert('Это мини-приложение Telegram. Запустите его внутри клиента Telegram.');
   throw new Error('Telegram user not found');
