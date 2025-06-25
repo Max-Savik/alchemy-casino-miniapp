@@ -31,6 +31,37 @@ if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
 const BOT_TOKEN = process.env.BOT_TOKEN;
 if (!BOT_TOKEN) throw new Error('BOT_TOKEN not set');
 
+function checkInitData(initData, BOT_TOKEN) {
+  try {
+    const pairs = initData.split('&').map(p => p.split('='));
+    const params = new Map(pairs.map(([k, v = '']) => [k, v]));
+    const hash = params.get('hash');
+    if (!hash) return null;
+
+    const dataCheck = pairs
+      .filter(([k]) => k !== 'hash')
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n');
+
+    const secret = crypto
+      .createHash('sha256')
+      .update(BOT_TOKEN)
+      .digest();
+
+    const check = crypto
+      .createHmac('sha256', secret)
+      .update(dataCheck)
+      .digest('hex');
+
+    if (check !== hash) return null;
+    const userStr = params.get('user');
+    return userStr ? JSON.parse(decodeURIComponent(userStr)) : null;
+  } catch {
+    return null;
+  }
+}
+
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
 
@@ -66,8 +97,6 @@ app.get("/history", (req, res) => res.json(history));
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
-import { checkInitData } from "./tgCheck.js";       // ваша функция проверки
-
 io.use((socket, next) => {
   try {
     const b64 = socket.handshake.auth.initDataB64;
@@ -76,7 +105,7 @@ io.use((socket, next) => {
 
     // здесь тот самый HMAC-sha256 / checkInitData
     const data = checkInitData(raw, process.env.BOT_TOKEN);
-    socket.user = data.user;            // кладём данные в socket
+    socket.user = data;         // кладём данные в socket
     next();
   } catch (err) {
     next(err);                          // «auth failed» прилетит клиенту
