@@ -349,7 +349,62 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
   maybeStartCountdown();
 });
 
+socket.on('depositTonHash', async ({name, hash, amount})=>{
+  try{
+    await waitTxConfirm(hash);              // см. ниже
+    addBalance(name, BigInt(amount));       // nanoTON
+    socket.emit('balance', balances.get(name));
+  }catch(e){
+    socket.emit('txError', {error:e});
+  }
 });
+
+  
+});
+
+async function waitTxConfirm(hash){
+  let attempts = 12;
+  while(attempts--){
+    const r = await axios.get(
+      `${process.env.TON_API}/blockchain/messages/${hash}/transaction`,
+      { headers:{'X-API-Key':process.env.TON_API_KEY}}
+    ).catch(()=>null);
+    if(r?.data?.transaction) return true;
+    await new Promise(r=>setTimeout(r, 5000));
+  }
+  throw 'TX_NOT_FOUND';
+}
+
+app.post('/withdraw', async (req,res)=>{
+  try{
+    const {name, amount, toAddr} = req.body;          // nanoTON
+    subBalance(name, BigInt(amount));
+
+    // 1 TON ≈ 0.05 TON комиссия → добавьте safety-margin
+    const fee   = 0.05e9;                             // 0.05 TON
+    const value = BigInt(amount) - BigInt(fee);
+
+    const seqno = await ton.runMethod(serviceWallet.address, 'seqno')
+                           .then(r=>r.stack.readNumber());
+    const transfer = serviceWallet.createTransfer({
+      secretKey: serviceKey.secretKey,
+      seqno,
+      messages:[
+        internal({
+          to: toAddr,
+          value,
+          bounce:false
+        })
+      ]
+    });
+    await ton.sendExternalMessage(serviceWallet, transfer);
+
+    res.json({ok:true, txHash: transfer.hash().toString('hex')});
+  }catch(e){
+    res.status(400).json({error:String(e)});
+  }
+});
+
 
 // ──────────────────────── Bootstrap ───────────────────────────
 (async () => {
