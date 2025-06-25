@@ -28,6 +28,18 @@ dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
 
+// ─────────────────── TON init ─────────────────────
+import { TonClient, WalletContractV4, internal } from "@ton/ton";
+import { mnemonicToWalletKey } from "@ton/crypto";
+import axios from "axios";
+
+const ton = new TonClient({ endpoint: process.env.TON_API });
+const serviceKey = await mnemonicToWalletKey(process.env.SERVICE_WALLET_PK.split(' '));
+const serviceWallet = WalletContractV4.create({
+  workchain: 0,
+  publicKey: serviceKey.publicKey,
+});
+
 
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
@@ -63,6 +75,18 @@ app.get("/history", (req, res) => res.json(history));
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
+
+/* ===== Balances (per Telegram username) ===== */
+const balances = new Map();           // name → tonBalance (nanoTON)
+function addBalance(name, nano){      // депозит
+  balances.set(name, (balances.get(name)||0n) + nano);
+}
+function subBalance(name, nano){      // вывод / ставка
+  const cur = balances.get(name)||0n;
+  if (cur < nano) throw 'ENOUGH_FUNDS';
+  balances.set(name, cur - nano);
+}
+
 
 // ───────────────────── Game state (1 round) ────────────────────
 let game = {
