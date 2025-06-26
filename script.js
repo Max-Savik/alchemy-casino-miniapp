@@ -1,5 +1,6 @@
 // ============================ script.js ============================
 
+
 // накопленный общий угол (в градусах)
 var cumulativeRotation = 0;
 
@@ -31,7 +32,6 @@ var cumulativeRotation = 0;
     console.error('Ошибка Lottie:', e);
   }
 })();
-
 
 // 1. Подключаемся к бекенду
 const socket = io("https://alchemy-casino-miniapp.onrender.com");
