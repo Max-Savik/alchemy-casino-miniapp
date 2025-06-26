@@ -75,7 +75,9 @@ async function saveBalances() {
 }
 
 function userAuth(req, res, next) {
-  const { userId } = req.body || req.query;
+  const userId =
+    (req.body && req.body.userId) ||
+    (req.query && req.query.userId);
   if (!userId) return res.status(400).json({ error: "userId required" });
   req.userId = String(userId);
   next();
