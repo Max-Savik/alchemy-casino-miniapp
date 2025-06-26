@@ -339,6 +339,33 @@
     </div>
   </div>
 </div>
+<!-- WALLET / DEPOSIT MODAL -->
+<div id="walletOverlay"
+     class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 hidden">
+  <div class="bg-gray-800/90 backdrop-blur-md rounded-2xl p-6 w-11/12 max-w-sm
+              ring-1 ring-amber-500/50 shadow-2xl">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-2xl font-semibold text-amber-300">Пополнить TON</h3>
+      <button id="walletClose" class="text-gray-400 hover:text-amber-300 text-3xl leading-none">&times;</button>
+    </div>
+
+    <label class="block mb-2 text-gray-300" for="walletAmount">Сумма TON:</label>
+    <input id="walletAmount" type="number" min="0.01" step="0.01"
+           class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-amber-400 mb-6"
+           placeholder="0.00" />
+
+    <button id="walletDepositBtn" disabled
+            class="w-full py-2 rounded-lg font-semibold bg-amber-500/90
+                   hover:bg-amber-500 active:bg-amber-600 disabled:opacity-50
+                   flex items-center justify-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Пополнить
+    </button>
+  </div>
+</div>
 
       </div>
 
