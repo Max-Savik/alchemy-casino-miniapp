@@ -32,6 +32,7 @@ var cumulativeRotation = 0;
   }
 })();
 
+
 // 1. Подключаемся к бекенду
 const socket = io("https://alchemy-casino-miniapp.onrender.com");
 
