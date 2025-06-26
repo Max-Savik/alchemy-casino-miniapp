@@ -28,41 +28,6 @@ dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
 
-// ─────────────────── TON init ─────────────────────
-import { TonClient, WalletContractV4, internal } from "@ton/ton";
-import { mnemonicToWalletKey } from "@ton/crypto";
-import axios from "axios";
-
-const ton = new TonClient({ endpoint: process.env.TON_API });
-// ─── helper: читаем сид-фразу из ENV или secret-файла ──────────
-async function loadMnemonic() {
-  // 1) .env или переменные окружения
-  if (process.env.SERVICE_WALLET_MNEMONIC?.trim()) {
-    return process.env.SERVICE_WALLET_MNEMONIC.trim();
-  }
-  // 2) Secret File в Render
-  try {
-    const txt = await fs.readFile(
-      "/etc/secrets/SERVICE_WALLET_MNEMONIC",
-      "utf8"
-    );
-    return txt.trim();
-  } catch {
-    throw new Error(
-      "SERVICE_WALLET_MNEMONIC not set (env var or secret file)"
-    );
-  }
-}
-
-const MNEMONIC = await loadMnemonic();                // ← строка из 24 слов
-const serviceKey = await mnemonicToWalletKey(
-  MNEMONIC.split(" ")
-);
-const serviceWallet = WalletContractV4.create({
-  workchain: 0,
-  publicKey: serviceKey.publicKey,
-});
-
 
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
@@ -90,39 +55,14 @@ async function saveHistory() {
   await fs.rename(tmp, HISTORY_FILE);
 }
 
-/* ===== Balances (per Telegram username) ===== */
-const balances = new Map();           // name → tonBalance (nanoTON)
-function addBalance(name, nano){      // депозит
-  balances.set(name, (balances.get(name)||0n) + nano);
-}
-function subBalance(name, nano){      // вывод / ставка
-  const cur = balances.get(name)||0n;
-  if (cur < nano) throw 'ENOUGH_FUNDS';
-  balances.set(name, cur - nano);
-}
-
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
-app.use(express.json());
 app.use(cors());
 app.use(express.static(__dirname));   // раздаём фронт
 app.get("/history", (req, res) => res.json(history));
 
-  // ── Новый роут: получить баланс пользователя ─────────────────
-  // GET /balance?name=<username>
-  app.get('/balance', (req, res) => {
-    const name = (req.query.name||'').trim();
-    if (!name) return res.status(400).json({ error: 'name required' });
-    const bal = balances.get(name) || 0n;
-    // возвращаем в строковом виде, чтобы не потерять BigInt
-    res.json({ balance: bal.toString() });
-  });
-
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
-
-
-
 
 // ───────────────────── Game state (1 round) ────────────────────
 let game = {
@@ -385,63 +325,7 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
   maybeStartCountdown();
 });
 
-socket.on('depositTonHash', async ({name, hash, amount})=>{
-  try{
-    await waitTxConfirm(hash);              // см. ниже
-    addBalance(name, BigInt(amount));       // nanoTON
-    socket.emit('balance', balances.get(name));
-  }catch(e){
-    socket.emit('txError', {error:e});
-  }
 });
-
-  
-});
-
-async function waitTxConfirm(hash){
-  const url = `${process.env.TON_API}/v2/blockchain/transactions/${hash}`;
-  for(let i=0; i<12; i++){
-    const resp = await axios.get(url, {
-      headers: {'X-API-Key': process.env.TON_API_KEY}
-    }).catch(()=>null);
-    if (resp?.data?.status === 'applied') {
-      return true;
-    }
-    // ждём 5 секунд и пробуем снова
-    await new Promise(r => setTimeout(r, 5000));
-  }
-  throw new Error('TX_NOT_CONFIRMED');
-}
-
-app.post('/withdraw', async (req,res)=>{
-  try{
-    const { name, amount, toAddr } = req.body;   // amount — строка или число
-    subBalance(name, BigInt(amount));            // вычитаем всю сумму из баланса
-
-    const fee   = 50_000_000n;                   // 0.05 TON в nanoTON
-    const value = BigInt(amount) - fee;          // отправляем пользователю fee меньше
-
-    const seqno = await ton.runMethod(serviceWallet.address, 'seqno')
-                           .then(r=>r.stack.readNumber());
-    const transfer = serviceWallet.createTransfer({
-      secretKey: serviceKey.secretKey,
-      seqno,
-      messages:[
-        internal({
-          to: toAddr,
-          value,
-          bounce:false
-        })
-      ]
-    });
-    await ton.sendExternalMessage(serviceWallet, transfer);
-
-    res.json({ok:true, txHash: transfer.hash().toString('hex')});
-  }catch(e){
-    res.status(400).json({error:String(e)});
-  }
-});
-
 
 // ──────────────────────── Bootstrap ───────────────────────────
 (async () => {
