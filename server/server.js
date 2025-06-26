@@ -63,11 +63,6 @@ const serviceWallet = WalletContractV4.create({
   publicKey: serviceKey.publicKey,
 });
 
-const serviceWallet = WalletContractV4.create({
-  workchain: 0,
-  publicKey: serviceKey.publicKey,
-});
-
 
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
@@ -95,6 +90,17 @@ async function saveHistory() {
   await fs.rename(tmp, HISTORY_FILE);
 }
 
+/* ===== Balances (per Telegram username) ===== */
+const balances = new Map();           // name → tonBalance (nanoTON)
+function addBalance(name, nano){      // депозит
+  balances.set(name, (balances.get(name)||0n) + nano);
+}
+function subBalance(name, nano){      // вывод / ставка
+  const cur = balances.get(name)||0n;
+  if (cur < nano) throw 'ENOUGH_FUNDS';
+  balances.set(name, cur - nano);
+}
+
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
 app.use(express.json());
@@ -115,16 +121,7 @@ app.get("/history", (req, res) => res.json(history));
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
-/* ===== Balances (per Telegram username) ===== */
-const balances = new Map();           // name → tonBalance (nanoTON)
-function addBalance(name, nano){      // депозит
-  balances.set(name, (balances.get(name)||0n) + nano);
-}
-function subBalance(name, nano){      // вывод / ставка
-  const cur = balances.get(name)||0n;
-  if (cur < nano) throw 'ENOUGH_FUNDS';
-  balances.set(name, cur - nano);
-}
+
 
 
 // ───────────────────── Game state (1 round) ────────────────────
