@@ -43,7 +43,7 @@ async function loadMnemonic() {
   // 2) Secret File в Render
   try {
     const txt = await fs.readFile(
-      "/etc/secrets/service_wallet_mnemonic",
+      "/etc/secrets/SERVICE_WALLET_MNEMONIC",
       "utf8"
     );
     return txt.trim();
