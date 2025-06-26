@@ -36,11 +36,12 @@ var cumulativeRotation = 0;
 // 1. Подключаемся к бекенду
 const socket = io("https://alchemy-casino-miniapp.onrender.com");
 
-/* ===== TON Connect ===== */
-const tonConnectUI = new window.tonconnectUI.TonConnectUI({
-  manifestUrl: 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
+/* ===== TON Connect UI ===== */
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+  manifestUrl : 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
   buttonRootId: 'connectWallet'
 });
+
 
 
 
