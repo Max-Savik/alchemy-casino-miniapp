@@ -36,10 +36,7 @@ var cumulativeRotation = 0;
 const socket = io("https://alchemy-casino-miniapp.onrender.com");
 
 /* ===== TON Connect ===== */
-const tonConnectUI = new TonConnectUI({
-  manifestUrl: 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
-  buttonRootId: 'connectWallet'
-});
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({ manifestUrl: 'https://…/tonconnect-manifest.json', buttonRootId: 'connectWallet' });
 
 let walletInfo = null;
 tonConnectUI.onStatusChange(info=>{
