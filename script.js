@@ -33,7 +33,6 @@ var cumulativeRotation = 0;
 })();
 
 // 1. Подключаемся к бекенду
-const socket = io("https://alchemy-casino-miniapp.onrender.com");
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 const socket = io(API_ORIGIN);
 
@@ -873,7 +872,7 @@ gsap.fromTo('#steam', { scale: .6, opacity: 0 }, {
 // ======================= INIT =======================
 show('game');
 refreshUI();
-await refreshBalance();  
+refreshBalance();  
 
 // Навешиваем один раз
 const copyBtn = document.getElementById('copyCommit');
