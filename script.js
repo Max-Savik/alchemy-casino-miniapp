@@ -35,23 +35,6 @@ var cumulativeRotation = 0;
 // 1. Подключаемся к бекенду
 const socket = io("https://alchemy-casino-miniapp.onrender.com");
 
-/* ===== TON Connect UI ===== */
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl : 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
-  buttonRootId: 'connectWallet'
-});
-
-
-
-
-let walletInfo = null;
-tonConnectUI.onStatusChange(info=>{
-  walletInfo = info;
-  document.querySelector('.wallet-label').textContent =
-    info ? info.account.address.slice(0,4)+'…'+info.account.address.slice(-4) : 'CONNECT';
-});
-
-
 // 2. Локальное состояние
 const inventory = [
   { id:'orb001',          name:'Loot Bag',      price:160, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg',   staked:false },
@@ -501,55 +484,6 @@ clearFiltersBtn.addEventListener('click', () => {
   // 6) Перерисовать окно выбора
   renderPicker();
 });
-
-
-depositTONBtn.addEventListener('click', async () => {
-  const amount = prompt('Сколько TON пополнить?');
-  if(!amount) return;
-
-  const nano = (BigInt(Math.round(parseFloat(amount)*1e9))).toString();
-
-  await tonConnectUI.sendTransaction({
-    validUntil: Math.floor(Date.now()/1000)+600,
-    messages:[{
-      address: SERVICE_WALLET_ADDR,
-      amount: nano,
-      payload: ''                      // можно комментарий
-    }]
-  });
-
-  // получим hash из events
-  tonConnectUI.once('onTransactionSent', tx=>{
-    socket.emit('depositTonHash', {
-      name: myName,
-      hash: tx.bocHash,                // см. docs
-      amount: nano
-    });
-  });
-});
-
-
-socket.on('balance', nano=>{
-  document.getElementById('tonBalance').textContent =
-    (Number(nano)/1e9).toFixed(2);
-});
-
-withdrawBtn.onclick = async ()=>{
-  const amount = prompt('Сколько TON вывести?');
-  const nano   = Math.round(parseFloat(amount)*1e9);
-
-  const res = await fetch('/withdraw',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      name: myName,
-      amount: nano,
-      toAddr: walletInfo.account.address
-    })
-  }).then(r=>r.json());
-
-  alert(res.ok ? 'Транзакция отправлена!' : 'Ошибка: '+res.error);
-};
 
 // ========================= SOCKET EVENTS =========================
 // При подключении сразу слать текущее состояние
