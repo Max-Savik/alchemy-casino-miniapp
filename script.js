@@ -34,6 +34,8 @@ var cumulativeRotation = 0;
 
 // 1. Подключаемся к бекенду
 const socket = io("https://alchemy-casino-miniapp.onrender.com");
+const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
+const socket = io(API_ORIGIN);
 
 // 2. Локальное состояние
 const inventory = [
@@ -69,6 +71,17 @@ let phase     = "waiting";              // waiting | countdown | spinning
 
 // Храним развернутых игроков (по имени) для истории NFT 
 const expandedPlayers = new Set();
+
+/* ================= TON BALANCE ================= */
+let tonBalance = 0;
+async function refreshBalance(){
+  try{
+    const res = await fetch(`${API_ORIGIN}/wallet/balance?userId=${myId}`);
+    const {balance} = await res.json();
+    tonBalance = balance;
+    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+  }catch(e){ console.warn('Balance fetch error',e); }
+}
 
 // =========================== Элементы страницы ===========================
 const svg         = document.getElementById('wheelSvg');
@@ -111,6 +124,7 @@ const myName =
     || [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
     || "Гость";
 
+const myId = tgUser.id || tgUser.user_id || 'guest-' + Math.random().toString(36).slice(2);
 // ====================== Локальное Хранилище Истории ======================
 // Загружаем историю из localStorage или создаём пустую
 let gameHistory = [];
@@ -787,6 +801,45 @@ function show(view){
   navEarn   .classList.toggle('active', view === 'earn');
 }
 
+/* ========== WALLET DEPOSIT ========== */
+const walletOverlay   = document.getElementById('walletOverlay');
+const walletCloseBtn  = document.getElementById('walletClose');
+const walletAmountInp = document.getElementById('walletAmount');
+const walletDepositBtn= document.getElementById('walletDepositBtn');
+const walletBtn       = document.getElementById('connectWallet');   // уже есть в хедере
+
+walletBtn.addEventListener('click', () => {
+  walletAmountInp.value = '';
+  walletDepositBtn.disabled = true;
+  walletOverlay.classList.remove('hidden');
+});
+
+walletCloseBtn.addEventListener('click', () => {
+  walletOverlay.classList.add('hidden');
+});
+
+walletAmountInp.addEventListener('input', () => {
+  const v = parseFloat(walletAmountInp.value);
+  walletDepositBtn.disabled = !(v>0);
+});
+
+walletDepositBtn.addEventListener('click', async () => {
+  const amt = parseFloat(walletAmountInp.value);
+  if(!(amt>0)) return;
+  try{
+    const res = await fetch(`${API_ORIGIN}/wallet/deposit`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userId:myId, amount:amt})
+    });
+    const {balance} = await res.json();
+    tonBalance = balance;
+    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+    walletOverlay.classList.add('hidden');
+  }catch(e){
+    alert('Не удалось пополнить: '+e.message);
+  }
+});
 
 
 // =================== HISTORY BUTTON ===================
@@ -820,7 +873,7 @@ gsap.fromTo('#steam', { scale: .6, opacity: 0 }, {
 // ======================= INIT =======================
 show('game');
 refreshUI();
-
+await refreshBalance();  
 
 // Навешиваем один раз
 const copyBtn = document.getElementById('copyCommit');
