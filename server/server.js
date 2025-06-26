@@ -21,6 +21,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT      = process.env.PORT || 3000;
 const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render disk
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
+const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 
 import dotenv from 'dotenv';
 dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
@@ -55,12 +56,68 @@ async function saveHistory() {
   await fs.rename(tmp, HISTORY_FILE);
 }
 
+// ─────────────── BALANCES helpers ─────────────── ➋
+let balances = {};          // { [userId]: number }
+async function loadBalances() {
+  try {
+    const txt = await fs.readFile(BALANCES_FILE, "utf8");
+    balances = JSON.parse(txt);
+    console.log("Loaded balances:", balances);
+  } catch (e) {
+    if (e.code !== "ENOENT") console.error("Balances read error:", e);
+    balances = {};
+  }
+}
+async function saveBalances() {
+  const tmp = BALANCES_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(balances, null, 2));
+  await fs.rename(tmp, BALANCES_FILE);
+}
+
+function userAuth(req, res, next) {
+  const { userId } = req.body || req.query;
+  if (!userId) return res.status(400).json({ error: "userId required" });
+  req.userId = String(userId);
+  next();
+}
+
+const wallet = express.Router();
+wallet.use(userAuth);
+
+/* GET /wallet/balance?userId=123 */
+wallet.get("/balance", (req, res) => {
+  const bal = balances[req.userId] || 0;
+  res.json({ balance: bal });
+});
+
+/* POST /wallet/deposit { userId, amount } */
+wallet.post("/deposit", async (req, res) => {
+  const amt = Number(req.body.amount);
+  if (!amt || amt <= 0) return res.status(400).json({ error: "amount>0" });
+  balances[req.userId] = (balances[req.userId] || 0) + amt;
+  await saveBalances();
+  res.json({ balance: balances[req.userId] });
+});
+
+/* POST /wallet/withdraw { userId, amount } */
+wallet.post("/withdraw", async (req, res) => {
+  const amt = Number(req.body.amount);
+  if (!amt || amt <= 0) return res.status(400).json({ error: "amount>0" });
+  const bal = balances[req.userId] || 0;
+  if (bal < amt) return res.status(400).json({ error: "insufficient" });
+  balances[req.userId] = bal - amt;
+  await saveBalances();
+  res.json({ balance: balances[req.userId] });
+});
+
+
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
 app.use(cors());
+app.use(express.json());
 app.use(express.static(__dirname));   // раздаём фронт
 app.get("/history", (req, res) => res.json(history));
-
+app.use("/wallet", wallet);
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
@@ -330,6 +387,7 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
 // ──────────────────────── Bootstrap ───────────────────────────
 (async () => {
   await loadHistory();
+  await loadBalances();
   resetRound();      
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
