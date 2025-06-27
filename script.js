@@ -795,23 +795,6 @@ placeTonBetBtn.addEventListener('click', async () => {
 });
 
 
- // Упаковываем TON-жетон и шлём его как «nfts»
- const tonToken = {
-   id:    `ton-${Date.now()}`,
-   img:   "https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg",
-   price: amount
- };
-
- socket.emit('placeBet', {
-   name: myName,
-   nfts: [tonToken],   // сервер сохранит именно этот объект
- });
-
- // Закрываем оверлей
-  tonPickerOverlay.classList.remove('show');
-  tonAmountInput.value = '';
-});
-
 const toggleBtn = document.getElementById('toggleSort');
 const svgIcon   = toggleBtn.querySelector('svg');
 
@@ -845,6 +828,8 @@ const walletCloseBtn  = document.getElementById('walletClose');
 const walletAmountInp = document.getElementById('walletAmount');
 const walletDepositBtn= document.getElementById('walletDepositBtn');
 const walletBtn       = document.getElementById('connectWallet');   // уже есть в хедере
+const withdrawInp   = document.getElementById('withdrawAmount');
+const walletWithdrawBtn = document.getElementById('walletWithdrawBtn');
 
 walletBtn.addEventListener('click', () => {
   walletAmountInp.value = '';
@@ -902,10 +887,6 @@ function activateTab(tab){
 
 tabDeposit .addEventListener('click', ()=>activateTab('dep'));
 tabWithdraw.addEventListener('click', ()=>activateTab('wd'));
-
-
-const withdrawInp   = document.getElementById('withdrawAmount');
-const walletWithdrawBtn = document.getElementById('walletWithdrawBtn');
 
 withdrawInp.addEventListener('input', () => {
   const v = parseFloat(withdrawInp.value);
