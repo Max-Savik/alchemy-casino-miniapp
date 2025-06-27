@@ -589,9 +589,15 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
   addToHistory(record);
 
   /* если это мы – подтянуть новый баланс (приз уже начислен на сервере) */
-  if (winner.userId === myId) {
-    refreshBalance();
-  }
+   if (winner.userId === myId) {
+     refreshBalance();
+
+    /* вкладка «История» уже открыта? – сразу обновим список */
+    if (typeof loadTxHistory === 'function' &&
+        !panelTx.classList.contains('hidden')) {
+      loadTxHistory();
+    }
+   }
 });
 
 // ───── byte-array → hex string helper ─────
