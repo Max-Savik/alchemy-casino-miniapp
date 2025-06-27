@@ -22,6 +22,7 @@ const PORT      = process.env.PORT || 3000;
 const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render disk
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
+const TX_FILE       = path.join(DATA_DIR, "transactions.json");
 
 import dotenv from 'dotenv';
 dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
@@ -99,6 +100,8 @@ wallet.post("/deposit", async (req, res) => {
   balances[req.userId] = (balances[req.userId] || 0) + amt;
   await saveBalances();
   res.json({ balance: balances[req.userId] });
+  txs.push({ userId: req.userId, type:'deposit', amount:amt, ts:Date.now() });
+  await saveTx();
 });
 
 /* POST /wallet/withdraw { userId, amount } */
@@ -110,9 +113,32 @@ wallet.post("/withdraw", async (req, res) => {
   balances[req.userId] = bal - amt;
   await saveBalances();
   res.json({ balance: balances[req.userId] });
+  txs.push({ userId: req.userId, type:'withdraw', amount:amt, ts:Date.now() });
+  await saveTx();
 });
 
+ /* GET /wallet/history?userId=123&limit=30 */
+wallet.get('/history', (req,res)=>{
+  const lim = Math.min( Number(req.query.limit||50), 200);
+  const list = txs
+      .filter(t=>t.userId===req.userId)
+      .slice(-lim)          // последние N
+      .reverse();          // от нового к старому
+  res.json(list);
+});       
 
+/* -------- WALLET TX helpers -------- */
+let txs = [];   // [{userId, type:'deposit'|'withdraw', amount, ts}]
+async function loadTx() {
+  try{
+    txs = JSON.parse(await fs.readFile(TX_FILE,'utf8'));
+  }catch(e){ if (e.code!=="ENOENT") console.error(e); txs=[]; }
+}
+async function saveTx(){
+  const tmp = TX_FILE+'.tmp';
+  await fs.writeFile(tmp, JSON.stringify(txs,null,2));
+  await fs.rename(tmp, TX_FILE);
+}
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
 app.use(cors());
@@ -390,6 +416,7 @@ socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
 (async () => {
   await loadHistory();
   await loadBalances();
+  await loadTx();
   resetRound();      
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
