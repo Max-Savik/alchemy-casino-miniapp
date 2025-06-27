@@ -11,7 +11,6 @@ async function postJSON(url, data){
 }
 
 
-
 // накопленный общий угол (в градусах)
 var cumulativeRotation = 0;
 
