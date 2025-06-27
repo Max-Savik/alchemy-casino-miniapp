@@ -791,6 +791,11 @@ placeTonBetBtn.addEventListener('click', async () => {
 
   tonPickerOverlay.classList.remove('show');
   tonAmountInput.value = '';
+
+  await postJSON(`${API_ORIGIN}/wallet/withdraw`,
+               {userId: myId, amount, purpose:'bet'});
+
+socket.emit('placeBet', { userId: myId, name: myName, nfts:[tonToken] });                        
 });
 
 
@@ -941,7 +946,10 @@ async function loadTxHistory(){
             alt="TON" class="w-4 h-4">
        <span>${sign}${t.amount}</span>
      </div>
-     <span class="text-gray-400 text-xs">${dt}</span>
+        <div class="text-right">
+     <div class="text-gray-400 text-xs">${dt}</div>
+     <div class="text-gray-500 text-[10px]">${label}</div>
+   </div>
    </div>`);
     });
   }catch(e){
