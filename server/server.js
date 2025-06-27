@@ -107,11 +107,14 @@ wallet.post("/deposit", async (req, res) => {
 /* POST /wallet/withdraw { userId, amount } */
 wallet.post("/withdraw", async (req, res) => {
   const amt = Number(req.body.amount);
+  const purpose = req.body.purpose === 'bet' ? 'bet' : 'withdraw';
   if (!amt || amt <= 0) return res.status(400).json({ error: "amount>0" });
   const bal = balances[req.userId] || 0;
   if (bal < amt) return res.status(400).json({ error: "insufficient" });
   balances[req.userId] = bal - amt;
   await saveBalances();
+  txs.push({ userId:req.userId, type:purpose,  amount:amt, ts:Date.now() });
+  await saveTx();
   res.json({ balance: balances[req.userId] });
   txs.push({ userId: req.userId, type:'withdraw', amount:amt, ts:Date.now() });
   await saveTx();
@@ -247,6 +250,16 @@ function startSpin() {
       total: game.totalUSD,
       seed: game.seed            // теперь раскрываем сид
      });
+
+     /* начисляем приз победителю */
+   const uid = winner.userId;
+   if (uid) {
+     balances[uid] = (balances[uid] || 0) + game.totalUSD;
+     await saveBalances();
+     txs.push({ userId: uid, type:'prize', amount:game.totalUSD, ts:Date.now() });
+     await saveTx();
+   }
+
 
     // ───── persist round to mounted disk ─────
 
@@ -388,10 +401,11 @@ app.use('/admin', admin);
 io.on("connection", socket => {
   socket.emit("state", game);
 
-socket.on("placeBet", ({ name, nfts = [], tonAmount = 0 }) => {
+socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
   let player = game.players.find(p => p.name === name);
   if (!player) {
     player = {
+      userId,
       name,
       value: 0,
       color: palette[game.players.length % palette.length],
