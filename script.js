@@ -883,18 +883,18 @@ function setTab(which){               // 'dep' | 'wd'
   const dep = which==='dep', wd = which==='wd', tx = which==='tx';
 
   /* Deposit кнопка */
-  tabDeposit.classList.toggle('bg-amber-500/90',  isDep);
-  tabDeposit.classList.toggle('text-gray-900',    isDep);
-  tabDeposit.classList.toggle('font-semibold',    isDep);
-  tabDeposit.classList.toggle('bg-gray-700/60',  !isDep);
-  tabDeposit.classList.toggle('text-gray-300',   !isDep);
+ tabDeposit.classList.toggle('bg-amber-500/90',  dep);
+ tabDeposit.classList.toggle('text-gray-900',    dep);
+ tabDeposit.classList.toggle('font-semibold',    dep);
+ tabDeposit.classList.toggle('bg-gray-700/60',  !dep);
+ tabDeposit.classList.toggle('text-gray-300',   !dep);
 
   /* Withdraw кнопка */
-  tabWithdraw.classList.toggle('bg-amber-500/90', !isDep);
-  tabWithdraw.classList.toggle('text-gray-900',   !isDep);
-  tabWithdraw.classList.toggle('font-semibold',   !isDep);
-  tabWithdraw.classList.toggle('bg-gray-700/60',   isDep);
-  tabWithdraw.classList.toggle('text-gray-300',    isDep);
+ tabWithdraw.classList.toggle('bg-amber-500/90', wd);
+ tabWithdraw.classList.toggle('text-gray-900',   wd);
+ tabWithdraw.classList.toggle('font-semibold',   wd);
+ tabWithdraw.classList.toggle('bg-gray-700/60', !wd);
+ tabWithdraw.classList.toggle('text-gray-300',  !wd);
 
   tabTx      .classList.toggle('bg-amber-500/90', tx);
   tabTx      .classList.toggle('text-gray-900',   tx);
