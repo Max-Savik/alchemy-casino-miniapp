@@ -1,5 +1,17 @@
 // ============================ script.js ============================
 
+async function postJSON(url, data){
+  const res = await fetch(url, {
+    method: 'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+
+
 // накопленный общий угол (в градусах)
 var cumulativeRotation = 0;
 
@@ -749,12 +761,39 @@ tonAmountInput.addEventListener('input', () => {
   placeTonBetBtn.disabled = !(val > 0);
 });
 
-placeTonBetBtn.addEventListener('click', () => {
+placeTonBetBtn.addEventListener('click', async () => {
   const amount = parseFloat(tonAmountInput.value);
-  if (!amount || amount <= 0) {
-    alert('Введите корректную сумму TON');
+  if (!(amount>0)) return;
+
+  // 1) Проверяем баланс
+  if (tonBalance < amount){
+    alert('Недостаточно TON на балансе!');
     return;
   }
+
+  try{
+    // 2) Списываем (wallet/withdraw)
+    const {balance} = await postJSON(`${API_ORIGIN}/wallet/withdraw`,
+                                     {userId:myId, amount});
+    tonBalance = balance;
+    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+  }catch(e){
+    alert('Не удалось списать TON: '+e.message);
+    return;
+  }
+
+  // 3) Отправляем ставку в Socket.IO
+  const tonToken = {
+    id: `ton-${Date.now()}`,
+    img:"https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg",
+    price: amount
+  };
+  socket.emit('placeBet', { name: myName, nfts:[tonToken] });
+
+  tonPickerOverlay.classList.remove('show');
+  tonAmountInput.value = '';
+});
+
 
  // Упаковываем TON-жетон и шлём его как «nfts»
  const tonToken = {
@@ -826,18 +865,51 @@ walletDepositBtn.addEventListener('click', async () => {
   const amt = parseFloat(walletAmountInp.value);
   if(!(amt>0)) return;
   try{
-    const res = await fetch(`${API_ORIGIN}/wallet/deposit`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({userId:myId, amount:amt})
-    });
-    const {balance} = await res.json();
+    const {balance} = await postJSON(`${API_ORIGIN}/wallet/deposit`,
+                                     {userId:myId, amount:amt});
     tonBalance = balance;
     document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
     walletOverlay.classList.add('hidden');
-  }catch(e){
-    alert('Не удалось пополнить: '+e.message);
-  }
+  }catch(e){ alert('Deposit error: '+e.message); }
+});
+
+walletWithdrawBtn.addEventListener('click', async () => {
+  const amt = parseFloat(withdrawInp.value);
+  if(!(amt>0)) return;
+  try{
+    const {balance} = await postJSON(`${API_ORIGIN}/wallet/withdraw`,
+                                     {userId:myId, amount:amt});
+    tonBalance = balance;
+    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+    walletOverlay.classList.add('hidden');
+  }catch(e){ alert('Withdraw error: '+e.message); }
+});
+
+
+/* ===== Переключение вкладок ===== */
+const tabDeposit   = document.getElementById('tabDeposit');
+const tabWithdraw  = document.getElementById('tabWithdraw');
+const panelDeposit = document.getElementById('panelDeposit');
+const panelWithdraw= document.getElementById('panelWithdraw');
+
+function activateTab(tab){
+  const dep = tab==='dep';
+  tabDeposit.classList.toggle('active', dep);
+  tabWithdraw.classList.toggle('active', !dep);
+  panelDeposit.classList.toggle('hidden', !dep);
+  panelWithdraw.classList.toggle('hidden', dep);
+}
+
+tabDeposit .addEventListener('click', ()=>activateTab('dep'));
+tabWithdraw.addEventListener('click', ()=>activateTab('wd'));
+
+
+const withdrawInp   = document.getElementById('withdrawAmount');
+const walletWithdrawBtn = document.getElementById('walletWithdrawBtn');
+
+withdrawInp.addEventListener('input', () => {
+  const v = parseFloat(withdrawInp.value);
+  walletWithdrawBtn.disabled = !(v>0);
 });
 
 
