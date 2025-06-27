@@ -587,6 +587,11 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
     }))
   };
   addToHistory(record);
+
+  /* если это мы – подтянуть новый баланс (приз уже начислен на сервере) */
+  if (winner.userId === myId) {
+    refreshBalance();
+  }
 });
 
 // ───── byte-array → hex string helper ─────
@@ -739,7 +744,7 @@ placeBetBtn.addEventListener('click', () => {
   renderProfile();
   renderPicker();
   pickerOverlay.classList.add('hidden');
-  socket.emit("placeBet", { name: myName, nfts });
+  socket.emit("placeBet", { userId: myId, name: myName, nfts });
 });
 /* ======== Открываем TON-пикер ======== */
 depositTONBtn.addEventListener('click', () => {
@@ -770,30 +775,20 @@ placeTonBetBtn.addEventListener('click', async () => {
     return;
   }
 
-  try{
-    // 2) Списываем (wallet/withdraw)
-    const {balance} = await postJSON(`${API_ORIGIN}/wallet/withdraw`,
-                                     {userId:myId, amount});
-    tonBalance = balance;
-    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
-  }catch(e){
-    alert('Не удалось списать TON: '+e.message);
-    return;
-  }
-
   // 3) Отправляем ставку в Socket.IO
   const tonToken = {
     id: `ton-${Date.now()}`,
     img:"https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg",
     price: amount
   };
-  socket.emit('placeBet', { name: myName, nfts:[tonToken] });
 
   tonPickerOverlay.classList.remove('show');
   tonAmountInput.value = '';
 
-  await postJSON(`${API_ORIGIN}/wallet/withdraw`,
+  const {balance} = await postJSON(`${API_ORIGIN}/wallet/withdraw`,
                {userId: myId, amount, purpose:'bet'});
+  tonBalance = balance;
+  document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
 
 socket.emit('placeBet', { userId: myId, name: myName, nfts:[tonToken] });                        
 });
@@ -936,9 +931,18 @@ async function loadTxHistory(){
     }
     panelTx.innerHTML = '';
     arr.forEach(t=>{
-      const dt = new Date(t.ts).toLocaleString();
-      const sign = t.type==='deposit' ? '+' : '−';
-      const clr  = t.type==='deposit' ? 'text-emerald-400' : 'text-rose-400';
+      const dt    = new Date(t.ts).toLocaleString();
+      const label = ({
+        deposit : 'Пополнение',
+        withdraw: 'Вывод',
+        bet     : 'Ставка',
+        prize   : 'Выигрыш'
+      })[t.type] || t.type;
+
+      const plusTypes = ['deposit','prize'];
+      const sign = plusTypes.includes(t.type) ? '+' : '−';
+      const clr  = plusTypes.includes(t.type) ? 'text-emerald-400'
+                                              : 'text-rose-400';
      panelTx.insertAdjacentHTML('beforeend', `
    <div class="flex justify-between items-center py-2 px-1">
      <div class="flex items-center gap-1 ${clr}">
