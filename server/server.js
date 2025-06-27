@@ -250,13 +250,18 @@ function startSpin() {
      });
 
      /* начисляем приз победителю */
-   const uid = winner.userId;
-   if (uid) {
-     balances[uid] = (balances[uid] || 0) + game.totalUSD;
-     await saveBalances();
-     txs.push({ userId: uid, type:'prize', amount:game.totalUSD, ts:Date.now() });
-     await saveTx();
-   }
+  const uid = String(winner.userId);
+  if (uid) {
+    balances[uid] = (balances[uid] || 0) + game.totalUSD;
+    await saveBalances();
+
+    /* сохраняем транзакцию «выигрыш» */
+    txs.push({
+      userId : uid,            // ← всегда строка
+      type   : 'prize',
+      amount : game.totalUSD,
+      ts     : Date.now()
+    });
 
 
     // ───── persist round to mounted disk ─────
