@@ -877,16 +877,33 @@ const tabWithdraw  = document.getElementById('tabWithdraw');
 const panelDeposit = document.getElementById('panelDeposit');
 const panelWithdraw= document.getElementById('panelWithdraw');
 
-function activateTab(tab){
-  const dep = tab==='dep';
-  tabDeposit.classList.toggle('active', dep);
-  tabWithdraw.classList.toggle('active', !dep);
-  panelDeposit.classList.toggle('hidden', !dep);
-  panelWithdraw.classList.toggle('hidden', dep);
+function setTab(which){               // 'dep' | 'wd'
+  const isDep = which === 'dep';
+
+  /* Deposit кнопка */
+  tabDeposit.classList.toggle('bg-amber-500/90',  isDep);
+  tabDeposit.classList.toggle('text-gray-900',    isDep);
+  tabDeposit.classList.toggle('font-semibold',    isDep);
+  tabDeposit.classList.toggle('bg-gray-700/60',  !isDep);
+  tabDeposit.classList.toggle('text-gray-300',   !isDep);
+
+  /* Withdraw кнопка */
+  tabWithdraw.classList.toggle('bg-amber-500/90', !isDep);
+  tabWithdraw.classList.toggle('text-gray-900',   !isDep);
+  tabWithdraw.classList.toggle('font-semibold',   !isDep);
+  tabWithdraw.classList.toggle('bg-gray-700/60',   isDep);
+  tabWithdraw.classList.toggle('text-gray-300',    isDep);
+
+  /* Панели */
+  panelDeposit .classList.toggle('hidden', !isDep);
+  panelWithdraw.classList.toggle('hidden',  isDep);
 }
 
-tabDeposit .addEventListener('click', ()=>activateTab('dep'));
-tabWithdraw.addEventListener('click', ()=>activateTab('wd'));
+tabDeposit .addEventListener('click', () => setTab('dep'));
+tabWithdraw.addEventListener('click', () => setTab('wd'));
+// при загрузке — depósito активен
+setTab('dep');
+
 
 withdrawInp.addEventListener('input', () => {
   const v = parseFloat(withdrawInp.value);
