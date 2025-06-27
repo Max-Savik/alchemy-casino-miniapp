@@ -830,6 +830,8 @@ const walletDepositBtn= document.getElementById('walletDepositBtn');
 const walletBtn       = document.getElementById('connectWallet');   // уже есть в хедере
 const withdrawInp   = document.getElementById('withdrawAmount');
 const walletWithdrawBtn = document.getElementById('walletWithdrawBtn');
+const tabTx       = document.getElementById('tabTx');
+const panelTx     = document.getElementById('panelTx');
 
 walletBtn.addEventListener('click', () => {
   walletAmountInp.value = '';
@@ -878,7 +880,7 @@ const panelDeposit = document.getElementById('panelDeposit');
 const panelWithdraw= document.getElementById('panelWithdraw');
 
 function setTab(which){               // 'dep' | 'wd'
-  const isDep = which === 'dep';
+  const dep = which==='dep', wd = which==='wd', tx = which==='tx';
 
   /* Deposit кнопка */
   tabDeposit.classList.toggle('bg-amber-500/90',  isDep);
@@ -894,13 +896,22 @@ function setTab(which){               // 'dep' | 'wd'
   tabWithdraw.classList.toggle('bg-gray-700/60',   isDep);
   tabWithdraw.classList.toggle('text-gray-300',    isDep);
 
-  /* Панели */
-  panelDeposit .classList.toggle('hidden', !isDep);
-  panelWithdraw.classList.toggle('hidden',  isDep);
+  tabTx      .classList.toggle('bg-amber-500/90', tx);
+  tabTx      .classList.toggle('text-gray-900',   tx);
+  tabTx      .classList.toggle('font-semibold',   tx);
+  tabTx      .classList.toggle('bg-gray-700/60', !tx);
+  tabTx      .classList.toggle('text-gray-300', !tx);
+
+  panelDeposit .classList.toggle('hidden', !dep);
+  panelWithdraw.classList.toggle('hidden', !wd);
+  panelTx      .classList.toggle('hidden', !tx);
+
+  if (tx) loadTxHistory();        // подгружаем при открытии
 }
 
 tabDeposit .addEventListener('click', () => setTab('dep'));
 tabWithdraw.addEventListener('click', () => setTab('wd'));
+tabTx.addEventListener('click', ()=>setTab('tx'));
 // при загрузке — depósito активен
 setTab('dep');
 
@@ -910,6 +921,30 @@ withdrawInp.addEventListener('input', () => {
   walletWithdrawBtn.disabled = !(v>0);
 });
 
+async function loadTxHistory(){
+  panelTx.innerHTML = '<div class="py-2 text-center text-gray-400">Загрузка…</div>';
+  try{
+    const res = await fetch(`${API_ORIGIN}/wallet/history?userId=${myId}&limit=50`);
+    const arr = await res.json();
+    if(arr.length===0){
+      panelTx.innerHTML = '<div class="py-4 text-center text-gray-400">Пока пусто</div>';
+      return;
+    }
+    panelTx.innerHTML = '';
+    arr.forEach(t=>{
+      const dt = new Date(t.ts).toLocaleString();
+      const sign = t.type==='deposit' ? '+' : '−';
+      const clr  = t.type==='deposit' ? 'text-emerald-400' : 'text-rose-400';
+      panelTx.insertAdjacentHTML('beforeend', `
+        <div class="flex justify-between py-2 px-1">
+          <span class="${clr}">${sign}${t.amount}</span>
+          <span class="text-gray-400">${dt}</span>
+        </div>`);
+    });
+  }catch(e){
+    panelTx.innerHTML = '<div class="py-2 text-center text-rose-400">Ошибка загрузки</div>';
+  }
+}
 
 // =================== HISTORY BUTTON ===================
 historyBtn.addEventListener('click', () => {
