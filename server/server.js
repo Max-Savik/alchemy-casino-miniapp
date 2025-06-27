@@ -113,11 +113,9 @@ wallet.post("/withdraw", async (req, res) => {
   if (bal < amt) return res.status(400).json({ error: "insufficient" });
   balances[req.userId] = bal - amt;
   await saveBalances();
-  txs.push({ userId:req.userId, type:purpose,  amount:amt, ts:Date.now() });
+  txs.push({ userId:req.userId, type:purpose, amount:amt, ts:Date.now() });
   await saveTx();
   res.json({ balance: balances[req.userId] });
-  txs.push({ userId: req.userId, type:'withdraw', amount:amt, ts:Date.now() });
-  await saveTx();
 });
 
  /* GET /wallet/history?userId=123&limit=30 */
@@ -244,7 +242,7 @@ function startSpin() {
     commitHash: game.commitHash
   });
 
-  setTimeout(() => {
+  setTimeout(async () => {
       io.emit("spinEnd", {
       winner,
       total: game.totalUSD,
@@ -278,8 +276,7 @@ history.push({
   }))
 });
 
-    saveHistory().catch(console.error);
-    // ─────────────────────────────────────────
+    await saveHistory();
 
     setTimeout(resetRound, 6_000);
   }, 6_000);
@@ -402,7 +399,7 @@ io.on("connection", socket => {
   socket.emit("state", game);
 
 socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
-  let player = game.players.find(p => p.name === name);
+  let player = game.players.find(p => p.userId === userId);
   if (!player) {
     player = {
       userId,
