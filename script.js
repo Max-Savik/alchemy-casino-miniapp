@@ -2,7 +2,7 @@
 
 /* === TonConnect === */
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: `${location.origin}/tonconnect-manifest.json`,
+  manifestUrl: "https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json",
   buttonRootId: "tonConnectBtn"
 });
 
