@@ -2,8 +2,8 @@
 
 /* === TonConnect === */
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: window.TC_MANIFEST_URL || "https://YOUR-MANIFEST-URL",
-  buttonRootId: "tonConnectBtn"          // ← та самая дивка в модалке
+  manifestUrl: `${location.origin}/tonconnect-manifest.json`,
+  buttonRootId: "tonConnectBtn"
 });
 
 let tonAddress = null;
