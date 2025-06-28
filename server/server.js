@@ -23,6 +23,18 @@ const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render d
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
+const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
+let addrMap = {};           // { [userId]: "EQB…" }
+
+async function loadAddr(){
+  try{ addrMap = JSON.parse(await fs.readFile(ADDR_FILE,'utf8')); }
+  catch(e){ if(e.code!=="ENOENT") console.error(e); addrMap={}; }
+}
+async function saveAddr(){
+  const tmp=ADDR_FILE+'.tmp';
+  await fs.writeFile(tmp,JSON.stringify(addrMap,null,2));
+  await fs.rename(tmp,ADDR_FILE);
+}
 
 import dotenv from 'dotenv';
 dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
@@ -117,6 +129,16 @@ wallet.post("/withdraw", async (req, res) => {
   await saveTx();
   res.json({ balance: balances[req.userId] });
 });
+
+/* POST /wallet/link { userId, address }  */
+wallet.post('/link', async (req,res)=>{
+  const {address} = req.body || {};
+  if(!address) return res.status(400).json({error:'address required'});
+  addrMap[req.userId] = address;
+  await saveAddr();
+  res.json({ ok:true, address });
+});
+
 
  /* GET /wallet/history?userId=123&limit=30 */
 wallet.get('/history', (req,res)=>{
@@ -444,6 +466,7 @@ socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
   await loadHistory();
   await loadBalances();
   await loadTx();
+  await loadAddr();
   resetRound();      
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
