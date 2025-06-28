@@ -1,9 +1,9 @@
 {
-  "manifest_version": "0.0.1",           // ← обязателен
+  "manifest_version": "0.0.1",        
   "name": "Golden Play MiniApp",
   "short_name": "GoldenPlay",
   "description": "Casino mini-app with NFT & TON jackpot",
-  "url": "https://alchemy-casino-miniapp.onrender.com",   // https, без слеша в конце
+  "url": "https://alchemy-casino-miniapp.onrender.com",  
 
   "icon_url": "https://alchemy-casino-miniapp.onrender.com/icon512.png",
 
