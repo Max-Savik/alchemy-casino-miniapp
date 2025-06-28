@@ -340,37 +340,48 @@
     </div>
   </div>
 </div>
-<!-- WALLET MODAL -->
+<!-- ▸▸▸ WALLET MODAL ▸▸▸ -->
 <div id="walletOverlay"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
 
-  <div class="w-11/12 max-w-sm p-6 rounded-2xl bg-gray-800/90 ring-1 ring-amber-500/50 shadow-2xl">
+  <div
+    class="w-11/12 max-w-sm p-6 rounded-2xl bg-gray-800/90 ring-1 ring-amber-500/50 shadow-2xl">
 
-    <!-- Заголовок + закрыть -->
-    <div class="flex items-center justify-between mb-5">
-      <h3 class="text-2xl font-semibold text-amber-300">Баланс TON</h3>
+    <!-- ── заголовок + Ton Connect + «×» ── -->
+    <div class="flex items-center gap-3 mb-5">
+      <h3 class="flex-grow text-2xl font-semibold text-amber-300">
+        Баланс TON
+      </h3>
+
+      <!-- TonConnect-UI смонтируется сюда -->
+      <div id="tonConnectBtn"></div>
+
       <button id="walletClose"
-              class="text-3xl leading-none text-gray-400 hover:text-amber-300">&times;</button>
+              class="text-3xl leading-none text-gray-400 hover:text-amber-300">
+        &times;
+      </button>
     </div>
-    <!-- будет заменён TonConnect-UI -->
-    <div id="tonConnectBtn" class="mb-4 flex justify-end"></div>
 
-    <!-- Вкладки -->
+    <!-- ── вкладки ── -->
     <div class="flex mb-6">
       <button id="tabDeposit"
-              class="flex-1 py-2 text-center rounded-t-lg bg-amber-500/90 text-gray-900
-                     font-semibold">Пополнить</button>
+              class="flex-1 py-2 text-center rounded-t-lg bg-amber-500/90 text-gray-900 font-semibold">
+        Пополнить
+      </button>
       <button id="tabWithdraw"
-              class="flex-1 py-2 text-center rounded-t-lg bg-gray-700/60 text-gray-300">Вывести</button>
+              class="flex-1 py-2 text-center rounded-t-lg bg-gray-700/60 text-gray-300">
+        Вывести
+      </button>
       <button id="tabTx"
-        class="flex-1 py-2 text-center rounded-t-lg bg-gray-700/60 text-gray-300">
-  История
-</button>
+              class="flex-1 py-2 text-center rounded-t-lg bg-gray-700/60 text-gray-300">
+        История
+      </button>
     </div>
 
-    <!-- ===== Пополнить ===== -->
+    <!-- ▸▸▸ ПОПОЛНИТЬ ▸▸▸ -->
     <div id="panelDeposit">
-      <label class="block mb-2 text-gray-300" for="walletAmount">Сумма TON:</label>
+      <label for="walletAmount"
+             class="block mb-2 text-gray-300">Сумма TON:</label>
       <input id="walletAmount" type="number" min="0.01" step="0.01"
              class="w-full mb-6 p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400
                     focus:outline-none focus:ring-2 focus:ring-amber-400"
@@ -378,12 +389,15 @@
       <button id="walletDepositBtn" disabled
               class="w-full py-2 rounded-lg font-semibold flex justify-center
                      bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600
-                     disabled:opacity-50">Пополнить</button>
+                     disabled:opacity-50">
+        Пополнить
+      </button>
     </div>
 
-    <!-- ===== Вывести ===== -->
+    <!-- ▸▸▸ ВЫВЕСТИ ▸▸▸ -->
     <div id="panelWithdraw" class="hidden">
-      <label class="block mb-2 text-gray-300" for="withdrawAmount">Сумма TON:</label>
+      <label for="withdrawAmount"
+             class="block mb-2 text-gray-300">Сумма TON:</label>
       <input id="withdrawAmount" type="number" min="0.01" step="0.01"
              class="w-full mb-6 p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400
                     focus:outline-none focus:ring-2 focus:ring-amber-400"
@@ -391,14 +405,20 @@
       <button id="walletWithdrawBtn" disabled
               class="w-full py-2 rounded-lg font-semibold flex justify-center
                      bg-rose-500/90 hover:bg-rose-500 active:bg-rose-600
-                     disabled:opacity-50">Вывести</button>
+                     disabled:opacity-50">
+        Вывести
+      </button>
     </div>
-<div id="panelTx"
-     class="hidden max-h-72 overflow-y-auto divide-y divide-gray-700 text-sm">
-</div>
+
+    <!-- ▸▸▸ ИСТОРИЯ ▸▸▸ -->
+    <div id="panelTx"
+         class="hidden max-h-72 overflow-y-auto divide-y divide-gray-700 text-sm">
+      <!-- история транзакций рендерится скриптом -->
+    </div>
 
   </div>
 </div>
+
 
 
 
