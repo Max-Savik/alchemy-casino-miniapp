@@ -1,5 +1,13 @@
 {
+  "manifest_version": "0.0.1",         
   "name": "Golden Play MiniApp",
-  "url":  "https://alchemy-casino-miniapp.onrender.com",
-  "icons": ["https://360031.fs1.hubspotusercontent-na1.net/hub/360031/hubfs/feature_alchemysymbol.jpg?width=509&name=feature_alchemysymbol.jpg"]
+  "short_name": "GoldenPlay",
+  "description": "Mini-app with NFT & TON jackpot",
+  "url": "https://alchemy-casino-miniapp.onrender.com",  
+
+  "icon_url": "https://alchemy-casino-miniapp.onrender.com/icon512.png",
+
+  "terms_of_use_url":   "https://alchemy-casino-miniapp.onrender.com/terms",
+  "privacy_policy_url": "https://alchemy-casino-miniapp.onrender.com/privacy"
 }
+
