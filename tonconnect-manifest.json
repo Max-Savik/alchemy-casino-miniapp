@@ -1,5 +1,8 @@
 {
   "name": "Golden Play",
-  "url": "https://max-savik.github.io/alchemy-casino-miniapp",
-  "iconUrl": "https://max-savik.github.io/alchemy-casino-miniapp/icon512.png"
+  "url": "https://max-savik.github.io/alchemy-casino-miniapp/",
+  "iconUrl": "https://max-savik.github.io/alchemy-casino-miniapp/icon512.png",
+
+  "termsOfUseUrl":    "https://max-savik.github.io/alchemy-casino-miniapp/terms.html",
+  "privacyPolicyUrl": "https://max-savik.github.io/alchemy-casino-miniapp/privacy.html"
 }
