@@ -705,15 +705,3 @@ input[type=range]::-moz-range-thumb {
 
 #fairBtn {padding-right: 0.5rem;}
 
-#tonConnectBtn,               /* сам root */
-#tonConnectBtn > * {          /* внутренний wrapper TonConnect-UI */
-    display: flex;
-    flex-wrap: wrap;          /* перенос строк при нехватке места */
-    justify-content: flex-start;
-    gap: .5rem;               /* чуть воздуха между кнопками */
-}
-
-#tonConnectBtn button {       /* сами кнопки */
-    flex: 1 1 calc(50% - .5rem);   /* две в строку, на мобилке */
-    min-width: 130px;              /* чтобы надписи не ломались */
-}
