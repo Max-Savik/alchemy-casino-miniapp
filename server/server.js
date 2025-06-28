@@ -262,7 +262,8 @@ function startSpin() {
       amount : game.totalUSD,
       ts     : Date.now()
     });
-
+    await saveTx();            // сохраняем prize-tx на диск
+  } 
 
     // ───── persist round to mounted disk ─────
 
