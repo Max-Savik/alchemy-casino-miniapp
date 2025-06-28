@@ -1,13 +1,29 @@
 // ============================ script.js ============================
 
+/* === TonConnect === */
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl:  import.meta.env?.TC_MANIFEST_URL ||   // vite / parcel etc.
-                window.TC_MANIFEST_URL                // fallback
-                || "https://YOUR-MANIFEST-URL",       // замените
-  buttonRootId: "connectWallet"   // существующая кнопка
+  manifestUrl: window.TC_MANIFEST_URL || "https://YOUR-MANIFEST-URL",
+  buttonRootId: "tonConnectBtn"          // ← та самая дивка в модалке
 });
 
-let tonAddress = null;          // будет строкой base64/hex
+let tonAddress = null;
+
+tonConnectUI.onStatusChange(async walletInfo => {
+  if (!walletInfo) {
+    tonAddress = null;
+    return;
+  }
+  tonAddress = walletInfo.account.address;
+
+  // сообщаем серверу, если ещё не привязан
+  await postJSON(`${API_ORIGIN}/wallet/link`, {
+    userId: myId,
+    address: tonAddress
+  }).catch(()=>{});
+
+  refreshBalance();
+});
+
 
 
 async function postJSON(url, data){
