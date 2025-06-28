@@ -1,12 +1,5 @@
 {
-  "manifest_version": "0.0.1",        
-  "name": "Golden Play MiniApp",
-  "short_name": "GoldenPlay",
-  "description": "Casino mini-app with NFT & TON jackpot",
-  "url": "https://alchemy-casino-miniapp.onrender.com",  
-
-  "icon_url": "https://alchemy-casino-miniapp.onrender.com/icon512.png",
-
-  "terms_of_use_url":   "https://alchemy-casino-miniapp.onrender.com/terms",
-  "privacy_policy_url": "https://alchemy-casino-miniapp.onrender.com/privacy"
+  "name": "Golden Play",
+  "url": "https://max-savik.github.io/alchemy-casino-miniapp",
+  "iconUrl": "https://alchemy-casino-miniapp.onrender.com/icon512.png",
 }
