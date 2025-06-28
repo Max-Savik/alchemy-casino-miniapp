@@ -249,22 +249,32 @@ function startSpin() {
       seed: game.seed            // теперь раскрываем сид
      });
 
-     /* начисляем приз победителю */
-  const uid = String(winner.userId);
-  if (uid) {
-    balances[uid] = (balances[uid] || 0) + game.totalUSD;
-    await saveBalances();
+      /* ───────── начисляем приз (только TON) ───────── */
+      const uid = String(winner.userId);
+      if (uid) {
+        /* считаем общий TON-банк: суммируем NFT-токены, id которых
+           мы создавали вида  "ton-<ts>"  */
+        const potTON = game.players.reduce((sum, p) =>
+          sum +
+          p.nfts
+           .filter(n => n.id.startsWith("ton-"))
+           .reduce((s, n) => s + n.price, 0)
+        , 0);
 
-    /* сохраняем транзакцию «выигрыш» */
-    txs.push({
-      userId : uid,            // ← всегда строка
-      type   : 'prize',
-      amount : game.totalUSD,
-      ts     : Date.now()
-    });
-    await saveTx();            // сохраняем prize-tx на диск
-  } 
+        if (potTON > 0) {
+          balances[uid] = (balances[uid] || 0) + potTON;
+          await saveBalances();
 
+          /* записываем prize-транзакцию */
+          txs.push({
+            userId : uid,
+            type   : "prize",
+            amount : potTON,
+            ts     : Date.now()
+          });
+          await saveTx();
+        }
+      }
     // ───── persist round to mounted disk ─────
 
 history.push({
