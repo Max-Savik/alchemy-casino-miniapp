@@ -1,5 +1,15 @@
 // ============================ script.js ============================
 
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+  manifestUrl:  import.meta.env?.TC_MANIFEST_URL ||   // vite / parcel etc.
+                window.TC_MANIFEST_URL                // fallback
+                || "https://YOUR-MANIFEST-URL",       // замените
+  buttonRootId: "connectWallet"   // существующая кнопка
+});
+
+let tonAddress = null;          // будет строкой base64/hex
+
+
 async function postJSON(url, data){
   const res = await fetch(url, {
     method: 'POST',
@@ -832,7 +842,7 @@ const walletOverlay   = document.getElementById('walletOverlay');
 const walletCloseBtn  = document.getElementById('walletClose');
 const walletAmountInp = document.getElementById('walletAmount');
 const walletDepositBtn= document.getElementById('walletDepositBtn');
-const walletBtn       = document.getElementById('connectWallet');   // уже есть в хедере
+const walletBtn       = document.getElementById('openWalletWindow');   
 const withdrawInp   = document.getElementById('withdrawAmount');
 const walletWithdrawBtn = document.getElementById('walletWithdrawBtn');
 const tabTx       = document.getElementById('tabTx');
