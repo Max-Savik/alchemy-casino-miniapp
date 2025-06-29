@@ -628,14 +628,6 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
     }
    }
 });
-
-socket.on('balanceUpdate', ({userId,balance})=>{
-  if(userId===myId){
-    tonBalance = balance;
-    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
-  }
-});
-
       
 function makeDepositPayload(uid){
   const bytes = new TextEncoder().encode(`deposit:${uid}`);
@@ -898,24 +890,31 @@ walletAmountInp.addEventListener('input', () => {
 
 walletDepositBtn.addEventListener('click', async () => {
   const amt = parseFloat(walletAmountInp.value);
-  if(!(amt>0)) return;
+  if (!(amt > 0)) return;
 
-  try{
+  try {
     await tonConnectUI.sendTransaction({
-      validUntil: Math.floor(Date.now()/1e3)+300,
-      messages:[{
-        address : window.CASINO_WALLET,      // из /env.js
-        amount  : (amt*1e9).toString(),      // в нано-ton
-        payload : makeDepositPayload(myId)   // “deposit:<telegramId>”
+      validUntil: Math.floor(Date.now() / 1e3) + 300,          // +5 минут
+      messages: [{
+        address: window.CASINO_WALLET,                         // из env.js
+        amount : (amt * 1e9).toString(),                       // nano-TON
+        payload: TON_CONNECT_UI.toUint8Array(`deposit:${myId}`)
       }]
     });
 
-    // показываем «Ждём подтверждения…» – баланс придёт с сервера
-    walletAmountInp.value = '';
+    walletAmountInp.value = "";
     walletDepositBtn.disabled = true;
-    alert('Транзакция отправлена!\nБаланс обновится после подтверждения сети.');
-  }catch(e){
-    alert('Платёж отклонён: '+e.message);
+    alert("Транзакция отправлена!\nБаланс обновится после подтверждения сети.");
+  } catch (e) {
+    alert("Платёж отклонён: " + e.message);
+  }
+});
+
+/* push-уведомление от сервера о новом балансе */
+socket.on("balanceUpdate", ({ userId, balance }) => {
+  if (userId === myId) {
+    tonBalance = balance;
+    document.getElementById("tonBalance").textContent = balance.toFixed(2);
   }
 });
 
