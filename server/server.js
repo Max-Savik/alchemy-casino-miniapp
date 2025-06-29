@@ -172,6 +172,12 @@ app.use("/wallet", wallet);
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
+app.get('/env.js', (req, res) => {
+  res.type('application/javascript');
+  res.send(`window.CASINO_WALLET = "${process.env.CASINO_WALLET}";`);
+});
+
+
 // ───────────────────── Game state (1 round) ────────────────────
 let game = {
   players: [],
@@ -470,3 +476,53 @@ socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
   resetRound();      
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
+import TonWeb from "tonweb";           // ES module (tonweb@latest)
+const ton = new TonWeb();
+
+let lastLt = 0;    // читаем из /data/scan.json
+
+async function scanLoop(){
+  try{
+    const r = await fetch(
+      `https://toncenter.com/api/v3/getTransactions?address=${CASINO_WALLET}&limit=20&api_key=${TONCENTER_API_KEY}`
+    ).then(r=>r.json());
+
+    for(const tx of r.result){
+      if(tx.lt <= lastLt) break;        // уже видели
+      lastLt = tx.lt;
+
+      // in-message?
+      const inMsg = tx.in_msg;
+      if(!inMsg || inMsg.source) continue;               // пропускаем исходящие
+
+      // value
+      const ton = parseInt(inMsg.value)/1e9;
+      if(ton < MIN_DEPOSIT_TON) continue;
+
+      // comment
+      const parsed = TonWeb.utils.bytesToString(
+        TonWeb.utils.base64ToBytes(inMsg.msg_data?.text || '')
+      );
+      const m = parsed.match(/^deposit:(.+)$/);
+      if(!m) continue;
+
+      const uid = m[1];
+      balances[uid] = (balances[uid]||0)+ton;
+      await saveBalances();
+
+      txs.push({userId:uid,type:'deposit',amount:ton,ts:Date.now(),tx:tx.transaction_id.hash});
+      await saveTx();
+
+      io.emit('balanceUpdate', { userId:uid, balance:balances[uid] });
+    }
+
+    // persist lastLt
+    await fs.writeFile(path.join(DATA_DIR,'scan.json'), JSON.stringify({lt:lastLt}));
+
+  }catch(e){ console.error('scan:',e.message); }
+
+  setTimeout(scanLoop, (process.env.SCAN_INTERVAL||15)*1000);
+}
+scanLoop();
+
