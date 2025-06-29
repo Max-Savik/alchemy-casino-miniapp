@@ -638,9 +638,8 @@ socket.on('balanceUpdate', ({userId,balance})=>{
 
       
 function makeDepositPayload(uid){
-  /* TL-B: text_comment "deposit:<uid>"  */
-  const s = `deposit:${uid}`;
-  return new TextEncoder().encode(s);      // Uint8Array payload
+  const bytes = new TextEncoder().encode(`deposit:${uid}`);
+  return btoa(String.fromCharCode(...bytes));   // => base64 string
 }
 
     
