@@ -487,14 +487,11 @@ socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
 import TonWeb from "tonweb";
 const ton = new TonWeb();              // нужен только utils
 
-// ── последний обработанный LT ──
 let lastLt = 0;
 try{
   const st = JSON.parse(await fs.readFile(SCAN_FILE,'utf8'));
   lastLt = st.lt || 0;
 }catch{ /* first start */ }
-
-let lastLt = 0;    // читаем из /data/scan.json
 
 async function scanLoop(){
   try{
