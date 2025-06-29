@@ -6,7 +6,10 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
   buttonRootId: "tonConnectBtn"
 });
 
-const { comment } = window.tonConnectSdk;
+const { comment } = window.tonConnectSdk || {};
+if (typeof comment !== 'function') {
+  console.error('[TonConnect] comment() helper not found – проверьте тег SDK');
+}
 
 let tonAddress = null;
 
