@@ -42,6 +42,13 @@ dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
 
+// ──────────── TON-env ────────────
+const CASINO_WALLET     = process.env.CASINO_WALLET;
+const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || "";
+const MIN_DEPOSIT_TON   = Number(process.env.MIN_DEPOSIT_TON || "0.1");
+if (!CASINO_WALLET) throw new Error('CASINO_WALLET not set');
+
+const SCAN_FILE = path.join(DATA_DIR, "scan.json");
 
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
@@ -477,8 +484,15 @@ socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
 
-import TonWeb from "tonweb";           // ES module (tonweb@latest)
-const ton = new TonWeb();
+import TonWeb from "tonweb";
+const ton = new TonWeb();              // нужен только utils
+
+// ── последний обработанный LT ──
+let lastLt = 0;
+try{
+  const st = JSON.parse(await fs.readFile(SCAN_FILE,'utf8'));
+  lastLt = st.lt || 0;
+}catch{ /* first start */ }
 
 let lastLt = 0;    // читаем из /data/scan.json
 
@@ -489,36 +503,37 @@ async function scanLoop(){
     ).then(r=>r.json());
 
     for(const tx of r.result){
-      if(tx.lt <= lastLt) break;        // уже видели
-      lastLt = tx.lt;
+      if (tx.transaction_id.lt <= lastLt) break;   // уже видели
+      lastLt = tx.transaction_id.lt;
 
       // in-message?
       const inMsg = tx.in_msg;
       if(!inMsg || inMsg.source) continue;               // пропускаем исходящие
 
       // value
-      const ton = parseInt(inMsg.value)/1e9;
-      if(ton < MIN_DEPOSIT_TON) continue;
+      const amountTon = parseInt(inMsg.value) / 1e9;
+      if (amountTon < MIN_DEPOSIT_TON) continue;
 
       // comment
+      const commentB64 = inMsg.message || inMsg.msg_data?.text || "";
       const parsed = TonWeb.utils.bytesToString(
-        TonWeb.utils.base64ToBytes(inMsg.msg_data?.text || '')
+        TonWeb.utils.base64ToBytes(commentB64)
       );
       const m = parsed.match(/^deposit:(.+)$/);
       if(!m) continue;
 
       const uid = m[1];
-      balances[uid] = (balances[uid]||0)+ton;
+      balances[uid] = (balances[uid] || 0) + amountTon;
       await saveBalances();
 
-      txs.push({userId:uid,type:'deposit',amount:ton,ts:Date.now(),tx:tx.transaction_id.hash});
+      txs.push({ userId: uid, type: "deposit", amount: amountTon, ts: Date.now(), tx: tx.transaction_id.hash });
       await saveTx();
 
       io.emit('balanceUpdate', { userId:uid, balance:balances[uid] });
     }
 
     // persist lastLt
-    await fs.writeFile(path.join(DATA_DIR,'scan.json'), JSON.stringify({lt:lastLt}));
+    await fs.writeFile(SCAN_FILE, JSON.stringify({ lt: lastLt }));
 
   }catch(e){ console.error('scan:',e.message); }
 
