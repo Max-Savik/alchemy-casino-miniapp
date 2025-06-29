@@ -514,14 +514,18 @@ async function scanLoop(){
       const amountTon = parseInt(inMsg.value) / 1e9;
       if (amountTon < MIN_DEPOSIT_TON) continue;
 
-       /* --- извлекаем строковый комментарий из входящего сообщения --- */
-      let parsed = inMsg.msg_data?.text;                 // toncenter text
-      if (!parsed && inMsg.message) {                  // fallback — ручной decode BOC
+      /* --- извлекаем комментарий --- */
+      let parsed =
+          inMsg.msg_data?.comment ??                    // text-comment
+          inMsg.msg_data?.text    ??                    // старые версии
+          null;
+
+      /* если пришла сырaя ячейка — пытаемся раскодировать её сами */
+      if (!parsed && inMsg.msg_data?.body) {
         try {
-          parsed = TonWeb.utils.bytesToString(
-            TonWeb.utils.base64ToBytes(inMsg.message)
-          );
-        } catch { /* ignore decode errors */ }
+          const bytes = TonWeb.utils.base64ToBytes(inMsg.msg_data.body);
+          parsed = TonWeb.utils.bytesToString(bytes);
+        } catch {/* ignore */}
       }
       if (!parsed) continue;                           // нет комментария → пропускаем
       const m = parsed.match(/^deposit:(.+)$/);
