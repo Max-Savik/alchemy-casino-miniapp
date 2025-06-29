@@ -41,7 +41,7 @@ async function postJSON(url, data){
 var cumulativeRotation = 0;
 
 // ───── Preloader + Lottie ─────
-(async function showPreloader() {
+(async showPreloader() {
   const overlay   = document.getElementById('lottieOverlay');
   const lottieEl  = document.getElementById('lottieContainer');
   // 1) Показываем оверлей
@@ -626,6 +626,13 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
    }
 });
 
+function makeDepositPayload(uid){
+  /* TL-B: text_comment "💰deposit:<uid>;"   (простой способ) */
+  const s = `deposit:${uid}`;
+  return TON_CONNECT_UI.toUint8Array(s);   // helper из SDK
+}
+
+    
 // ───── byte-array → hex string helper ─────
 function bufToHex(buf) {
   return [...new Uint8Array(buf)]
@@ -882,14 +889,26 @@ walletAmountInp.addEventListener('input', () => {
 walletDepositBtn.addEventListener('click', async () => {
   const amt = parseFloat(walletAmountInp.value);
   if(!(amt>0)) return;
+
   try{
-    const {balance} = await postJSON(`${API_ORIGIN}/wallet/deposit`,
-                                     {userId:myId, amount:amt});
-    tonBalance = balance;
-    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
-    walletOverlay.classList.add('hidden');
-  }catch(e){ alert('Deposit error: '+e.message); }
+    await tonConnectUI.sendTransaction({
+      validUntil: Math.floor(Date.now()/1e3)+300,
+      messages:[{
+        address : CASINO_WALLET,             // возьмите из env, прокиньте в HTML
+        amount  : (amt*1e9).toString(),      // в нано-ton
+        payload : makeDepositPayload(myId)   // “deposit:<telegramId>”
+      }]
+    });
+
+    // показываем «Ждём подтверждения…» – баланс придёт с сервера
+    walletAmountInp.value = '';
+    walletDepositBtn.disabled = true;
+    alert('Транзакция отправлена!\nБаланс обновится после подтверждения сети.');
+  }catch(e){
+    alert('Платёж отклонён: '+e.message);
+  }
 });
+
 
 walletWithdrawBtn.addEventListener('click', async () => {
   const amt = parseFloat(withdrawInp.value);
