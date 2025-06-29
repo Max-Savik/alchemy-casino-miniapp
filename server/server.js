@@ -114,13 +114,8 @@ wallet.get("/balance", (req, res) => {
 
 /* POST /wallet/deposit { userId, amount } */
 wallet.post("/deposit", async (req, res) => {
-  const amt = Number(req.body.amount);
-  if (!amt || amt <= 0) return res.status(400).json({ error: "amount>0" });
-  balances[req.userId] = (balances[req.userId] || 0) + amt;
-  await saveBalances();
-  res.json({ balance: balances[req.userId] });
-  txs.push({ userId: req.userId, type:'deposit', amount:amt, ts:Date.now() });
-  await saveTx();
+/*     Пользователь должен пополнять баланс on-chain через TonConnect. */
+  return res.status(403).json({ error: "deposit disabled — use Ton Connect transfer" });
 });
 
 /* POST /wallet/withdraw { userId, amount } */
@@ -173,16 +168,18 @@ async function saveTx(){
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));   // раздаём фронт
+
+/* ─── отдаём CASINO_WALLET в браузер ─── */
+app.get('/env.js', (_req, res) => {
+  res.type('application/javascript');
+  res.send(`window.CASINO_WALLET="${CASINO_WALLET}";`);
+});
+
+app.use(express.static(__dirname));   // статику подключаем после /env.js
 app.get("/history", (req, res) => res.json(history));
 app.use("/wallet", wallet);
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
-
-app.get('/env.js', (req, res) => {
-  res.type('application/javascript');
-  res.send(`window.CASINO_WALLET = "${process.env.CASINO_WALLET}";`);
-});
 
 
 // ───────────────────── Game state (1 round) ────────────────────
@@ -495,24 +492,30 @@ try{
 
 async function scanLoop(){
   try{
-    const r = await fetch(
+    const resp = await fetch(
       `https://toncenter.com/api/v3/getTransactions?address=${CASINO_WALLET}&limit=20&api_key=${TONCENTER_API_KEY}`
-    ).then(r=>r.json());
+    );
+    const r = await resp.json();
+    if (!r.ok) throw new Error(r.error ?? 'toncenter error');
 
-    for(const tx of r.result){
-      if (tx.transaction_id.lt <= lastLt) break;   // уже видели
+    /* идём от старых к новым, чтобы корректно обновлять lastLt */
+    for (const tx of [...r.result].reverse()) {
+      if (tx.transaction_id.lt <= lastLt) continue;   // уже учтён
+
+      /* запоминаем самый новый обработанный lt */
       lastLt = tx.transaction_id.lt;
 
-      // in-message?
+       /*  inbound message (перевод на адрес казино)  */
       const inMsg = tx.in_msg;
-      if(!inMsg || inMsg.source) continue;               // пропускаем исходящие
+      if (!inMsg)                                   continue;          // нет входящего
+      if (inMsg.destination !== CASINO_WALLET)      continue;          // не наш кошелёк
 
       // value
       const amountTon = parseInt(inMsg.value) / 1e9;
       if (amountTon < MIN_DEPOSIT_TON) continue;
 
        /* --- извлекаем строковый комментарий из входящего сообщения --- */
-      let parsed = inMsg.msg_data?.text;               // toncenter уже раскодировал comment
+      let parsed = inMsg.msg_data?.text;                 // toncenter text
       if (!parsed && inMsg.message) {                  // fallback — ручной decode BOC
         try {
           parsed = TonWeb.utils.bytesToString(
