@@ -73,6 +73,9 @@ var cumulativeRotation = 0;
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 const socket = io(API_ORIGIN);
 
+/* если env.js не успел загрузиться — fallback */
+window.CASINO_WALLET = window.CASINO_WALLET || "";
+
 // 2. Локальное состояние
 const inventory = [
   { id:'orb001',          name:'Loot Bag',      price:160, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg',   staked:false },
@@ -902,7 +905,7 @@ walletDepositBtn.addEventListener('click', async () => {
     await tonConnectUI.sendTransaction({
       validUntil: Math.floor(Date.now()/1e3)+300,
       messages:[{
-        address : CASINO_WALLET,             // возьмите из env, прокиньте в HTML
+        address : window.CASINO_WALLET,      // из /env.js
         amount  : (amt*1e9).toString(),      // в нано-ton
         payload : makeDepositPayload(myId)   // “deposit:<telegramId>”
       }]
