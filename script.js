@@ -626,6 +626,14 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
    }
 });
 
+socket.on('balanceUpdate', ({userId,balance})=>{
+  if(userId===myId){
+    tonBalance = balance;
+    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+  }
+});
+
+      
 function makeDepositPayload(uid){
   /* TL-B: text_comment "💰deposit:<uid>;"   (простой способ) */
   const s = `deposit:${uid}`;
