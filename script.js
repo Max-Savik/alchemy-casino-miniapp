@@ -41,7 +41,7 @@ async function postJSON(url, data){
 var cumulativeRotation = 0;
 
 // ───── Preloader + Lottie ─────
-(async showPreloader() {
+(async function showPreloader() {
   const overlay   = document.getElementById('lottieOverlay');
   const lottieEl  = document.getElementById('lottieContainer');
   // 1) Показываем оверлей
@@ -635,9 +635,9 @@ socket.on('balanceUpdate', ({userId,balance})=>{
 
       
 function makeDepositPayload(uid){
-  /* TL-B: text_comment "💰deposit:<uid>;"   (простой способ) */
+  /* TL-B: text_comment "deposit:<uid>"  */
   const s = `deposit:${uid}`;
-  return TON_CONNECT_UI.toUint8Array(s);   // helper из SDK
+  return new TextEncoder().encode(s);      // Uint8Array payload
 }
 
     
