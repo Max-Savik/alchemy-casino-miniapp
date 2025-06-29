@@ -511,11 +511,16 @@ async function scanLoop(){
       const amountTon = parseInt(inMsg.value) / 1e9;
       if (amountTon < MIN_DEPOSIT_TON) continue;
 
-      // comment
-      const commentB64 = inMsg.message || inMsg.msg_data?.text || "";
-      const parsed = TonWeb.utils.bytesToString(
-        TonWeb.utils.base64ToBytes(commentB64)
-      );
+       /* --- извлекаем строковый комментарий из входящего сообщения --- */
+      let parsed = inMsg.msg_data?.text;               // toncenter уже раскодировал comment
+      if (!parsed && inMsg.message) {                  // fallback — ручной decode BOC
+        try {
+          parsed = TonWeb.utils.bytesToString(
+            TonWeb.utils.base64ToBytes(inMsg.message)
+          );
+        } catch { /* ignore decode errors */ }
+      }
+      if (!parsed) continue;                           // нет комментария → пропускаем
       const m = parsed.match(/^deposit:(.+)$/);
       if(!m) continue;
 
