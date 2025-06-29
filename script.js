@@ -6,6 +6,8 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
   buttonRootId: "tonConnectBtn"
 });
 
+import { comment } from "@tonconnect/sdk";
+
 let tonAddress = null;
 
 tonConnectUI.onStatusChange(async walletInfo => {
@@ -898,7 +900,7 @@ walletDepositBtn.addEventListener('click', async () => {
       messages: [{
         address: window.CASINO_WALLET,                         // из env.js
         amount : (amt * 1e9).toString(),                       // nano-TON
-        payload: TON_CONNECT_UI.toUint8Array(`deposit:${myId}`)
+        payload: comment(`deposit:${myId}`)
       }]
     });
 
