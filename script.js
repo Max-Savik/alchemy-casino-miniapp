@@ -6,7 +6,7 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
   buttonRootId: "tonConnectBtn"
 });
 
-import { comment } from "@tonconnect/sdk";
+const { comment } = window.tonConnectSdk;
 
 let tonAddress = null;
 
@@ -630,11 +630,6 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
     }
    }
 });
-      
-function makeDepositPayload(uid){
-  const bytes = new TextEncoder().encode(`deposit:${uid}`);
-  return btoa(String.fromCharCode(...bytes));   // => base64 string
-}
 
     
 // ───── byte-array → hex string helper ─────
