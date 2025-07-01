@@ -1,7 +1,6 @@
 // ============================ script.js ============================
 
 /* === TonConnect === */
-
 // 1. Находим класс независимо от версии UI
 const TonConnectUIClass =
         window.TON_CONNECT_UI?.TonConnectUI   //  UI ≤ 0.2.x
