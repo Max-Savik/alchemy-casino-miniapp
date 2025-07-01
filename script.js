@@ -2,30 +2,17 @@
 
 /* === TonConnect === */
 
-/* 1. Берём класс UI: сначала новая ветка, потом старая */
-const TonConnectUIClass =
-        window.TonConnectUI              // UI ≥ 0.3
-     || window.TON_CONNECT_UI?.TonConnectUI; // UI ≤ 0.2
-
-if (!TonConnectUIClass) {
-  console.error('[TonConnect] TonConnectUI class not found — проверьте тег <script>');
-}
-
-/* 2. Экземпляр UI-виджета */
-const tonConnectUI = new TonConnectUIClass({
+// класс доступен строго по TON_CONNECT_UI
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
   manifestUrl : 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
   buttonRootId: 'tonConnectBtn'
 });
 
-/* 3. helper для текстового payload’а */
-const comment =
-      window.TonConnectUtils?.comment           // UI ≥ 0.4
-   || window.TonConnectUI?.utils?.comment       // UI 0.3.x
-   || window.TON_CONNECT_UI?.utils?.comment     // UI 0.2.x
-   || window.tonConnectSdk?.utils?.comment;     // если SDK подключён отдельно
+// helper для текстового payload'а
+const comment = TON_CONNECT_UI.utils.comment;   // <- есть в 0.3.x
 
 if (typeof comment !== 'function') {
-  console.error('[TonConnect] utils.comment() не найден — проверьте версию скриптов');
+  console.error('comment() не найден — проверьте версию UI-бандла');
 }
 
 
