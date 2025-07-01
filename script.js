@@ -17,13 +17,15 @@ const tonConnectUI = new TonConnectUIClass({
   buttonRootId: 'tonConnectBtn'
 });
 
-/* 3. helper для текстового payload’а  */
+/* 3. helper для текстового payload’а */
 const comment =
-      TonConnectUIClass?.utils?.comment          // любая актуальная UI-версия
-   || window.TON_CONNECT_UI?.utils?.comment;     // совсем старая 0.2.x
+      window.TonConnectUtils?.comment           // UI ≥ 0.4
+   || window.TonConnectUI?.utils?.comment       // UI 0.3.x
+   || window.TON_CONNECT_UI?.utils?.comment     // UI 0.2.x
+   || window.tonConnectSdk?.utils?.comment;     // если SDK подключён отдельно
 
 if (typeof comment !== 'function') {
-  console.error('[TonConnect] utils.comment() не найден — проверьте версию UI');
+  console.error('[TonConnect] utils.comment() не найден — проверьте версию скриптов');
 }
 
 
