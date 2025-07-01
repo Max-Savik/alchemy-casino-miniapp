@@ -1,16 +1,16 @@
 // ============================ script.js ============================
 
-/*  TonConnect UI is exposed as the global TON_CONNECT_UI object   */
+/* === TonConnect === */
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
   manifestUrl : 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
-  buttonRootId: 'tonConnectBtn'          // <div id="tonConnectBtn"></div> in HTML
+  buttonRootId: 'tonConnectBtn'
 });
 
-/* helper that turns a string into an on-chain text payload */
-const comment = TON_CONNECT_UI.utils.comment;
+/* helper for plain-text payloads */
+const comment = window.tonConnectSdk?.utils?.comment;
 
 if (typeof comment !== 'function') {
-  console.error('comment() не найден — проверьте версию UI-бандла');
+  console.error('utils.comment() not found – SDK tag probably missing');
 }
 
 
