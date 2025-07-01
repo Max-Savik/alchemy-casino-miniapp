@@ -1,10 +1,22 @@
 // ============================ script.js ============================
 
 /* === TonConnect === */
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: "https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json",
-  buttonRootId: "tonConnectBtn"
+
+// 1. Находим класс независимо от версии UI
+const TonConnectUIClass =
+        window.TON_CONNECT_UI?.TonConnectUI   //  UI ≤ 0.2.x
+     || window.TonConnectUI;                  //  UI ≥ 0.3.x
+
+if (!TonConnectUIClass) {
+  console.error('[TonConnect] TonConnectUI class not found — проверьте тег UI');
+}
+
+// 2. Создаём экземпляр
+const tonConnectUI = new TonConnectUIClass({
+  manifestUrl : 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
+  buttonRootId: 'tonConnectBtn'
 });
+
 
 
 const comment =
