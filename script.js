@@ -7,9 +7,12 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 });
 
 
-const { comment } = window.TonConnectSDK.utils;
+const comment =
+      window.tonConnectSdk?.utils?.comment   // ≥ 0.2.20
+   || window.TonConnectSDK?.utils?.comment; // ≤ 0.2.19
+
 if (typeof comment !== 'function') {
-  console.error('[TonConnect] comment() helper still missing');
+  console.error('[TonConnect] utils.comment() не найден — проверьте версию SDK');
 }
 
 let tonAddress = null;
@@ -895,11 +898,11 @@ walletDepositBtn.addEventListener('click', async () => {
 
   try {
     await tonConnectUI.sendTransaction({
-      validUntil: Math.floor(Date.now() / 1e3) + 300,
+      validUntil: Date.now() / 1e3 + 300 | 0,
       messages: [{
         address: window.CASINO_WALLET,
-        amount : (amt * 1e9).toString(),          // nano TON
-        payload: comment(`deposit:${myId}`)       // ✅ helper is here
+        amount : String(amt * 1e9),   // nano-TON
+        payload: comment(`deposit:${myId}`)
       }]
     });
 
