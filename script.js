@@ -17,7 +17,6 @@ const tonConnectUI = new TonConnectUIClass({
 });
 
 
-
 const comment =
       window.tonConnectSdk?.utils?.comment   // ≥ 0.2.20
    || window.TonConnectSDK?.utils?.comment; // ≤ 0.2.19
