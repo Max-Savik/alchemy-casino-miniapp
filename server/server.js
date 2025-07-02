@@ -27,6 +27,7 @@ const TON_API_KEY    = process.env.TONCENTER_KEY || "";
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
+const WD_FILE       = path.join(DATA_DIR, "withdrawals.json"); 
 const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
 let addrMap = {};           // { [userId]: "EQB…" }
 
@@ -102,6 +103,21 @@ function userAuth(req, res, next) {
   next();
 }
 
+/* pending withdrawals  [{id,userId,amount,to,ts,status}] */
+let withdrawals = [];
+async function loadWithdrawals() {
+  try {
+    withdrawals = JSON.parse(await fs.readFile(WD_FILE, "utf8"));
+  } catch (e) {
+    if (e.code !== "ENOENT") console.error(e);
+    withdrawals = [];
+  }
+}
+async function saveWithdrawals() {
+  const tmp = WD_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(withdrawals, null, 2));
+  await fs
+
 const wallet = express.Router();
 wallet.use(userAuth);
 
@@ -125,15 +141,32 @@ wallet.post("/deposit", async (req, res) => {
 /* POST /wallet/withdraw { userId, amount } */
 wallet.post("/withdraw", async (req, res) => {
   const amt = Number(req.body.amount);
-  const purpose = req.body.purpose === 'bet' ? 'bet' : 'withdraw';
-  if (!amt || amt <= 0) return res.status(400).json({ error: "amount>0" });
+
+  /* 1️⃣ базовые проверки */
+  if (!amt || amt <= 0)  return res.status(400).json({ error: "amount>0" });
   const bal = balances[req.userId] || 0;
-  if (bal < amt) return res.status(400).json({ error: "insufficient" });
+  if (bal < amt)         return res.status(400).json({ error: "insufficient" });
+
+  /* 2️⃣ нужен привязанный адрес */
+  const toAddr = addrMap[req.userId];
+  if (!toAddr)           return res.status(400).json({ error: "no linked address" });
+
+  /* 3️⃣ резервируем средства и пишем pending */
   balances[req.userId] = bal - amt;
   await saveBalances();
-  txs.push({ userId:req.userId, type:purpose, amount:amt, ts:Date.now() });
+
+  const id = crypto.randomUUID();
+  withdrawals.push({
+    id, userId: req.userId, amount: amt, to: toAddr,
+    ts: Date.now(), status: "pending"           // позже будет «sent» / «fail»
+  });
+  await saveWithdrawals();
+
+  /* 4️⃣ финансовая история для пользователя */
+  txs.push({ userId:req.userId, type:"withdraw", amount:amt, ts:Date.now() });
   await saveTx();
-  res.json({ balance: balances[req.userId] });
+
+  res.json({ balance: balances[req.userId], wid: id });
 });
 
 /* POST /wallet/link { userId, address }  */
@@ -535,6 +568,7 @@ async function pollDeposits() {
   await loadBalances();
   await loadTx();
   await loadAddr();
+  await loadWithdrawals();
   resetRound();      
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
