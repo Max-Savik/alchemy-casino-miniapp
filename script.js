@@ -2,17 +2,9 @@
 
 /* === TonConnect === */
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl : 'https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json',
-  buttonRootId: 'tonConnectBtn'
+  manifestUrl: "https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json",
+  buttonRootId: "tonConnectBtn"
 });
-
-/* helper for plain-text payloads */
-const comment = window.tonConnectSdk?.utils?.comment;
-
-if (typeof comment !== 'function') {
-  console.error('utils.comment() not found – SDK tag probably missing');
-}
-
 
 let tonAddress = null;
 
@@ -80,9 +72,6 @@ var cumulativeRotation = 0;
 // 1. Подключаемся к бекенду
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 const socket = io(API_ORIGIN);
-
-/* если env.js не успел загрузиться — fallback */
-window.CASINO_WALLET = window.CASINO_WALLET || "";
 
 // 2. Локальное состояние
 const inventory = [
@@ -637,7 +626,6 @@ socket.on("spinEnd", ({ winner, total, seed  }) => {
    }
 });
 
-    
 // ───── byte-array → hex string helper ─────
 function bufToHex(buf) {
   return [...new Uint8Array(buf)]
@@ -893,34 +881,15 @@ walletAmountInp.addEventListener('input', () => {
 
 walletDepositBtn.addEventListener('click', async () => {
   const amt = parseFloat(walletAmountInp.value);
-  if (!(amt > 0)) return;
-
-  try {
-    await tonConnectUI.sendTransaction({
-      validUntil: Date.now() / 1e3 + 300 | 0,
-      messages: [{
-        address: window.CASINO_WALLET,
-        amount : String(amt * 1e9),   // nano-TON
-        payload: comment(`deposit:${myId}`)
-      }]
-    });
-
-    walletAmountInp.value = "";
-    walletDepositBtn.disabled = true;
-    alert("Транзакция отправлена!\nБаланс обновится после подтверждения сети.");
-  } catch (e) {
-    alert("Платёж отклонён: " + e.message);
-  }
-});
-
-/* push-уведомление от сервера о новом балансе */
-socket.on("balanceUpdate", ({ userId, balance }) => {
-  if (userId === myId) {
+  if(!(amt>0)) return;
+  try{
+    const {balance} = await postJSON(`${API_ORIGIN}/wallet/deposit`,
+                                     {userId:myId, amount:amt});
     tonBalance = balance;
-    document.getElementById("tonBalance").textContent = balance.toFixed(2);
-  }
+    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+    walletOverlay.classList.add('hidden');
+  }catch(e){ alert('Deposit error: '+e.message); }
 });
-
 
 walletWithdrawBtn.addEventListener('click', async () => {
   const amt = parseFloat(withdrawInp.value);
