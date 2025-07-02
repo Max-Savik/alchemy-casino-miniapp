@@ -116,7 +116,7 @@ async function loadWithdrawals() {
 async function saveWithdrawals() {
   const tmp = WD_FILE + ".tmp";
   await fs.writeFile(tmp, JSON.stringify(withdrawals, null, 2));
-  await fs
+  await fs.rename(tmp, WD_FILE); 
 
 const wallet = express.Router();
 wallet.use(userAuth);
