@@ -42,13 +42,6 @@ dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
 
-// ──────────── TON-env ────────────
-const CASINO_WALLET     = process.env.CASINO_WALLET;
-const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || "";
-const MIN_DEPOSIT_TON   = Number(process.env.MIN_DEPOSIT_TON || "0.1");
-if (!CASINO_WALLET) throw new Error('CASINO_WALLET not set');
-
-const SCAN_FILE = path.join(DATA_DIR, "scan.json");
 
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
@@ -114,8 +107,13 @@ wallet.get("/balance", (req, res) => {
 
 /* POST /wallet/deposit { userId, amount } */
 wallet.post("/deposit", async (req, res) => {
-/*     Пользователь должен пополнять баланс on-chain через TonConnect. */
-  return res.status(403).json({ error: "deposit disabled — use Ton Connect transfer" });
+  const amt = Number(req.body.amount);
+  if (!amt || amt <= 0) return res.status(400).json({ error: "amount>0" });
+  balances[req.userId] = (balances[req.userId] || 0) + amt;
+  await saveBalances();
+  res.json({ balance: balances[req.userId] });
+  txs.push({ userId: req.userId, type:'deposit', amount:amt, ts:Date.now() });
+  await saveTx();
 });
 
 /* POST /wallet/withdraw { userId, amount } */
@@ -168,19 +166,11 @@ async function saveTx(){
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-/* ─── отдаём CASINO_WALLET в браузер ─── */
-app.get('/env.js', (_req, res) => {
-  res.type('application/javascript');
-  res.send(`window.CASINO_WALLET="${CASINO_WALLET}";`);
-});
-
-app.use(express.static(__dirname));   // статику подключаем после /env.js
+app.use(express.static(__dirname));   // раздаём фронт
 app.get("/history", (req, res) => res.json(history));
 app.use("/wallet", wallet);
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
-
 
 // ───────────────────── Game state (1 round) ────────────────────
 let game = {
@@ -480,73 +470,3 @@ socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
   resetRound();      
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
-
-import TonWeb from "tonweb";
-const ton = new TonWeb();              // нужен только utils
-
-let lastLt = 0;
-try{
-  const st = JSON.parse(await fs.readFile(SCAN_FILE,'utf8'));
-  lastLt = st.lt || 0;
-}catch{ /* first start */ }
-
-async function scanLoop(){
-  try{
-    const resp = await fetch(
-      `https://toncenter.com/api/v3/getTransactions?address=${CASINO_WALLET}&limit=20&api_key=${TONCENTER_API_KEY}`
-    );
-    const r = await resp.json();
-    if (!r.ok) throw new Error(r.error ?? 'toncenter error');
-
-    /* идём от старых к новым, чтобы корректно обновлять lastLt */
-    for (const tx of [...r.result].reverse()) {
-      if (tx.transaction_id.lt <= lastLt) continue;   // уже учтён
-
-      /* запоминаем самый новый обработанный lt */
-      lastLt = tx.transaction_id.lt;
-
-       /*  inbound message (перевод на адрес казино)  */
-      const inMsg = tx.in_msg;
-      if (!inMsg)                                   continue;          // нет входящего
-      if (inMsg.destination !== CASINO_WALLET)      continue;          // не наш кошелёк
-
-      // value
-      const amountTon = parseInt(inMsg.value) / 1e9;
-      if (amountTon < MIN_DEPOSIT_TON) continue;
-
-      /* --- извлекаем комментарий --- */
-      let parsed =
-          inMsg.msg_data?.comment ??                    // text-comment
-          inMsg.msg_data?.text    ??                    // старые версии
-          null;
-
-      /* если пришла сырaя ячейка — пытаемся раскодировать её сами */
-      if (!parsed && inMsg.msg_data?.body) {
-        try {
-          const bytes = TonWeb.utils.base64ToBytes(inMsg.msg_data.body);
-          parsed = TonWeb.utils.bytesToString(bytes);
-        } catch {/* ignore */}
-      }
-      if (!parsed) continue;                           // нет комментария → пропускаем
-      const m = parsed.match(/^deposit:(.+)$/);
-      if(!m) continue;
-
-      const uid = m[1];
-      balances[uid] = (balances[uid] || 0) + amountTon;
-      await saveBalances();
-
-      txs.push({ userId: uid, type: "deposit", amount: amountTon, ts: Date.now(), tx: tx.transaction_id.hash });
-      await saveTx();
-
-      io.emit('balanceUpdate', { userId:uid, balance:balances[uid] });
-    }
-
-    // persist lastLt
-    await fs.writeFile(SCAN_FILE, JSON.stringify({ lt: lastLt }));
-
-  }catch(e){ console.error('scan:',e.message); }
-
-  setTimeout(scanLoop, (process.env.SCAN_INTERVAL||15)*1000);
-}
-scanLoop();
-
