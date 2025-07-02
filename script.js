@@ -894,7 +894,7 @@ walletDepositBtn.addEventListener('click', async () => {
       messages: [{
         address: DEPOSIT_ADDR,    // куда летят деньги
         amount:  nanoAmount,      // строкой!
-        payload: tonConnectUI.utils.commentToPayload(comment)
+        payload: TON_CONNECT_UI.utils.commentToPayload(comment)
       }]
     });
 
