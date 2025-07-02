@@ -24,7 +24,13 @@ tonConnectUI.onStatusChange(async walletInfo => {
   refreshBalance();
 });
 
-
+async function makeCommentPayload(text) {
+  const cell = new TonWeb.boc.Cell();
+  cell.bits.writeUint(0, 32);   // op 0 ⇒ текстовый комментарий
+  cell.bits.writeString(text);
+  const boc = await cell.toBoc(false);          // без индексов
+  return TonWeb.utils.bytesToBase64(boc);
+}
 
 async function postJSON(url, data){
   const res = await fetch(url, {
@@ -889,12 +895,13 @@ walletDepositBtn.addEventListener('click', async () => {
 
   try {
     const comment = "uid:" + myId;  
+    const payload  = await makeCommentPayload(comment);
     await tonConnectUI.sendTransaction({
       validUntil: Math.floor(Date.now() / 1000) + 180,            // 3 минуты на подпись
       messages: [{
         address: DEPOSIT_ADDR,    // куда летят деньги
         amount:  nanoAmount,      // строкой!
-        payload: TON_CONNECT_UI.utils.commentToPayload(comment)
+        payload
       }]
     });
 
