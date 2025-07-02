@@ -492,12 +492,13 @@ async function pollDeposits() {
       if (lt <= lastLt) break;          // всё старое уже учли
 
       const valueTon = Number(tx.in_msg.value) / 1e9;
-      const bodyText = tx.in_msg.message || "";
+      /* --- достаём текст комментария, как делает Toncenter --- */
+      const bodyText =
+        tx.in_msg.message                         // старые кошельки
+        || tx.in_msg.msg_data?.text               // msg.dataText
+        || ""; 
 
-      /* ищем комментарий формата  uid:1234  */
-      if (tx.in_msg.destination === DEPOSIT_ADDR &&
-          bodyText.startsWith("uid:") &&
-          valueTon > 0) {
+      if (bodyText.startsWith("uid:") && valueTon > 0) {
 
         const userId = bodyText.slice(4).trim();
 
