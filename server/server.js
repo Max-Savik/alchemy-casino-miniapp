@@ -134,7 +134,13 @@ wallet.post("/deposit", async (req, res) => {
   balances[req.userId] = (balances[req.userId] || 0) + amt;
   await saveBalances();
   res.json({ balance: balances[req.userId] });
-  txs.push({ userId: req.userId, type:'deposit', amount:amt, ts:Date.now() });
+    txs.push({
+    userId: req.userId,
+    type  : "withdraw",
+    amount: amt,
+    ts    : Date.now(),
+    status: "pending"
+  });
   await saveTx();
 });
 
