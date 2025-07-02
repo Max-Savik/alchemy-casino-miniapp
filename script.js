@@ -888,12 +888,13 @@ walletDepositBtn.addEventListener('click', async () => {
   const nanoAmount = BigInt(Math.round(amt * 1e9)).toString();   // TON → nanotons
 
   try {
+    const comment = "uid:" + myId;  
     await tonConnectUI.sendTransaction({
       validUntil: Math.floor(Date.now() / 1000) + 180,            // 3 минуты на подпись
       messages: [{
         address: DEPOSIT_ADDR,    // куда летят деньги
         amount:  nanoAmount,      // строкой!
-        payload: ""               // можно будет вписать комментарий/опкод
+        payload: tonConnectUI.utils.commentToPayload(comment)
       }]
     });
 
