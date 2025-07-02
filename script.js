@@ -858,6 +858,7 @@ const walletOverlay   = document.getElementById('walletOverlay');
 const walletCloseBtn  = document.getElementById('walletClose');
 const walletAmountInp = document.getElementById('walletAmount');
 const walletDepositBtn= document.getElementById('walletDepositBtn');
+const DEPOSIT_ADDR = "UQDgtoKkFtMlomUSsngJFbIlAxG78cgbjyEF9khCZTAAgXUn"; 
 const walletBtn       = document.getElementById('openWalletWindow');   
 const withdrawInp   = document.getElementById('withdrawAmount');
 const walletWithdrawBtn = document.getElementById('walletWithdrawBtn');
@@ -881,14 +882,33 @@ walletAmountInp.addEventListener('input', () => {
 
 walletDepositBtn.addEventListener('click', async () => {
   const amt = parseFloat(walletAmountInp.value);
-  if(!(amt>0)) return;
-  try{
-    const {balance} = await postJSON(`${API_ORIGIN}/wallet/deposit`,
-                                     {userId:myId, amount:amt});
-    tonBalance = balance;
-    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+  if (!(amt > 0)) return;
+
+  /* ===== 1. Формируем TonConnect-запрос ===== */
+  const nanoAmount = BigInt(Math.round(amt * 1e9)).toString();   // TON → nanotons
+
+  try {
+    await tonConnectUI.sendTransaction({
+      validUntil: Math.floor(Date.now() / 1000) + 180,            // 3 минуты на подпись
+      messages: [{
+        address: DEPOSIT_ADDR,    // куда летят деньги
+        amount:  nanoAmount,      // строкой!
+        payload: ""               // можно будет вписать комментарий/опкод
+      }]
+    });
+
+    /* ===== 2. UI после отправки ===== */
     walletOverlay.classList.add('hidden');
-  }catch(e){ alert('Deposit error: '+e.message); }
+    walletAmountInp.value = "";
+
+    // Оптимистично ждём 3 с и обновляем (пока без он-чейн проверки)
+    await new Promise(r => setTimeout(r, 3000));
+    refreshBalance();
+  } catch (e) {
+    console.warn("TonConnect TX cancelled/failure", e);
+    alert("Транзакция отменена или не выполнена");
+  }
+
 });
 
 walletWithdrawBtn.addEventListener('click', async () => {
