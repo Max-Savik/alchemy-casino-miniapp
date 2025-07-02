@@ -14,17 +14,23 @@ import cors from "cors";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import fetch from "node-fetch";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ───────────────────────── Config & Disk ─────────────────────────
 const PORT      = process.env.PORT || 3000;
 const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render disk
+const DEPOSIT_ADDR   = process.env.DEPOSIT_ADDR;
+const TON_API        = process.env.TONCENTER_API || "https://toncenter.com/api/v2/";
+const TON_API_KEY    = process.env.TONCENTER_KEY || "";
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
 const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
 let addrMap = {};           // { [userId]: "EQB…" }
+
+if (!DEPOSIT_ADDR) throw new Error("DEPOSIT_ADDR not set");
 
 async function loadAddr(){
   try{ addrMap = JSON.parse(await fs.readFile(ADDR_FILE,'utf8')); }
@@ -151,7 +157,7 @@ wallet.get('/history', (req,res)=>{
 });       
 
 /* -------- WALLET TX helpers -------- */
-let txs = [];   // [{userId, type:'deposit'|'withdraw', amount, ts}]
+let txs = [];   // [{userId,type,amount,ts,hash?}]
 async function loadTx() {
   try{
     txs = JSON.parse(await fs.readFile(TX_FILE,'utf8'));
@@ -461,6 +467,67 @@ socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
 
 });
 
+// ─────────── DEPOSIT WATCHER (Toncenter) ───────────
+async function tonApi(method, params = {}) {
+  const url = new URL(method, TON_API);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  if (TON_API_KEY) url.searchParams.set("api_key", TON_API_KEY);
+  const r = await fetch(url);
+  const j = await r.json();
+  if (!j.ok && j.status !== 200) throw new Error(j.error || "Toncenter error");
+  return j.result ?? j;
+}
+
+let lastLt = 0n;                         // сдвигаемся только вперёд
+
+async function pollDeposits() {
+  try {
+    const txsList = await tonApi("getTransactions", {
+      address: DEPOSIT_ADDR,
+      limit: 20
+    });
+
+    for (const tx of txsList) {
+      const lt   = BigInt(tx.transaction_id.lt);
+      if (lt <= lastLt) break;          // всё старое уже учли
+
+      const valueTon = Number(tx.in_msg.value) / 1e9;
+      const bodyText = tx.in_msg.message || "";
+
+      /* ищем комментарий формата  uid:1234  */
+      if (tx.in_msg.destination === DEPOSIT_ADDR &&
+          bodyText.startsWith("uid:") &&
+          valueTon > 0) {
+
+        const userId = bodyText.slice(4).trim();
+
+        /* пропускаем, если уже записали этот hash */
+        if (txs.some(t => t.hash === tx.transaction_id.hash)) continue;
+
+        console.log(`➕ Deposit ${valueTon} TON from ${userId}`);
+        balances[userId] = (balances[userId] || 0) + valueTon;
+        await saveBalances();
+
+        txs.push({
+          userId,
+          type:   "deposit",
+          amount: valueTon,
+          ts:     tx.utime * 1000,
+          hash:   tx.transaction_id.hash
+        });
+        await saveTx();
+      }
+
+      lastLt = lt;
+    }
+  } catch (e) {
+    console.error("pollDeposits:", e.message);
+  } finally {
+    setTimeout(pollDeposits, 15_000);   // каждые 15 с
+  }
+}
+
+
 // ──────────────────────── Bootstrap ───────────────────────────
 (async () => {
   await loadHistory();
@@ -468,5 +535,6 @@ socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
   await loadTx();
   await loadAddr();
   resetRound();      
+  pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
