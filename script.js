@@ -993,12 +993,14 @@ async function loadTxHistory(){
     panelTx.innerHTML = '';
     arr.forEach(t=>{
       const dt    = new Date(t.ts).toLocaleString();
-      const label = ({
-        deposit : 'Пополнение',
-        withdraw: 'Вывод',
-        bet     : 'Ставка',
-        prize   : 'Выигрыш'
-      })[t.type] || t.type;
+const label = t.type === 'withdraw' && t.status === 'pending'
+  ? 'Вывод (ожид.)'
+  : ({
+      deposit : 'Пополнение',
+      withdraw: 'Вывод',
+      bet     : 'Ставка',
+      prize   : 'Выигрыш'
+    }[t.type] || t.type);
 
       const plusTypes = ['deposit','prize'];
       const sign = plusTypes.includes(t.type) ? '+' : '−';
