@@ -16,6 +16,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch";
 import TonWeb from "tonweb";
+import nacl from "tweetnacl";    
 import dotenv from 'dotenv';
 dotenv.config();  
 
@@ -31,17 +32,16 @@ const HOT_PRIV_KEY   = process.env.HOT_PRIV_KEY;
 const HOT_WALLET_TYPE= process.env.HOT_WALLET_TYPE || "v4r2";
 if (!HOT_PRIV_KEY) throw new Error("HOT_PRIV_KEY not set");
 
-const secretKey = TonWeb.utils.hexToBytes(HOT_PRIV_KEY); // 64 bytes
-const publicKey = secretKey.slice(32);                   // ← вторая половина
-const keyPair   = { secretKey, publicKey };
+const seed = TonWeb.utils.hexToBytes(HOT_PRIV_KEY);      // 32-байтный hex!
+if (seed.length !== 32) throw new Error("HOT_PRIV_KEY должен быть 32-байтным hex");
+const keyPair   = nacl.sign.keyPair.fromSeed(seed);      // { publicKey, secretKey }
 
 const provider   = new TonWeb.HttpProvider(TON_API, {apiKey: TON_API_KEY});
 const tonweb     = new TonWeb(provider);
 
 /* выбираем класс кошелька без учёта регистра              */
-const WalletClass = Object.entries(tonweb.wallet.all)
-  .find(([key]) => key.toLowerCase() === HOT_WALLET_TYPE.toLowerCase())
-  ?. [1];                     // второй элемент пары → сам класс
+const WalletClass = tonweb.wallet.all[HOT_WALLET_TYPE]   // v3R2, v4R2, …
+   || tonweb.wallet.all.v4R2;               // второй элемент пары → сам класс
 
 if (!WalletClass) {
   const supported = Object.keys(tonweb.wallet.all).join(", ");
@@ -69,8 +69,6 @@ async function saveAddr(){
   await fs.rename(tmp,ADDR_FILE);
 }
 
-import dotenv from 'dotenv';
-dotenv.config();               // .env: ADMIN_TOKEN=super-secret-hex
 
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
@@ -633,51 +631,38 @@ async function postBocToToncenter(bocBase64) {
 
 
 async function processWithdrawals() {
-  try {
-    const w = withdrawals.find(x => x.status === 'pending');
-    if (!w) return;
+   try {
+     const w = withdrawals.find(x => x.status === 'pending');
+     if (!w) return;
 
-    // 1. получаем актуальный seqno (через метод runGetMethod и парсим из stack)
-    const { stack } = await tonApi("runGetMethod", {
-      address: await hotWallet.getAddress(),  // или ваш hotWallet адрес
-      method: "seqno",
-      params: []
-    });
-    // stack[0] имеет вид [ 'num', '<value>' ] → берём второй элемент и превращаем в число
-    const seqno = Number(stack[0][1]);
-    console.log("🔁 current seqno:", seqno);
+    // 1. seqno через встроенный метод TonWeb
+    const seqno = Number(await hotWallet.methods.seqno().call());
+    console.log("🔁 seqno:", seqno);
 
-    /* 2. собираем transfer */
-    const transfer = hotWallet.methods.transfer({
+    /* 2. формируем и сразу отправляем */
+    await hotWallet.methods.transfer({
       secretKey : keyPair.secretKey,
-      toAddress : w.to,
+      toAddress : w.to,                        // строка «EQC…» тоже подойдёт
       amount    : TonWeb.utils.toNano(w.amount.toString()),
       seqno,
-      payload   : null,          // или Cell с комментарием
-      sendMode  : 3              // платить газ отдельно
-    });
+      payload   : null,
+      sendMode  : 3
+    }).send();                                 // ← всё, транзакция отправлена
 
-    /* 3. вытаскиваем BOC и шлём POST-ом */
-    const query   = await transfer.getQuery();          // {message, body, …}
-    const bocB64  = TonWeb.utils.bytesToBase64(
-                      await query.message.toBoc(false)  // без индексов
-                    );
+     /* 3. помечаем заявку как выполненную */
+    w.txHash = (seqno + 1).toString();         // просто маркер, при желании можно
+                                                // запросить реальный hash через getTransactions
+     w.status = "sent";
+     await saveWithdrawals();
 
-    await tonApi('sendBoc', { boc: bocB64 });          // наша обёртка делает POST
 
-    /* 4. помечаем заявку как выполненную */
-    w.status = 'sent';
-    w.txHash = bocB64.slice(0,16);                     // для логов/истории
-    await saveWithdrawals();
-
-    console.log(`✅ sent ${w.amount} TON → ${w.to}`);
-  } catch (e) {
-    console.error('processWithdrawals:', e);
-  } finally {
-    setTimeout(processWithdrawals, 20_000);            // проверяем каждые 20 с
-  }
+    console.log(`✅ вывод ${w.amount} TON → ${w.to}`);
+   } catch (e) {
+     console.error("processWithdrawals:", e);
+   } finally {
+     setTimeout(processWithdrawals, 20_000);
+   }
 }
-
 
 
 
