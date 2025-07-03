@@ -30,11 +30,9 @@ const HOT_PRIV_KEY   = process.env.HOT_PRIV_KEY;
 const HOT_WALLET_TYPE= process.env.HOT_WALLET_TYPE || "v4r2";
 if (!HOT_PRIV_KEY) throw new Error("HOT_PRIV_KEY not set");
 
-/* keypair из приватного ключа */
-const keyPair = {
-  publicKey : TonWeb.utils.hexToBytes(HOT_PRIV_KEY).slice(32), // pk = вторая половина
-  secretKey : TonWeb.utils.hexToBytes(HOT_PRIV_KEY)
-};
+const secretKey = TonWeb.utils.hexToBytes(HOT_PRIV_KEY); // 64 bytes
+const publicKey = secretKey.slice(32);                   // ← вторая половина
+const keyPair   = { secretKey, publicKey };
 
 const provider   = new TonWeb.HttpProvider(TON_API, {apiKey: TON_API_KEY});
 const tonweb     = new TonWeb(provider);
@@ -636,8 +634,9 @@ async function processWithdrawals() {
 
     console.log(`✅ prepared TX for ${w.amount} TON → ${w.to}`);
 
-    /* →👉 здесь будет настоящий вызов sendBoc на шаге 3-B-2 */
-    // await tonApi("sendBoc", {boc: TonWeb.utils.bytesToBase64(boc)});
+    await tonApi("sendBoc", { boc: TonWeb.utils.bytesToBase64(boc) });
+    seqno++;                          // локально повышаем, чтобы след. заявка не упала
+
 
   } catch(e){
     console.error("processWithdrawals:", e);
