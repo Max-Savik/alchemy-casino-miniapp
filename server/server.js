@@ -660,8 +660,9 @@ async function processWithdrawals() {
       sendMode  : 3
     });
 
-    const { boc: bocB64 } = await transfer.getQuery();     // query.boc — уже base64
-    await tonApi("sendBoc", { boc: bocB64 });              // POST → 200
+    const queryCell = await transfer.getQuery();           // Cell
+    const bocBytes  = await queryCell.toBoc(false);        // Uint8Array
+    const bocB64    = TonWeb.utils.bytesToBase64(bocBytes);
 
     // 4. запоминаем tx-hash (первые 16 символов base64 удобно для логов)
     w.txHash = bocB64.slice(0, 16);                           // ← всё, транзакция отправлена
