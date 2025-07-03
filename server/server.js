@@ -36,9 +36,14 @@ const keyPair = {
   secretKey : TonWeb.utils.hexToBytes(HOT_PRIV_KEY)
 };
 
-/* и сам Wallet-contract */
-const tonweb     = new TonWeb(new TonWeb.HttpProvider(TON_API, {apiKey:TON_API_KEY}));
-const hotWallet  = new tonweb.wallet[HOT_WALLET_TYPE](tonweb.provider, {publicKey:keyPair.publicKey});
+const provider   = new TonWeb.HttpProvider(TON_API, {apiKey: TON_API_KEY});
+const tonweb     = new TonWeb(provider);
+
+/* выбираем класс кошелька динамически */
+const WalletClass = tonweb.wallet.all[HOT_WALLET_TYPE.toUpperCase()];
+if (!WalletClass) throw new Error(`Unsupported wallet type: ${HOT_WALLET_TYPE}`);
+
+const hotWallet  = new WalletClass(provider, { publicKey: keyPair.publicKey });
 
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
