@@ -60,6 +60,7 @@ if (!WalletClass) {
 }
 
 const hotWallet  = new WalletClass(provider, { publicKey: keyPair.publicKey });
+let nextSeqno = 0;  
 
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
@@ -647,7 +648,7 @@ async function processWithdrawals() {
      if (!w) return;
 
     // 1. актуальный seqno
-    const seqno = Number(await hotWallet.methods.seqno().call());
+    const seqno = nextSeqno;
     console.log("🔁 seqno:", seqno);
 
 // 2. собираем transfer
@@ -667,6 +668,7 @@ const bocB64   = TonWeb.utils.bytesToBase64(bocBytes);
 await tonApi("sendBoc", { boc: bocB64 });      // <-- ключевое
 
 // 4. фиксация в журнале
+nextSeqno = seqno + 1;
 w.txHash = bocB64.slice(0, 16);
 w.status = "sent";
 await saveWithdrawals();
@@ -690,6 +692,8 @@ console.log(`✅ вывод ${w.amount} TON → ${w.to}`);
   await loadTx();
   await loadAddr();
   await loadWithdrawals();
+  nextSeqno = Number(await hotWallet.methods.seqno().call());
+  console.log("🚀 starting seqno:", nextSeqno);
   resetRound();      
   pollDeposits().catch(console.error);
   processWithdrawals().catch(console.error);
