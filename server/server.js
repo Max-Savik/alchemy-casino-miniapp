@@ -646,19 +646,30 @@ async function processWithdrawals() {
      const w = withdrawals.find(x => x.status === 'pending');
      if (!w) return;
 
-    // 1. seqno через встроенный метод TonWeb
+    // 1. актуальный seqno
     const seqno = Number(await hotWallet.methods.seqno().call());
     console.log("🔁 seqno:", seqno);
 
-    /* 2. формируем и сразу отправляем */
-    await hotWallet.methods.transfer({
+    // 2. собираем transfer-запрос
+    const transfer = hotWallet.methods.transfer({
       secretKey : keyPair.secretKey,
-      toAddress : w.to,                        // строка «EQC…» тоже подойдёт
+      toAddress : w.to,
       amount    : TonWeb.utils.toNano(w.amount.toString()),
       seqno,
       payload   : null,
       sendMode  : 3
-    }).send();                                 // ← всё, транзакция отправлена
+    });
+
+    // 3. получаем raw-сообщение и шлём POST-ом
+    const query   = await transfer.getQuery();             // {message, …}
+    const bocB64  = TonWeb.utils.bytesToBase64(
+                      await query.message.toBoc(false)     // без индексов
+                    );
+
+    await tonApi("sendBoc", { boc: bocB64 });              // POST → 200
+
+    // 4. запоминаем tx-hash (первые 16 символов base64 удобно для логов)
+    w.txHash = bocB64.slice(0, 16);                           // ← всё, транзакция отправлена
 
      /* 3. помечаем заявку как выполненную */
     w.txHash = (seqno + 1).toString();         // просто маркер, при желании можно
