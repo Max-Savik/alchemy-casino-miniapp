@@ -537,6 +537,22 @@ socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
 
 // ─────────── DEPOSIT WATCHER (Toncenter) ───────────
 async function tonApi(method, params = {}) {
+  /* === sendBoc должен идти POST-ом в тело! === */
+  if (method === "sendBoc") {
+    const r = await fetch(TON_API + "sendBoc", {
+      method : "POST",
+      headers: { "Content-Type":"application/json" },
+      body   : JSON.stringify({
+        boc     : params.boc,
+        api_key : TON_API_KEY || undefined
+      })
+    });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || "Toncenter error");
+    return j.result ?? j;
+  }
+
+  /* остальные методы – как и раньше, GET */
   const url = new URL(method, TON_API);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   if (TON_API_KEY) url.searchParams.set("api_key", TON_API_KEY);
@@ -620,22 +636,20 @@ async function processWithdrawals() {
 
     const boc = await transfer.toBoc(false);
 
-    /* ==== пока что только записываем «sent» и hash,   ====
-       ====     реальной sendBoc НЕ ДЕЛАЕМ          ==== */
+    /* === отправляем === */
+    await tonApi("sendBoc", { boc: TonWeb.utils.bytesToBase64(boc) });
 
+    /* mark as sent _после_ успешного ответа Toncenter */
     w.status = "sent";
     w.txHash = TonWeb.utils.bytesToHex(await TonWeb.utils.sha256(boc));
     await saveWithdrawals();
 
-    /* также апдейтим запись в txs */
-    const rec = txs.find(t => t.type==="withdraw" && t.ts===w.ts && t.userId===w.userId);
+    const rec = txs.find(t => t.type==="withdraw" &&
+                              t.ts===w.ts && t.userId===w.userId);
     if (rec) rec.status = "sent";
     await saveTx();
 
-    console.log(`✅ prepared TX for ${w.amount} TON → ${w.to}`);
-
-    await tonApi("sendBoc", { boc: TonWeb.utils.bytesToBase64(boc) });
-    seqno++;                          // локально повышаем, чтобы след. заявка не упала
+    console.log(`✅ TX ${w.txHash.slice(0,8)}… : ${w.amount} TON → ${w.to}`);
 
 
   } catch(e){
