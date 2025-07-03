@@ -622,65 +622,74 @@ async function pollDeposits() {
   }
 }
 
-async function postBocToToncenter(bocBase64) {
-  // формируем URL …/sendBoc?api_key=...
-  const url = new URL('sendBoc', TON_API);
-  if (TON_API_KEY) url.searchParams.set('api_key', TON_API_KEY);
+// ─────────────── globals ────────────────
+let nextSeqno = Number(await hotWallet.methods.seqno().call()); // актуальный на старте
+let sending   = false;                                          // «замок»
 
-  const r = await fetch(url.toString(), {
-    method : 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body   : JSON.stringify({ boc: bocBase64 })
-  });
+// каждые 5 с проверяем очередь
+setInterval(processWithdrawals, 5_000);
 
-  if (!r.ok) {
-    const text = await r.text();
-    throw new Error(`sendBoc failed: ${r.status} ${text}`);
-  }
-  return (await r.json()).result.id;   // base64-hash
-}
-
-
+// ─────────────────────────────────────────
+//  processWithdrawals — единственная точка,
+//  где мы реально шлём деньги из hot-кошелька
+// ─────────────────────────────────────────
 async function processWithdrawals() {
-   try {
-     const w = withdrawals.find(x => x.status === 'pending');
-     if (!w) return;
+  if (sending) return;
+  sending = true;
 
-    // 1. актуальный seqno
-    const seqno = Number(await hotWallet.methods.seqno().call());
-    console.log("🔁 seqno:", seqno);
+  try {
+    while (true) {                       // обработаем сразу все ожидания
+      const w = withdrawals.find(x => x.status === 'pending');
+      if (!w) break;                     // очередь пуста
 
-// 2. собираем transfer
-const transfer = hotWallet.methods.transfer({
-  secretKey : keyPair.secretKey,
-  toAddress : w.to,
-  amount    : TonWeb.utils.toNano(w.amount.toString()),
-  seqno,
-  payload   : null,
-  sendMode  : 3
-});
+      // 1. seqno
+      const chainSeqno = Number(await hotWallet.methods.seqno().call());
+      if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
 
-// 3. получаем BOC и отправляем
-const bocBytes = await (await transfer.getQuery()).toBoc(false);
-const bocB64   = TonWeb.utils.bytesToBase64(bocBytes);
+      // 2. формируем перевод
+      const transfer = hotWallet.methods.transfer({
+        secretKey : keyPair.secretKey,
+        toAddress : w.to,
+        amount    : TonWeb.utils.toNano(String(w.amount)),
+        seqno     : nextSeqno,
+        sendMode  : 3
+      });
 
-await tonApi("sendBoc", { boc: bocB64 });      // <-- ключевое
+      const q      = await transfer.getQuery();
+      const cell   = q.cell || q.message;
+      const boc    = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
 
-// 4. фиксация в журнале
-w.txHash = bocB64.slice(0, 16);
-w.status = "sent";
-await saveWithdrawals();
+      // 3. отправляем
+      await tonApi('sendBoc', { boc });
+      console.log(`✅ ${w.id}: seqno ${nextSeqno} → ${w.to} (${w.amount} TON)`);
 
-console.log(`✅ вывод ${w.amount} TON → ${w.to}`);
+      // 4. отмечаем
+      w.txHash = boc.slice(0, 16);
+      w.status = 'sent';
+      w.seqno  = nextSeqno;
+      nextSeqno += 1;
+      await saveWithdrawals();
+    }
 
-
-   } catch (e) {
-     console.error("processWithdrawals:", e);
-   } finally {
-     setTimeout(processWithdrawals, 20_000);
-   }
+  } catch (err) {
+    const txt = String(err);
+    if (txt.includes('exit code 33') || txt.includes('duplicate')) {
+      console.log('ℹ️ дубликат seqno — увеличиваем счётчик');
+      nextSeqno += 1;
+    } else {
+      console.error('processWithdrawals:', err);
+      const wpend = withdrawals.find(x => x.status === 'pending');
+      if (wpend) {
+        wpend.status = 'fail';
+        wpend.error  = txt.slice(0, 150);
+        wpend.seqno  = nextSeqno;
+        await saveWithdrawals();
+      }
+    }
+  } finally {
+    sending = false;               // обязательно снимаем «замок»
+  }
 }
-
 
 
 
@@ -693,6 +702,5 @@ console.log(`✅ вывод ${w.amount} TON → ${w.to}`);
   await loadWithdrawals();
   resetRound();      
   pollDeposits().catch(console.error);
-  processWithdrawals().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
