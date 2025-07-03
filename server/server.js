@@ -655,12 +655,8 @@ async function processWithdrawals() {
         sendMode  : 3
       });
 
-      const q      = await transfer.getQuery();
-      const cell = await transfer.getQuery();          // cell – уже Cell
-const boc  = TonWeb.utils.bytesToBase64(
-  await cell.toBoc(false)
-);
-      const boc    = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
+     const cell   = await transfer.getQuery();
+     const boc    = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
 
       // 3. отправляем
       await tonApi('sendBoc', { boc });
