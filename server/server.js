@@ -615,51 +615,44 @@ async function pollDeposits() {
 
 async function processWithdrawals() {
   try {
+    // берём первую заявку в pending
     const w = withdrawals.find(x => x.status === 'pending');
     if (!w) return;
 
- const seqno = await hotWallet.methods.seqno().call();   // ← так в 0.0.66
+    /* seqno в 0.0.66 – это метод */
+    const seqno = await hotWallet.methods.seqno().call();
 
- const transfer = hotWallet.methods.transfer({
-   secretKey : keyPair.secretKey,
-   toAddress : w.to,
-   amount    : TonWeb.utils.toNano(w.amount.toString()),
-   seqno,
-   payload   : null
- });
+    const transfer = hotWallet.methods.transfer({
+      secretKey : keyPair.secretKey,
+      toAddress : w.to,
+      amount    : TonWeb.utils.toNano(w.amount.toString()),
+      seqno,
+      payload   : null
+    });
 
- const txHash = await transfer.send();          // Toncenter отправит BOC сам
+    /* Toncenter отправит BOC сам, вернёт хэш транзакции */
+    const txHash = await transfer.send();
 
- w.status = "sent";
- w.txHash = txHash;            // обычно hex-строка
- await saveWithdrawals();
-
- const rec  = txs.find(t => t.type==="withdraw" && t.ts===w.ts && t.userId===w.userId);
- if (rec) rec.status = "sent";
- await saveTx();
-
- console.log(`✅ withdrawal ${w.amount} TON → ${w.to}  hash ${txHash.slice(0,8)}…`);
-    /* mark as sent _после_ успешного ответа Toncenter */
-    w.status = "sent";
-    w.txHash = TonWeb.utils.bytesToHex(await TonWeb.utils.sha256(boc));
+    // ——— помечаем как отправлено ———
+    w.status = 'sent';
+    w.txHash = txHash;        // hex-строка
     await saveWithdrawals();
 
-    const rec = txs.find(t => t.type==="withdraw" &&
-                              t.ts===w.ts && t.userId===w.userId);
-    if (rec) rec.status = "sent";
+    const rec = txs.find(t =>
+      t.type === 'withdraw' && t.ts === w.ts && t.userId === w.userId);
+    if (rec) rec.status = 'sent';
     await saveTx();
 
-    console.log(`✅ TX ${w.txHash.slice(0,8)}… : ${w.amount} TON → ${w.to}`);
-
+    console.log(`✅ withdrawal ${w.amount} TON → ${w.to}  (${txHash.slice(0,8)}…)`);
 
   } catch (e) {
     console.error('processWithdrawals:', e);
-    /* если Toncenter ответил seqno out-of-date – просто оставляем
-       заявку в pending, она попробуется следующей итерацией */
+    // если seqno не совпал — оставим pending, повторим позже
   } finally {
     setTimeout(processWithdrawals, 20_000);
   }
 }
+
 
 
 // ──────────────────────── Bootstrap ───────────────────────────
