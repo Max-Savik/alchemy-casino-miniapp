@@ -645,5 +645,6 @@ async function processWithdrawals() {
   await loadWithdrawals();
   resetRound();      
   pollDeposits().catch(console.error);
+  processWithdrawals().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
