@@ -16,6 +16,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch";
 import TonWeb from "tonweb";
+import dotenv from 'dotenv';
+dotenv.config();  
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -635,8 +637,15 @@ async function processWithdrawals() {
     const w = withdrawals.find(x => x.status === 'pending');
     if (!w) return;
 
-    /* 1. получаем актуальный seqno */
-    const seqno = await hotWallet.methods.seqno().call();
+    // 1. получаем актуальный seqno (через метод runGetMethod и парсим из stack)
+    const { stack } = await tonApi("runGetMethod", {
+      address: await hotWallet.getAddress(),  // или ваш hotWallet адрес
+      method: "seqno",
+      params: []
+    });
+    // stack[0] имеет вид [ 'num', '<value>' ] → берём второй элемент и превращаем в число
+    const seqno = Number(stack[0][1]);
+    console.log("🔁 current seqno:", seqno);
 
     /* 2. собираем transfer */
     const transfer = hotWallet.methods.transfer({
