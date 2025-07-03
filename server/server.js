@@ -614,44 +614,43 @@ async function pollDeposits() {
 
 
 async function processWithdrawals() {
-  try {
-    // берём первую заявку в pending
-    const w = withdrawals.find(x => x.status === 'pending');
-    if (!w) return;
+   try {
+     const w = withdrawals.find(x => x.status === "pending");
+     if (!w) return;
 
-    /* seqno в 0.0.66 – это метод */
-    const seqno = await hotWallet.methods.seqno().call();
+    const seqno = await hotWallet.getSeqno();        // в 0.0.66 это готовый helper
 
-    const transfer = hotWallet.methods.transfer({
-      secretKey : keyPair.secretKey,
-      toAddress : w.to,
-      amount    : TonWeb.utils.toNano(w.amount.toString()),
-      seqno,
-      payload   : null
+    /* 1) собираем и подписываем transfer */
+    const transfer = await hotWallet.createTransfer({
+       secretKey : keyPair.secretKey,
+       toAddress : w.to,
+       amount    : TonWeb.utils.toNano(w.amount.toString()),
+       seqno,
+       payload   : null,          // можно комментарий
+       sendMode  : 3              // pay gas separately (= default)
     });
 
-    /* Toncenter отправит BOC сам, вернёт хэш транзакции */
-    const txHash = await transfer.send();
+    /* 2) сериализуем в BOC без индексов */
+    const bocBytes   = await transfer.toBoc(false);
+    const bocBase64  = TonWeb.utils.bytesToBase64(bocBytes);
 
-    // ——— помечаем как отправлено ———
-    w.status = 'sent';
-    w.txHash = txHash;        // hex-строка
-    await saveWithdrawals();
+    /* 3) реально шлём через Toncenter */
+    const {id: txHashBase64} = await tonApi("sendBoc", { boc: bocBase64 });
+    const txHash = Buffer.from(txHashBase64, "base64").toString("hex");
 
-    const rec = txs.find(t =>
-      t.type === 'withdraw' && t.ts === w.ts && t.userId === w.userId);
-    if (rec) rec.status = 'sent';
-    await saveTx();
+     /* === помечаем как «sent» === */
+     w.status = "sent";
+     w.txHash = txHash.slice(0, 16);   // хватит первых 8 байт для ссылки
 
-    console.log(`✅ withdrawal ${w.amount} TON → ${w.to}  (${txHash.slice(0,8)}…)`);
+    console.log(`✅ sent ${w.amount} TON → ${w.to}  (hash ${txHash.slice(0,8)}…)`);
 
-  } catch (e) {
-    console.error('processWithdrawals:', e);
-    // если seqno не совпал — оставим pending, повторим позже
-  } finally {
-    setTimeout(processWithdrawals, 20_000);
-  }
+   } catch (e) {
+     console.error("processWithdrawals:", e);
+   } finally {
+     setTimeout(processWithdrawals, 20_000);
+   }
 }
+
 
 
 
