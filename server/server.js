@@ -611,31 +611,50 @@ async function pollDeposits() {
   }
 }
 
+async function postBocToToncenter(bocBase64) {
+  // формируем URL …/sendBoc?api_key=...
+  const url = new URL('sendBoc', TON_API);
+  if (TON_API_KEY) url.searchParams.set('api_key', TON_API_KEY);
+
+  const r = await fetch(url.toString(), {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body   : JSON.stringify({ boc: bocBase64 })
+  });
+
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`sendBoc failed: ${r.status} ${text}`);
+  }
+  return (await r.json()).result.id;   // base64-hash
+}
+
 
 async function processWithdrawals () {
   try {
     const w = withdrawals.find(x => x.status === 'pending');
     if (!w) return;
 
-    // 1️⃣ seqno как number
+    // 1️⃣ seqno как обычное число
     const seqno = Number(await hotWallet.methods.seqno().call());
 
-    // 2️⃣ старый transfer-API
+    // 2️⃣ собираем и подписываем сообщение
     const transfer = hotWallet.methods.transfer({
       secretKey : keyPair.secretKey,
       toAddress : w.to,
       amount    : TonWeb.utils.toNano(w.amount.toString()),
-      seqno,                       // теперь точно number
+      seqno,
       payload   : null,
-      sendMode  : 3                // gas отдельно
+      sendMode  : 3
     });
 
-    // 3️⃣ отправка (в 0.0.66 вызывает provider.sendBoc)
-    const txHash = await transfer.send();   // hex-строка
+    // 3️⃣ сериализуем без индексов и шлём POST-ом
+    const boc  = await transfer.toBoc(false);
+    const hash = await postBocToToncenter(TonWeb.utils.bytesToBase64(boc));
 
-    // 4️⃣ отметки в журнале
+    // 4️⃣ фиксация статуса
     w.status = 'sent';
-    w.txHash = txHash.slice(0, 16);
+    w.txHash = Buffer.from(hash, 'base64').toString('hex').slice(0,16);
     await saveWithdrawals();
 
     const rec = txs.find(t =>
@@ -643,13 +662,15 @@ async function processWithdrawals () {
     if (rec) rec.status = 'sent';
     await saveTx();
 
-    console.log(`✅ sent ${w.amount} TON → ${w.to}  (hash ${txHash.slice(0,8)}…)`);
+    console.log(`✅ sent ${w.amount} TON → ${w.to}  (tx ${w.txHash}…)`);
+
   } catch (e) {
     console.error('processWithdrawals:', e);
   } finally {
     setTimeout(processWithdrawals, 20_000);
   }
 }
+
 
 
 
