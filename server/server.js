@@ -60,7 +60,6 @@ if (!WalletClass) {
 }
 
 const hotWallet  = new WalletClass(provider, { publicKey: keyPair.publicKey });
-let nextSeqno = 0;  
 
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
@@ -623,56 +622,66 @@ async function pollDeposits() {
   }
 }
 
-async function processWithdrawals() {
-  try {
-    const w = withdrawals.find(x => x.status === "pending");
-    if (!w) return;
+async function postBocToToncenter(bocBase64) {
+  // формируем URL …/sendBoc?api_key=...
+  const url = new URL('sendBoc', TON_API);
+  if (TON_API_KEY) url.searchParams.set('api_key', TON_API_KEY);
 
-    /* 1. Запрашиваем актуальный seqno прямо перед сборкой */
+  const r = await fetch(url.toString(), {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body   : JSON.stringify({ boc: bocBase64 })
+  });
+
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`sendBoc failed: ${r.status} ${text}`);
+  }
+  return (await r.json()).result.id;   // base64-hash
+}
+
+
+async function processWithdrawals() {
+   try {
+     const w = withdrawals.find(x => x.status === 'pending');
+     if (!w) return;
+
+    // 1. актуальный seqno
     const seqno = Number(await hotWallet.methods.seqno().call());
     console.log("🔁 seqno:", seqno);
 
-    /* 2. Формируем перевод */
-    const transfer = hotWallet.methods.transfer({
-      secretKey : keyPair.secretKey,
-      toAddress : w.to,
-      amount    : TonWeb.utils.toNano(w.amount.toString()),
-      seqno,
-      payload   : null,
-      sendMode  : 3
-    });
+// 2. собираем transfer
+const transfer = hotWallet.methods.transfer({
+  secretKey : keyPair.secretKey,
+  toAddress : w.to,
+  amount    : TonWeb.utils.toNano(w.amount.toString()),
+  seqno,
+  payload   : null,
+  sendMode  : 3
+});
 
-    /* 3. Получаем BOC (универсально под любые версии TonWeb) */
-    let bocBytes = await transfer.getQuery();
-    if (!(bocBytes instanceof Uint8Array)) {
-      // Cell или обёртка
-      bocBytes = bocBytes?.toBoc
-        ? await bocBytes.toBoc(false)
-        : await bocBytes.message.toBoc(false);
-    }
-    const bocB64 = TonWeb.utils.bytesToBase64(bocBytes);
+// 3. получаем BOC и отправляем
+const bocBytes = await (await transfer.getQuery()).toBoc(false);
+const bocB64   = TonWeb.utils.bytesToBase64(bocBytes);
 
-    /* 4. Отправляем */
-    await tonApi("sendBoc", { boc: bocB64 });
-    console.log("📤 отправлено, ждём подтверждения…");
+await tonApi("sendBoc", { boc: bocB64 });      // <-- ключевое
 
-    /* 5. Ждём, пока seqno увеличится */
-    while (Number(await hotWallet.methods.seqno().call()) === seqno) {
-      await new Promise(r => setTimeout(r, 4000));
-    }
-    console.log("✅ подтверждено!");
+// 4. фиксация в журнале
+w.txHash = bocB64.slice(0, 16);
+w.status = "sent";
+await saveWithdrawals();
 
-    /* 6. Помечаем заявку */
-    w.txHash = bocB64.slice(0, 16);
-    w.status = "sent";
-    await saveWithdrawals();
+console.log(`✅ вывод ${w.amount} TON → ${w.to}`);
 
-  } catch (e) {
-    console.error("processWithdrawals:", e);
-  } finally {
-    setTimeout(processWithdrawals, 20_000);   // повторяем каждые 20 с
-  }
+
+   } catch (e) {
+     console.error("processWithdrawals:", e);
+   } finally {
+     setTimeout(processWithdrawals, 20_000);
+   }
 }
+
+
 
 
 // ──────────────────────── Bootstrap ───────────────────────────
@@ -682,8 +691,6 @@ async function processWithdrawals() {
   await loadTx();
   await loadAddr();
   await loadWithdrawals();
-  nextSeqno = Number(await hotWallet.methods.seqno().call());
-  console.log("🚀 starting seqno:", nextSeqno);
   resetRound();      
   pollDeposits().catch(console.error);
   processWithdrawals().catch(console.error);
