@@ -637,28 +637,37 @@ async function processWithdrawals() {
 
     console.log("🔁 seqno:", nextSeqno);
 
-    /* 2. формируем transfer */
-    const transfer = hotWallet.methods.transfer({
-      secretKey: keyPair.secretKey,
-      toAddress: w.to,
-      amount   : TonWeb.utils.toNano(w.amount.toString()),
-      seqno    : nextSeqno,        // ← правильный счётчик
-      payload  : null,
-      sendMode : 3                 // PAYER_SEPARATE_GAS
-    });
+// 2. собираем transfer
+const transfer = hotWallet.methods.transfer({
+  secretKey : keyPair.secretKey,
+  toAddress : w.to,
+  amount    : TonWeb.utils.toNano(w.amount.toString()),
+  seqno     : nextSeqno,
+  payload   : null,
+  sendMode  : 3
+});
 
-    /* 3. сериализуем и шлём */
-    const query   = await transfer.getQuery();          // { message, … }
-    const bocB64  = TonWeb.utils.bytesToBase64(
-                      await query.message.toBoc(false)  // <- Cell → Uint8Array
-                    );
+/* 3. получаем BOC в зависимости от типа */
+let bocBytes = await transfer.getQuery();     // что бы ни вернуло…
 
-    await tonApi("sendBoc", { boc: bocB64 });
-    console.log("📤 BOC отправлен, ждём включения в блок…");
+if (bocBytes instanceof Uint8Array) {
+  /* new TonWeb — BOC уже Uint8Array */
+} else if (bocBytes && typeof bocBytes.toBoc === "function") {
+  /* старые TonWeb — вернулся Cell */
+  bocBytes = await bocBytes.toBoc(false);
+} else if (bocBytes?.message?.toBoc) {
+  /* очень старые TonWeb */
+  bocBytes = await bocBytes.message.toBoc(false);
+} else {
+  throw new Error("Неизвестный формат результата getQuery()");
+}
 
-    /* 4. ждём, пока seqno увеличится */
-    nextSeqno = await waitSeqnoIncrease(nextSeqno);
-    console.log("✅ подтверждено, новый seqno:", nextSeqno);
+const bocB64 = TonWeb.utils.bytesToBase64(bocBytes);
+
+/* 4. шлём */
+await tonApi("sendBoc", { boc: bocB64 });
+console.log("📤 BOC отправлен, ждём подтверждения…");
+
 
     /* 5. отмечаем заявку */
     w.txHash = bocB64.slice(0, 16);
