@@ -656,7 +656,10 @@ async function processWithdrawals() {
       });
 
       const q      = await transfer.getQuery();
-      const cell   = q.cell || q.message;
+      const cell = await transfer.getQuery();          // cell – уже Cell
+const boc  = TonWeb.utils.bytesToBase64(
+  await cell.toBoc(false)
+);
       const boc    = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
 
       // 3. отправляем
