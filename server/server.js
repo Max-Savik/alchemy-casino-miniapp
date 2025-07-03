@@ -617,25 +617,21 @@ async function processWithdrawals() {
      const w = withdrawals.find(x => x.status === "pending");
      if (!w) return;
 
-    const seqno = await hotWallet.methods.seqno().call();       // в 0.0.66 это готовый helper
+    /* 1️⃣ актуальный seqno */
+    const seqno = await hotWallet.methods.seqno().call();
 
-    /* 1) собираем и подписываем transfer */
-    const transfer = await hotWallet.createTransfer({
-       secretKey : keyPair.secretKey,
-       toAddress : w.to,
-       amount    : TonWeb.utils.toNano(w.amount.toString()),
-       seqno,
-       payload   : null,          // можно комментарий
-       sendMode  : 3              // pay gas separately (= default)
+    /* 2️⃣ строим transfer через старый API */
+    const transfer = hotWallet.methods.transfer({
+        secretKey : keyPair.secretKey,
+        toAddress : w.to,
+        amount    : TonWeb.utils.toNano(w.amount.toString()),
+        seqno,
+        payload   : null,      // комментарий, если нужен
+        sendMode  : 3          // gas отдельно
     });
 
-    /* 2) сериализуем в BOC без индексов */
-    const bocBytes   = await transfer.toBoc(false);
-    const bocBase64  = TonWeb.utils.bytesToBase64(bocBytes);
-
-    /* 3) реально шлём через Toncenter */
-    const {id: txHashBase64} = await tonApi("sendBoc", { boc: bocBase64 });
-    const txHash = Buffer.from(txHashBase64, "base64").toString("hex");
+    /* 3️⃣ отправляем — send() в 0.0.66 уже вызывает provider.sendBoc */
+    const txHash = await transfer.send();          // hex-строка
 
      /* === помечаем как «sent» === */
      w.status = "sent";
