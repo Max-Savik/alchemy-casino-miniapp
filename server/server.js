@@ -641,15 +641,27 @@ async function postBocToToncenter(bocBase64) {
   return (await r.json()).result.id;   // base64-hash
 }
 
+async function waitSeqnoIncrease(old) {
+  for (;;) {
+    const now = Number(await hotWallet.methods.seqno().call());
+    if (now > old) return now;      // увеличился – можно продолжать
+    await new Promise(r => setTimeout(r, 4000)); // подождём 4 с
+  }
+}
 
 async function processWithdrawals() {
    try {
      const w = withdrawals.find(x => x.status === 'pending');
      if (!w) return;
 
-    // 1. актуальный seqno
-    const seqno = nextSeqno;
-    console.log("🔁 seqno:", seqno);
+// 1. берём chain-seqno и ждём, пока он догонит nextSeqno
+const chainSeqno = Number(await hotWallet.methods.seqno().call());
+if (chainSeqno !== nextSeqno) {
+  console.log(`⏳ кошелёк ещё на seqno ${chainSeqno}, ждём подтверждения…`);
+  return;                                    // подождём следующего цикла
+}
+
+console.log("🔁 seqno:", nextSeqno);
 
 // 2. собираем transfer
 const transfer = hotWallet.methods.transfer({
@@ -661,19 +673,18 @@ const transfer = hotWallet.methods.transfer({
   sendMode  : 3
 });
 
-// 3. получаем BOC и отправляем
-const bocBytes = await (await transfer.getQuery()).toBoc(false);
-const bocB64   = TonWeb.utils.bytesToBase64(bocBytes);
+// 3. отправляем
+await tonApi("sendBoc", { boc: bocB64 });
+console.log("📤 BOC отправлен, ждём включения в блок…");
 
-await tonApi("sendBoc", { boc: bocB64 });      // <-- ключевое
+// 4. ждём, пока seqno в блокчейне станет больше
+nextSeqno = await waitSeqnoIncrease(nextSeqno);
+console.log("✅ подтверждено, новый seqno:", nextSeqno);
 
-// 4. фиксация в журнале
-nextSeqno = seqno + 1;
+// 5. помечаем заявку
 w.txHash = bocB64.slice(0, 16);
 w.status = "sent";
 await saveWithdrawals();
-
-console.log(`✅ вывод ${w.amount} TON → ${w.to}`);
 
    } catch (e) {
      console.error("processWithdrawals:", e);
