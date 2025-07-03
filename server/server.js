@@ -32,9 +32,20 @@ const HOT_PRIV_KEY   = process.env.HOT_PRIV_KEY;
 const HOT_WALLET_TYPE= process.env.HOT_WALLET_TYPE || "v4r2";
 if (!HOT_PRIV_KEY) throw new Error("HOT_PRIV_KEY not set");
 
-const seed = TonWeb.utils.hexToBytes(HOT_PRIV_KEY);      // 32-байтный hex!
-if (seed.length !== 32) throw new Error("HOT_PRIV_KEY должен быть 32-байтным hex");
-const keyPair   = nacl.sign.keyPair.fromSeed(seed);      // { publicKey, secretKey }
+const raw = TonWeb.utils.hexToBytes(
+  HOT_PRIV_KEY.startsWith("0x") ? HOT_PRIV_KEY.slice(2) : HOT_PRIV_KEY
+);
+
+let keyPair;
+if (raw.length === 32) {
+  // Дан только seed → генерируем пару
+  keyPair = nacl.sign.keyPair.fromSeed(raw);             // {publicKey, secretKey}
+} else if (raw.length === 64) {
+  // Дан уже secretKey (seed+pub) → вытаскиваем pub из второй половины
+  keyPair = { secretKey: raw, publicKey: raw.slice(32) };
+} else {
+  throw new Error("HOT_PRIV_KEY должен быть 32- или 64-байтным hex");
+}
 
 const provider   = new TonWeb.HttpProvider(TON_API, {apiKey: TON_API_KEY});
 const tonweb     = new TonWeb(provider);
