@@ -12,5 +12,4 @@
     "dotenv": "^16.4.1",
     "tonweb": "git+https://github.com/ton-community/tonweb.git#master"
   }
-  
 }
