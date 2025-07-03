@@ -617,7 +617,7 @@ async function processWithdrawals() {
      const w = withdrawals.find(x => x.status === "pending");
      if (!w) return;
 
-    const seqno = await hotWallet.getSeqno();        // в 0.0.66 это готовый helper
+    const seqno = await hotWallet.methods.seqno().call();       // в 0.0.66 это готовый helper
 
     /* 1) собираем и подписываем transfer */
     const transfer = await hotWallet.createTransfer({
