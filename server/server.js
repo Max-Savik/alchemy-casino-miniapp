@@ -628,38 +628,39 @@ async function processWithdrawals() {
     const w = withdrawals.find(x => x.status === "pending");
     if (!w) return;
 
-    // 1. ждём, пока on-chain seqno = nextSeqno
+    /* 1. ждём, пока on-chain seqno догонит наш nextSeqno */
     const chainSeqno = Number(await hotWallet.methods.seqno().call());
     if (chainSeqno !== nextSeqno) {
       console.log(`⏳ кошелёк ещё на seqno ${chainSeqno}, ждём подтверждения…`);
-      return; // подождём следующего цикла
+      return;                                    // повторим позже
     }
 
     console.log("🔁 seqno:", nextSeqno);
 
-    // 2. собираем transfer
+    /* 2. формируем transfer */
     const transfer = hotWallet.methods.transfer({
       secretKey: keyPair.secretKey,
       toAddress: w.to,
       amount   : TonWeb.utils.toNano(w.amount.toString()),
-      seqno    : nextSeqno,        // ← корректное поле
+      seqno    : nextSeqno,        // ← правильный счётчик
       payload  : null,
-      sendMode : 3                 // payer-separate-gas
+      sendMode : 3                 // PAYER_SEPARATE_GAS
     });
 
-    // 3. сериализуем в BOC и шлём
-    const query   = await transfer.getQuery();              // {message, …}
-    const bocBytes= await query.message.toBoc(false);
-    const bocB64  = TonWeb.utils.bytesToBase64(bocBytes);
+    /* 3. сериализуем и шлём */
+    const query   = await transfer.getQuery();          // { message, … }
+    const bocB64  = TonWeb.utils.bytesToBase64(
+                      await query.message.toBoc(false)  // <- Cell → Uint8Array
+                    );
 
     await tonApi("sendBoc", { boc: bocB64 });
     console.log("📤 BOC отправлен, ждём включения в блок…");
 
-    // 4. ждём повышения seqno в блокчейне
+    /* 4. ждём, пока seqno увеличится */
     nextSeqno = await waitSeqnoIncrease(nextSeqno);
     console.log("✅ подтверждено, новый seqno:", nextSeqno);
 
-    // 5. помечаем заявку
+    /* 5. отмечаем заявку */
     w.txHash = bocB64.slice(0, 16);
     w.status = "sent";
     await saveWithdrawals();
@@ -667,10 +668,9 @@ async function processWithdrawals() {
   } catch (e) {
     console.error("processWithdrawals:", e);
   } finally {
-    setTimeout(processWithdrawals, 20_000);
+    setTimeout(processWithdrawals, 20_000);   // цикл каждые 20 с
   }
 }
-
 
 
 // ──────────────────────── Bootstrap ───────────────────────────
