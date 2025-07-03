@@ -612,40 +612,44 @@ async function pollDeposits() {
 }
 
 
-async function processWithdrawals() {
-   try {
-     const w = withdrawals.find(x => x.status === "pending");
-     if (!w) return;
+async function processWithdrawals () {
+  try {
+    const w = withdrawals.find(x => x.status === 'pending');
+    if (!w) return;
 
-    /* 1️⃣ актуальный seqno */
-    const seqno = await hotWallet.methods.seqno().call();
+    // 1️⃣ seqno как number
+    const seqno = Number(await hotWallet.methods.seqno().call());
 
-    /* 2️⃣ строим transfer через старый API */
+    // 2️⃣ старый transfer-API
     const transfer = hotWallet.methods.transfer({
-        secretKey : keyPair.secretKey,
-        toAddress : w.to,
-        amount    : TonWeb.utils.toNano(w.amount.toString()),
-        seqno,
-        payload   : null,      // комментарий, если нужен
-        sendMode  : 3          // gas отдельно
+      secretKey : keyPair.secretKey,
+      toAddress : w.to,
+      amount    : TonWeb.utils.toNano(w.amount.toString()),
+      seqno,                       // теперь точно number
+      payload   : null,
+      sendMode  : 3                // gas отдельно
     });
 
-    /* 3️⃣ отправляем — send() в 0.0.66 уже вызывает provider.sendBoc */
-    const txHash = await transfer.send();          // hex-строка
+    // 3️⃣ отправка (в 0.0.66 вызывает provider.sendBoc)
+    const txHash = await transfer.send();   // hex-строка
 
-     /* === помечаем как «sent» === */
-     w.status = "sent";
-     w.txHash = txHash.slice(0, 16);   // хватит первых 8 байт для ссылки
+    // 4️⃣ отметки в журнале
+    w.status = 'sent';
+    w.txHash = txHash.slice(0, 16);
+    await saveWithdrawals();
+
+    const rec = txs.find(t =>
+      t.type === 'withdraw' && t.ts === w.ts && t.userId === w.userId);
+    if (rec) rec.status = 'sent';
+    await saveTx();
 
     console.log(`✅ sent ${w.amount} TON → ${w.to}  (hash ${txHash.slice(0,8)}…)`);
-
-   } catch (e) {
-     console.error("processWithdrawals:", e);
-   } finally {
-     setTimeout(processWithdrawals, 20_000);
-   }
+  } catch (e) {
+    console.error('processWithdrawals:', e);
+  } finally {
+    setTimeout(processWithdrawals, 20_000);
+  }
 }
-
 
 
 
