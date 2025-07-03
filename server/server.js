@@ -16,6 +16,7 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch";
+import TonWeb from "tonweb";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +26,20 @@ const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render d
 const DEPOSIT_ADDR   = process.env.DEPOSIT_ADDR;
 const TON_API        = process.env.TONCENTER_API || "https://toncenter.com/api/v2/";
 const TON_API_KEY    = process.env.TONCENTER_KEY || "";
+const HOT_PRIV_KEY   = process.env.HOT_PRIV_KEY;
+const HOT_WALLET_TYPE= process.env.HOT_WALLET_TYPE || "v4r2";
+if (!HOT_PRIV_KEY) throw new Error("HOT_PRIV_KEY not set");
+
+/* keypair из приватного ключа */
+const keyPair = {
+  publicKey : TonWeb.utils.hexToBytes(HOT_PRIV_KEY).slice(32), // pk = вторая половина
+  secretKey : TonWeb.utils.hexToBytes(HOT_PRIV_KEY)
+};
+
+/* и сам Wallet-contract */
+const tonweb     = new TonWeb(new TonWeb.HttpProvider(TON_API, {apiKey:TON_API_KEY}));
+const hotWallet  = new tonweb.wallet[HOT_WALLET_TYPE](tonweb.provider, {publicKey:keyPair.publicKey});
+
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
@@ -569,6 +584,54 @@ async function pollDeposits() {
     console.error("pollDeposits:", e.message);
   } finally {
     setTimeout(pollDeposits, 15_000);   // каждые 15 с
+  }
+}
+
+
+async function processWithdrawals() {
+  try {
+    /* берём только pending */
+    const pendings = withdrawals.filter(w => w.status === "pending");
+    if (pendings.length === 0) return;
+
+    const seqno = await hotWallet.getSeqno();   // текущий счетчик
+
+    /* собираем одиночные transfers — по 1 на итерацию,
+       чтобы не «подвиснуть» и не словить double spend */
+    const w = pendings[0];
+    const amountNano = TonWeb.utils.toNano(w.amount.toString());
+
+    const transfer = await hotWallet.createTransfer({
+      secretKey : keyPair.secretKey,
+      toAddress : w.to,
+      amount    : amountNano,
+      seqno,
+      payload   : null    // можно вписать комментарий
+    });
+
+    const boc = await transfer.toBoc(false);
+
+    /* ==== пока что только записываем «sent» и hash,   ====
+       ====     реальной sendBoc НЕ ДЕЛАЕМ          ==== */
+
+    w.status = "sent";
+    w.txHash = TonWeb.utils.bytesToHex(await TonWeb.utils.sha256(boc));
+    await saveWithdrawals();
+
+    /* также апдейтим запись в txs */
+    const rec = txs.find(t => t.type==="withdraw" && t.ts===w.ts && t.userId===w.userId);
+    if (rec) rec.status = "sent";
+    await saveTx();
+
+    console.log(`✅ prepared TX for ${w.amount} TON → ${w.to}`);
+
+    /* →👉 здесь будет настоящий вызов sendBoc на шаге 3-B-2 */
+    // await tonApi("sendBoc", {boc: TonWeb.utils.bytesToBase64(boc)});
+
+  } catch(e){
+    console.error("processWithdrawals:", e);
+  } finally {
+    setTimeout(processWithdrawals, 20_000);    // каждые 20 с
   }
 }
 
