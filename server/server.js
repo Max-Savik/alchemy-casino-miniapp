@@ -244,7 +244,7 @@ const io = new Server(httpServer, { cors: { origin: "*" } });
 // ───────────────────── Game state (1 round) ────────────────────
 let game = {
   players: [],
-  totalUSD: 0,
+  totalTON: 0,
   phase: "waiting",
   endsAt: null,
   seed: null,           // крипто-сид
@@ -261,7 +261,7 @@ function weightedPickBySeed(seed) {
     .digest("hex")
     .substr(0, 16);
   const rnd = parseInt(hash, 16) / 0xffffffffffffffff;
-  const ticket = rnd * game.totalUSD;
+  const ticket = rnd * game.totalTON;
   let acc = 0;
   for (const p of game.players) {
     acc += p.value;
@@ -275,7 +275,7 @@ function resetRound() {
   const seed = crypto.randomBytes(16).toString("hex");
   game = {
     players: [],
-    totalUSD: 0,
+    totalTON: 0,
     phase: "waiting",
     endsAt: null,
     seed,
@@ -321,7 +321,7 @@ function startSpin() {
   const spins = 6 + (parseInt(game.seed.substr(0,2), 16) % 4);
 
   // угловой размер сектора победителя
-  const sliceDeg = (winner.value / game.totalUSD) * 360;
+  const sliceDeg = (winner.value / game.totalTON) * 360;
   const offset   = 5 + rand01(game.seed, "offset") * (sliceDeg - 10); // 5° отступ от краёв
   
   io.emit("spinStart", {
@@ -336,7 +336,7 @@ function startSpin() {
   setTimeout(async () => {
       io.emit("spinEnd", {
       winner,
-      total: game.totalUSD,
+      total: game.totalTON,
       seed: game.seed            // теперь раскрываем сид
      });
 
@@ -371,7 +371,7 @@ function startSpin() {
 history.push({
   timestamp: new Date().toISOString(),
   winner:     winner.name,
-  total:      game.totalUSD,
+  total:      game.totalTON,
 
   /* === provable-fair data === */
   commitHash: game.commitHash,   // sha256(seed)
@@ -546,11 +546,11 @@ socket.on("placeBet", async ({ userId, name, nfts = [], tonAmount = 0 }) => {
     };
     game.players.push(player);
   }
-  // сумма NFT + TON
-  const nftSum = nfts.reduce((s, x) => s + x.price, 0);
+  // итоговая стоимость ставки (NFT-ы уже содержат TON-токен, если он был)
+  const betValue = nfts.reduce((s, x) => s + x.price, 0);
 
-  player.value     += nftSum + tonAmount;
-  game.totalUSD    += nftSum + tonAmount;
+  player.value  += betValue;
+  game.totalTON += betValue;
   nfts.forEach(x => player.nfts.push(x));
 
   io.emit("state", game);
