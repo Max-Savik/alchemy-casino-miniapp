@@ -814,27 +814,10 @@ placeTonBetBtn.addEventListener('click', async () => {
     return;
   }
 
-  // 3) Отправляем ставку в Socket.IO
-  const tonToken = {
-    id: `ton-${Date.now()}`,
-    img:"https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg",
-    price: amount
-  };
-
-  tonPickerOverlay.classList.remove('show');
-  tonAmountInput.value = '';
-
-// 1) Проверка, что денег хватает, всё ещё нужна:
-if (tonBalance < amount){
-  alert('Недостаточно TON на балансе!');
-  return;
-}
-
 // 2) Просто отправляем ставку
 socket.emit('placeBet', { userId: myId, name: myName, tonAmount: amount });
 
-// 3) Баланс обновится через событие err или после ответа state,
-//    но можно сразу оптимистично вычесть:
+// 3) Оптимистично уменьшаем баланс локально
 tonBalance -= amount;
 document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
 
@@ -842,8 +825,7 @@ document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
 tonPickerOverlay.classList.remove('show');
 tonAmountInput.value = '';
 
-
-
+});   // ←← закрываем функцию и addEventListener
 const toggleBtn = document.getElementById('toggleSort');
 const svgIcon   = toggleBtn.querySelector('svg');
 
