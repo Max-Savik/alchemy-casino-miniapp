@@ -824,13 +824,24 @@ placeTonBetBtn.addEventListener('click', async () => {
   tonPickerOverlay.classList.remove('show');
   tonAmountInput.value = '';
 
-  const {balance} = await postJSON(`${API_ORIGIN}/wallet/withdraw`,
-               {userId: myId, amount, purpose:'bet'});
-  tonBalance = balance;
-  document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+// 1) Проверка, что денег хватает, всё ещё нужна:
+if (tonBalance < amount){
+  alert('Недостаточно TON на балансе!');
+  return;
+}
 
-socket.emit('placeBet', { userId: myId, name: myName, nfts:[tonToken] });                        
-});
+// 2) Просто отправляем ставку
+socket.emit('placeBet', { userId: myId, name: myName, tonAmount: amount });
+
+// 3) Баланс обновится через событие err или после ответа state,
+//    но можно сразу оптимистично вычесть:
+tonBalance -= amount;
+document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+
+// 4) Закрываем модалку
+tonPickerOverlay.classList.remove('show');
+tonAmountInput.value = '';
+
 
 
 const toggleBtn = document.getElementById('toggleSort');
