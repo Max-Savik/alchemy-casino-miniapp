@@ -162,22 +162,6 @@ wallet.get("/balance", (req, res) => {
   res.json({ balance: bal });
 });
 
-/* POST /wallet/deposit { userId, amount } */
-wallet.post("/deposit", async (req, res) => {
-  const amt = Number(req.body.amount);
-  if (!amt || amt <= 0) return res.status(400).json({ error: "amount>0" });
-  balances[req.userId] = (balances[req.userId] || 0) + amt;
-  await saveBalances();
-  res.json({ balance: balances[req.userId] });
-  txs.push({                      
-    userId : req.userId,
-    type   : "deposit",
-    amount : amt,
-    ts     : Date.now()
-  });
-  await saveTx();
-});
-
 /* POST /wallet/withdraw { userId, amount } */
 wallet.post("/withdraw", async (req, res) => {
   const amt = Number(req.body.amount);
