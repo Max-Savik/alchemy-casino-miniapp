@@ -109,7 +109,7 @@ const selected = new Set();            // NFT, выбранные перед с�
 const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#d79a59','#218380'];
 
 let players   = [];
-let totalUSD  = 0;
+let totalTON  = 0;
 let phase     = "waiting";              // waiting | countdown | spinning
 
 // Храним развернутых игроков (по имени) для истории NFT 
@@ -286,12 +286,12 @@ function renderProfile() {
 
 function drawWheel() {
   svg.innerHTML = '';
-  if (!totalUSD) return;
+  if (!totalTON) return;
 
   let start = -90;
   players.forEach(p => {
     // размер сектора
-    const sweep = (p.value / totalUSD) * 360;
+    const sweep = (p.value / totalTON) * 360;
     const end = start + sweep;
 
     // рисуем сектор
@@ -382,7 +382,7 @@ tonWrapper.appendChild(valueEl);
 
 // Процент доли банка
 const percEl = document.createElement('span');
-percEl.textContent = `· ${((p.value/totalUSD) * 100).toFixed(1)}%`;
+percEl.textContent = `· ${((p.value/totalTON) * 100).toFixed(1)}%`;
 percEl.className = 'text-emerald-400 text-xs';
 
 // Собираем
@@ -495,7 +495,7 @@ wrapper.addEventListener('click', () => {
     list.appendChild(li);
   });
 
-  pot.textContent = `${formatNumber(totalUSD)} TON`;
+  pot.textContent = `${formatNumber(totalTON)} TON`;
   drawWheel();
   renderPicker();
   renderProfile();
@@ -546,11 +546,11 @@ clearFiltersBtn.addEventListener('click', () => {
 // При подключении сразу слать текущее состояние
 socket.on("state", s => {
   players  = s.players;
-  totalUSD = s.totalUSD;
+  totalTON = s.totalTON;
   phase    = s.phase;
 
   window.players  = s.players;
-  window.totalUSD = s.totalUSD;
+  window.totalTON = s.totalTON;
 
   if (players.length === 0) {
     // Новый раунд: сбрасываем UI
@@ -594,7 +594,7 @@ socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitH
   lastSpin.seed    = seed;
   lastSpin.serverWinner = winner.name; 
   players  = list;
-  totalUSD = list.reduce((a,b) => a + b.value, 0);
+  totalTON = list.reduce((a,b) => a + b.value, 0);
   phase    = "spinning";
   lockBets(true);
   updateStatus();
@@ -683,7 +683,7 @@ function runSpinAnimation(winner, spins, offsetDeg) {
         (счёт идёт от −90°, потому что первый сектор рисуется вверх). */
   let startAngle = -90;
   for (const p of players) {
-    const sweep = (p.value / totalUSD) * 360;
+    const sweep = (p.value / totalTON) * 360;
     if (p.name === winner.name) break;
     startAngle += sweep;
   }
