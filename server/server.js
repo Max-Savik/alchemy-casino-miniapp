@@ -504,7 +504,36 @@ app.use('/admin', admin);
 io.on("connection", socket => {
   socket.emit("state", game);
 
-socket.on("placeBet", ({ userId, name, nfts = [], tonAmount = 0 }) => {
+socket.on("placeBet", async ({ userId, name, nfts = [], tonAmount = 0 }) => {
+  // 0) базовая валидация
+  tonAmount = Number(tonAmount) || 0;
+  if (tonAmount < 0) tonAmount = 0;          // защита от отрицательных
+
+  /* 1) проверяем и списываем TON-баланс */
+  if (tonAmount > 0) {
+    const bal = balances[userId] || 0;
+    if (bal < tonAmount) {
+      socket.emit("err", "insufficient");
+      return;
+    }
+    balances[userId] = bal - tonAmount;
+    await saveBalances();
+
+    txs.push({
+      userId,
+      type:   "bet",
+      amount: tonAmount,
+      ts:     Date.now()
+    });
+    await saveTx();
+
+    // оформляем TON как «виртуальный NFT-токен», чтобы логика колеса не менялась
+    nfts.push({
+      id:   `ton-${Date.now()}`,
+      img:  "https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg",
+      price: tonAmount
+    });
+  }
   let player = game.players.find(p => p.userId === userId);
   if (!player) {
     player = {
