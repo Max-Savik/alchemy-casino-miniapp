@@ -1,6 +1,7 @@
 {
   "name": "golden-jackpot-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "Jackpot backend with TON support, JWT-auth and CSRF protection",
   "type": "module",
   "scripts": {
     "start": "node server.js"
@@ -11,6 +12,13 @@
     "socket.io": "^4.7.2",
     "dotenv": "^16.4.1",
     "tonweb": "^0.0.66",
-    "tweetnacl": "^1.0.3"
-  }
+    "tweetnacl": "^1.0.3",
+
+    "jsonwebtoken": "^9.0.2",
+    "cookie-parser": "^1.4.6",
+    "csurf": "^1.11.0",
+    "helmet": "^7.1.2",
+    "express-rate-limit": "^7.1.0"
+  },
+  "license": "MIT"
 }
