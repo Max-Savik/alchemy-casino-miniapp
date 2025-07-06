@@ -8,7 +8,7 @@
 
 
 import express from "express";
-import crypto from "crypto";  
+import crypto from "crypto";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
@@ -17,12 +17,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch";
 import TonWeb from "tonweb";
-import nacl from "tweetnacl";    
-import dotenv from 'dotenv';
+import nacl from "tweetnacl";
+import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import { parse as parseCookie } from "cookie";
 dotenv.config();  
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -89,7 +90,15 @@ async function saveAddr(){
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
 
+/* ───── JWT ───── */
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";   // Задайте в .env
+const JWT_LIFE   = "30d";                                    // Время жизни токена
 
+/* ───── RATE-LIMIT (от  DoS/брут/спама) ──── */
+const apiLimiter = rateLimit({
+  windowMs: 60_000,   // 1 минута
+  max     : 60,       // ≤60 запросов/мин с одного IP
+});
 // ensure /data exists (Render mounts it, но локально нужно создать)
 await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
 
@@ -135,12 +144,16 @@ async function saveBalances() {
 }
 
 function userAuth(req, res, next) {
-  const userId =
-    (req.body && req.body.userId) ||
-    (req.query && req.query.userId);
-  if (!userId) return res.status(400).json({ error: "userId required" });
-  req.userId = String(userId);
-  next();
+  try {
+    const token =
+      req.cookies?.sid || (req.get("Authorization") || "").replace("Bearer ", "");
+    if (!token) return res.status(401).json({ error: "no token" });
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.userId = payload.uid;
+    next();
+  } catch {
+    return res.status(401).json({ error: "invalid token" });
+  }
 }
 
 /* pending withdrawals  [{id,userId,amount,to,ts,status}] */
@@ -159,7 +172,7 @@ async function saveWithdrawals() {
   await fs.rename(tmp, WD_FILE); 
 }   
 const wallet = express.Router();
-wallet.use(userAuth);
+wallet.use(apiLimiter, userAuth);   // защита и для JWT-роутов
 
 /* GET /wallet/balance?userId=123 */
 wallet.get("/balance", (req, res) => {
@@ -213,7 +226,7 @@ wallet.post('/link', async (req,res)=>{
 });
 
 
- /* GET /wallet/history?userId=123&limit=30 */
+ /* GET /wallet/history?limit=30 */
 wallet.get('/history', (req,res)=>{
   const lim = Math.min( Number(req.query.limit||50), 200);
   const list = txs
@@ -237,6 +250,8 @@ async function saveTx(){
 }
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cookieParser());
 // ---------- безопасный CORS ----------
 const allowed = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
@@ -257,6 +272,26 @@ app.use(
 );
 app.use(express.json());
 app.use(express.static(__dirname));   // раздаём фронт
+app.use(apiLimiter);  
+// === LOGIN ===  (вызывается телеграм-клиентом один раз)
+app.post("/auth/login", (req, res) => {
+  /* Telegram должен подписывать userId — здесь минимальная проверка на число */
+  const { userId } = req.body || {};
+  if (!/^\d+$/.test(userId)) return res.status(400).json({ error: "bad userId" });
+
+  const token = jwt.sign({ uid: String(userId) }, JWT_SECRET, {
+    expiresIn: JWT_LIFE,
+  });
+
+  res
+    .cookie("sid", token, {
+      httpOnly: true,
+      sameSite: "Strict",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 дней
+    })
+    .json({ ok: true });
+});
 app.get("/history", (req, res) => res.json(history));
 app.use("/wallet", wallet);
 const httpServer = http.createServer(app);
@@ -427,10 +462,19 @@ function adminAuth(req, res, next) {
 const admin = express.Router();
 admin.use(adminAuth);
 
-// 1) Скачать history.json
+/* 1) Скачать history.json или конкретный backup
+   GET /admin/history/download            – актуальный файл
+   GET /admin/history/download?id=…bak    – бэкап по id           */
 admin.get('/history/download', async (req, res) => {
-  await saveHistory();                       // убедимся, что последнее состояние записано
-  res.download(HISTORY_FILE, 'history.json');
+  const id   = (req.query.id || '').trim();      // пусто ⇒ основной файл
+  const file = path.join(DATA_DIR, id || 'history.json');
+
+  try {
+    await fs.access(file);        // убедимся, что файл существует
+    res.download(file);
+  } catch {
+    res.sendStatus(404);
+  }
 });
 
 // 2) Очистить историю (с резервной копией)
@@ -518,21 +562,27 @@ admin.post('/history/restore', async (req, res) => {
   }
 });
 
-/* 8) Скачать любой backup по id
-   GET /admin/history/download?id=history.json.1719226800000.bak      */
-admin.get('/history/download', async (req, res) => {
-  const id = (req.query.id || '').trim() || 'history.json';
-  const file = path.join(DATA_DIR, id);
-  res.download(file).catch(() => res.sendStatus(404));
-});
-
 app.use('/admin', admin);
 
 // ───────────────────── Socket handlers ─────────────────────────
+io.use((socket, next) => {
+  try {
+    const cookies = parseCookie(socket.handshake.headers.cookie || "");
+    const token = cookies.sid || socket.handshake.auth?.token;
+    if (!token) return next(new Error("auth"));
+    const { uid } = jwt.verify(token, JWT_SECRET);
+    socket.userId = uid;
+    next();
+  } catch {
+    next(new Error("auth"));
+  }
+});
+
 io.on("connection", socket => {
   socket.emit("state", game);
 
-socket.on("placeBet", async ({ userId, name, nfts = [], tonAmount = 0 }) => {
+socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
+  const userId = socket.userId;
   // 0) базовая валидация
   tonAmount = Number(tonAmount) || 0;
   if (tonAmount < 0) tonAmount = 0;          // защита от отрицательных
