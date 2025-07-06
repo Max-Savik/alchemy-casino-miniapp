@@ -290,7 +290,7 @@ app.post("/auth/login", (req, res) => {
       secure   : true,            // must-have для SameSite=None
       maxAge   : 1000*60*60*24*30
     })
-    .json({ ok:true });
+    .json({ ok: true, token });
 });
 app.get("/history", (req, res) => res.json(history));
 app.use("/wallet", wallet);
