@@ -285,12 +285,12 @@ app.post("/auth/login", (req, res) => {
 
   res
     .cookie("sid", token, {
-      httpOnly: true,
-      sameSite: "Strict",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 дней
+      httpOnly : true,
+      sameSite : "None",          // ← разрешаем отправлять с другого домена
+      secure   : true,            // must-have для SameSite=None
+      maxAge   : 1000*60*60*24*30
     })
-    .json({ ok: true });
+    .json({ ok:true });
 });
 app.get("/history", (req, res) => res.json(history));
 app.use("/wallet", wallet);
