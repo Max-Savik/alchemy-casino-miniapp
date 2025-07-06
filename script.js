@@ -16,11 +16,8 @@ tonConnectUI.onStatusChange(async walletInfo => {
   }
   tonAddress = walletInfo.account.address;
 
-  // сообщаем серверу, если ещё не привязан
-  await postJSON(`${API_ORIGIN}/wallet/link`, {
-    userId: myId,
-    address: tonAddress
-  }).catch(()=>{});
+ await postJSON(`${API_ORIGIN}/wallet/link`, { address: tonAddress })
+      .catch(()=>{});
 
   refreshBalance();
 });
@@ -38,6 +35,7 @@ async function postJSON(url, data){
     method: 'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(data),
+    credentials: "include" 
   });
   if(!res.ok) throw new Error(await res.text());
   return res.json();
@@ -78,14 +76,7 @@ var cumulativeRotation = 0;
 
 // 1. Подключаемся к бекенду
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
-const token  = document.cookie
-                  .split("; ")
-                  .find(c=>c.startsWith("sid="))
-                  ?.split("=")[1];
-const socket = io(API_ORIGIN, {
-  auth            : { token },
-  withCredentials : true
-});
+let socket;   
 
 // 2. Локальное состояние
 const inventory = [
@@ -126,7 +117,9 @@ const expandedPlayers = new Set();
 let tonBalance = 0;
 async function refreshBalance(){
   try{
-    const res = await fetch(`${API_ORIGIN}/wallet/balance?userId=${myId}`);
+      const res = await fetch(`${API_ORIGIN}/wallet/balance`, {
+      credentials: "include"
+    });
   if(res.ok){
   const {balance=0}=await res.json();
   tonBalance=balance;
@@ -564,14 +557,21 @@ async function ensureJwt() {
   });
 }
 
-(async()=>{          // IIFE перед остальным кодом
-  await ensureJwt();
+ (async () => {
+   await ensureJwt();                // ставим куку sid
 
-  /* --- дальше можно стартовать --- */
-  initSockets();     // функция, в которой был new io(...)
-  refreshBalance();
-})();
+   const token = document.cookie
+     .split("; ")
+     .find(c => c.startsWith("sid="))
+     ?.split("=")[1];
 
+   socket = io(API_ORIGIN, {         // <-- теперь подключаемся
+     auth            : { token },
+     withCredentials : true
+   });
+
+   refreshBalance();
+ })();
 // ========================= SOCKET EVENTS =========================
 // При подключении сразу слать текущее состояние
 socket.on("state", s => {
@@ -813,7 +813,7 @@ placeBetBtn.addEventListener('click', () => {
   renderProfile();
   renderPicker();
   pickerOverlay.classList.add('hidden');
-  socket.emit("placeBet", { userId: myId, name: myName, nfts });
+  socket.emit("placeBet", { name: myName, nfts });
 });
 /* ======== Открываем TON-пикер ======== */
 depositTONBtn.addEventListener('click', () => {
@@ -845,7 +845,7 @@ placeTonBetBtn.addEventListener('click', async () => {
   }
 
 // 2) Просто отправляем ставку
-socket.emit('placeBet', { userId: myId, name: myName, tonAmount: amount });
+socket.emit('placeBet', { name: myName, tonAmount: amount });
 
 // 3) Оптимистично уменьшаем баланс локально
 tonBalance -= amount;
@@ -947,8 +947,8 @@ walletWithdrawBtn.addEventListener('click', async () => {
   const amt = parseFloat(withdrawInp.value);
   if(!(amt>0)) return;
   try{
-    const {balance} = await postJSON(`${API_ORIGIN}/wallet/withdraw`,
-                                     {userId:myId, amount:amt});
+    const { balance } = await postJSON(`${API_ORIGIN}/wallet/withdraw`,
+                                   { amount: amt });
     tonBalance = balance;
     document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
     walletOverlay.classList.add('hidden');
@@ -1007,9 +1007,9 @@ withdrawInp.addEventListener('input', () => {
 async function loadTxHistory(){
   panelTx.innerHTML = '<div class="py-2 text-center text-gray-400">Загрузка…</div>';
   try{
-  const res = await fetch(`${API_ORIGIN}/wallet/balance`, {
-  credentials: "include"
-});
+   const res = await fetch(`${API_ORIGIN}/wallet/history?limit=50`, {
+    credentials: "include"
+  });
     const arr = await res.json();
     if(arr.length===0){
       panelTx.innerHTML = '<div class="py-4 text-center text-gray-400">Пока пусто</div>';
