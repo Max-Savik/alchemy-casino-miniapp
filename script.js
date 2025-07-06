@@ -33,7 +33,10 @@ async function makeCommentPayload(text) {
 async function postJSON(url, data){
   const res = await fetch(url, {
     method: 'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{
+      'Content-Type':'application/json',
+      ...(jwtToken && { 'Authorization': 'Bearer '+jwtToken })
+    },
     body: JSON.stringify(data),
     credentials: "include" 
   });
@@ -77,6 +80,8 @@ var cumulativeRotation = 0;
 // 1. Подключаемся к бекенду
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 let socket;   
+// JWT, сохранённый локально, если кука не работает
+let jwtToken = localStorage.getItem("jwt") || null;
 
 function initSocketEvents() {
   /* ---------- состояние игры ---------- */
@@ -194,9 +199,10 @@ const expandedPlayers = new Set();
 let tonBalance = 0;
 async function refreshBalance(){
   try{
-      const res = await fetch(`${API_ORIGIN}/wallet/balance`, {
-      credentials: "include"
-    });
+        const res = await fetch(`${API_ORIGIN}/wallet/balance`, {
+        credentials: "include",
+        headers: jwtToken ? { 'Authorization': 'Bearer '+jwtToken } : {}
+      });
   if(res.ok){
   const {balance=0}=await res.json();
   tonBalance=balance;
@@ -623,32 +629,40 @@ clearFiltersBtn.addEventListener('click', () => {
 
 // логин сразу после получения tgUser
 async function ensureJwt() {
-  // если кука уже есть – ничего не делаем
+  // 1) есть рабочая кука → всё хорошо
   if (document.cookie.split("; ").some(c => c.startsWith("sid="))) return;
 
-  await fetch(`${API_ORIGIN}/auth/login`, {
+  // 2) уже получали токен ранее
+  if (jwtToken) return;
+
+  // 3) запрашиваем новый
+  const r   = await fetch(`${API_ORIGIN}/auth/login`, {
     method      : "POST",
-    credentials : "include",       // ← сохраняем куку sid
+    credentials : "include",
     headers     : { "Content-Type": "application/json" },
     body        : JSON.stringify({ userId: myId })
   });
-}
+  const j = await r.json();
+  jwtToken = j.token;
+  localStorage.setItem("jwt", jwtToken);
 
- (async () => {
-   await ensureJwt();                // ставим куку sid
+ }                              
 
-   const token = document.cookie
-     .split("; ")
-     .find(c => c.startsWith("sid="))
-     ?.split("=")[1];
+/* ── запускаем авторизацию и сокет ── */
+(async () => {
+  await ensureJwt();
 
-   socket = io(API_ORIGIN, {         // <-- теперь подключаемся
-     auth            : { token },
-     withCredentials : true
-   });
+  const token = (document.cookie.split("; ")
+      .find(c => c.startsWith("sid=")) || "")
+      .split("=")[1] || jwtToken;
+
+  socket = io(API_ORIGIN, {
+    auth: { token },
+    withCredentials: true
+  });
   initSocketEvents();
-   refreshBalance();
- })();
+  refreshBalance();
+})();
 
 // ───── byte-array → hex string helper ─────
 function bufToHex(buf) {
@@ -934,8 +948,10 @@ walletWithdrawBtn.addEventListener('click', async () => {
   const amt = parseFloat(withdrawInp.value);
   if(!(amt>0)) return;
   try{
-    const { balance } = await postJSON(`${API_ORIGIN}/wallet/withdraw`,
-                                   { amount: amt });
+        const { balance } = await postJSON(
+        `${API_ORIGIN}/wallet/withdraw`,
+        { amount: amt }
+    );
     tonBalance = balance;
     document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
     walletOverlay.classList.add('hidden');
@@ -995,8 +1011,9 @@ async function loadTxHistory(){
   panelTx.innerHTML = '<div class="py-2 text-center text-gray-400">Загрузка…</div>';
   try{
    const res = await fetch(`${API_ORIGIN}/wallet/history?limit=50`, {
-    credentials: "include"
-  });
+     credentials: "include",
+     headers: jwtToken ? { 'Authorization': 'Bearer '+jwtToken } : {}
+   });
     const arr = await res.json();
     if(arr.length===0){
       panelTx.innerHTML = '<div class="py-4 text-center text-gray-400">Пока пусто</div>';
