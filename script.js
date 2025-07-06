@@ -78,6 +78,83 @@ var cumulativeRotation = 0;
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 let socket;   
 
+function initSocketEvents() {
+  /* ---------- состояние игры ---------- */
+  socket.on("state", s => {
+    players  = s.players;
+    totalTON = s.totalTON;
+    phase    = s.phase;
+
+    window.players  = s.players;
+    window.totalTON = s.totalTON;
+
+    if (players.length === 0) {
+      inventory.forEach(n => n.staked = false);
+      lockBets(false);
+      updateStatus();
+    }
+    if (s.commitHash) setCommit(s.commitHash);
+    refreshUI();
+
+    const overlay = document.getElementById('lottieOverlay');
+    if (overlay) overlay.remove();
+    const main = document.getElementById('mainContent');
+    requestAnimationFrame(() => {
+      main.classList.remove('opacity-0');
+      main.classList.add('opacity-100');
+    });
+
+    if (s.phase === "countdown") {
+      updateStatus(Math.ceil((s.endsAt - Date.now()) / 1000));
+    } else {
+      updateStatus();
+    }
+  });
+
+  socket.on("countdownStart", ({ endsAt, commitHash }) => {
+    if (commitHash) setCommit(commitHash);
+    phase = "countdown";
+    updateStatus(Math.ceil((endsAt - Date.now()) / 1000));
+  });
+
+  socket.on("countdownTick", ({ remaining }) => {
+    phase = "countdown";
+    updateStatus(Math.ceil(remaining / 1000));
+  });
+
+  let lastSpin = { players: [], seed: null };
+
+  socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitHash }) => {
+    lastSpin.players = list.map(p => ({ name: p.name, value: p.value }));
+    lastSpin.seed    = seed;
+    lastSpin.serverWinner = winner.name;
+    players  = list;
+    totalTON = list.reduce((a,b) => a + b.value, 0);
+    phase    = "spinning";
+    lockBets(true);
+    updateStatus();
+    runSpinAnimation(winner, spins, offsetDeg);
+  });
+
+  socket.on("spinEnd", ({ winner, total, seed }) => {
+    lockBets(false);
+    phase = "waiting";
+    updateStatus();
+
+    const record = {
+      timestamp: new Date().toISOString(),
+      winner:    winner.name,
+      total,
+      participants: players.map(p => ({ name: p.name, nfts: p.nfts }))
+    };
+    addToHistory(record);
+
+    if (winner.userId === myId) {
+      refreshBalance();
+      if (!panelTx.classList.contains('hidden')) loadTxHistory();
+    }
+  });
+}
 // 2. Локальное состояние
 const inventory = [
   { id:'orb001',          name:'Loot Bag',      price:160, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg',   staked:false },
@@ -569,99 +646,9 @@ async function ensureJwt() {
      auth            : { token },
      withCredentials : true
    });
-
+  initSocketEvents();
    refreshBalance();
  })();
-// ========================= SOCKET EVENTS =========================
-// При подключении сразу слать текущее состояние
-socket.on("state", s => {
-  players  = s.players;
-  totalTON = s.totalTON;
-  phase    = s.phase;
-
-  window.players  = s.players;
-  window.totalTON = s.totalTON;
-
-  if (players.length === 0) {
-    // Новый раунд: сбрасываем UI
-    inventory.forEach(n => n.staked = false);
-    lockBets(false);
-    updateStatus();
-  }
-  if (s.commitHash) setCommit(s.commitHash);
-  refreshUI();
-  // убираем оверлей и показываем страницу
-  const overlay = document.getElementById('lottieOverlay');
-  if (overlay) overlay.remove();
-  const main = document.getElementById('mainContent');
-// немного даём браузеру применить начальное состояние
-requestAnimationFrame(() => {
-  main.classList.remove('opacity-0');
-  main.classList.add('opacity-100');
-});
-
-  if (s.phase === "countdown") {
-    updateStatus(Math.ceil((s.endsAt - Date.now()) / 1000));
-  } else {
-    updateStatus();
-  }
-});
-
-socket.on("countdownStart", ({ endsAt, commitHash  }) => {
-    if (commitHash) setCommit(commitHash);
-  phase = "countdown";
-  updateStatus(Math.ceil((endsAt - Date.now()) / 1000));
-});
-socket.on("countdownTick", ({ remaining }) => {
-  phase = "countdown";
-  updateStatus(Math.ceil(remaining / 1000));
-});
-
-let lastSpin = { players: [], seed: null };
-
-socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitHash }) => {
-    lastSpin.players = list.map(p => ({ name: p.name, value: p.value }));
-  lastSpin.seed    = seed;
-  lastSpin.serverWinner = winner.name; 
-  players  = list;
-  totalTON = list.reduce((a,b) => a + b.value, 0);
-  phase    = "spinning";
-  lockBets(true);
-  updateStatus();
-
-  
-  // Запускаем анимацию, передав spins
-  runSpinAnimation(winner, spins, offsetDeg);
-});
-
-socket.on("spinEnd", ({ winner, total, seed  }) => {
-  lockBets(false);
-  phase = "waiting";
-  updateStatus();
-
-  // Собираем полную информацию о раунде:
-  const record = {
-    timestamp: new Date().toISOString(),
-    winner:    winner.name,
-    total:     total,
-    participants: players.map(p => ({
-      name: p.name,
-      nfts: p.nfts  // массив {id, img, price}
-    }))
-  };
-  addToHistory(record);
-
-  /* если это мы – подтянуть новый баланс (приз уже начислен на сервере) */
-   if (winner.userId === myId) {
-     refreshBalance();
-
-    /* вкладка «История» уже открыта? – сразу обновим список */
-    if (typeof loadTxHistory === 'function' &&
-        !panelTx.classList.contains('hidden')) {
-      loadTxHistory();
-    }
-   }
-});
 
 // ───── byte-array → hex string helper ─────
 function bufToHex(buf) {
