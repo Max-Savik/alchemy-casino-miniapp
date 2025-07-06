@@ -37,7 +37,7 @@ async function postJSON(url, data){
   const res = await fetch(url, {
     method: 'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
   if(!res.ok) throw new Error(await res.text());
   return res.json();
@@ -78,7 +78,14 @@ var cumulativeRotation = 0;
 
 // 1. Подключаемся к бекенду
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
-const socket = io(API_ORIGIN);
+const token  = document.cookie
+                  .split("; ")
+                  .find(c=>c.startsWith("sid="))
+                  ?.split("=")[1];
+const socket = io(API_ORIGIN, {
+  auth            : { token },
+  withCredentials : true
+});
 
 // 2. Локальное состояние
 const inventory = [
@@ -120,9 +127,11 @@ let tonBalance = 0;
 async function refreshBalance(){
   try{
     const res = await fetch(`${API_ORIGIN}/wallet/balance?userId=${myId}`);
-    const {balance} = await res.json();
-    tonBalance = balance;
-    document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+  if(res.ok){
+  const {balance=0}=await res.json();
+  tonBalance=balance;
+  document.getElementById('tonBalance').textContent=tonBalance.toFixed(2);
+}
   }catch(e){ console.warn('Balance fetch error',e); }
 }
 
@@ -541,6 +550,27 @@ clearFiltersBtn.addEventListener('click', () => {
   // 6) Перерисовать окно выбора
   renderPicker();
 });
+
+// логин сразу после получения tgUser
+async function ensureJwt() {
+  // если кука уже есть – ничего не делаем
+  if (document.cookie.split("; ").some(c => c.startsWith("sid="))) return;
+
+  await fetch(`${API_ORIGIN}/auth/login`, {
+    method      : "POST",
+    credentials : "include",       // ← сохраняем куку sid
+    headers     : { "Content-Type": "application/json" },
+    body        : JSON.stringify({ userId: myId })
+  });
+}
+
+(async()=>{          // IIFE перед остальным кодом
+  await ensureJwt();
+
+  /* --- дальше можно стартовать --- */
+  initSockets();     // функция, в которой был new io(...)
+  refreshBalance();
+})();
 
 // ========================= SOCKET EVENTS =========================
 // При подключении сразу слать текущее состояние
@@ -977,7 +1007,9 @@ withdrawInp.addEventListener('input', () => {
 async function loadTxHistory(){
   panelTx.innerHTML = '<div class="py-2 text-center text-gray-400">Загрузка…</div>';
   try{
-    const res = await fetch(`${API_ORIGIN}/wallet/history?userId=${myId}&limit=50`);
+  const res = await fetch(`${API_ORIGIN}/wallet/balance`, {
+  credentials: "include"
+});
     const arr = await res.json();
     if(arr.length===0){
       panelTx.innerHTML = '<div class="py-4 text-center text-gray-400">Пока пусто</div>';
