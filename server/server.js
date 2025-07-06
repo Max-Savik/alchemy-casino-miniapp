@@ -233,13 +233,36 @@ async function saveTx(){
 }
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
-app.use(cors());
+// ---------- безопасный CORS ----------
+const allowed = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // запросы без Origin (curl, Postman) можно пускать
+      if (!origin) return cb(null, true);
+      if (allowed.includes(origin)) return cb(null, true);
+      cb(new Error("CORS: origin blocked"));
+    },
+    credentials: true,
+    optionsSuccessStatus: 200,
+  })
+);
 app.use(express.json());
 app.use(express.static(__dirname));   // раздаём фронт
 app.get("/history", (req, res) => res.json(history));
 app.use("/wallet", wallet);
 const httpServer = http.createServer(app);
-const io = new Server(httpServer, { cors: { origin: "*" } });
+const io = new Server(httpServer, {
+  cors: {
+    origin: allowed,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
 // ───────────────────── Game state (1 round) ────────────────────
 let game = {
