@@ -215,7 +215,9 @@ wallet.post("/withdraw", async (req, res) => {
     status : "pending"        
   });
   await saveTx();
-
+  processWithdrawals().catch(err =>
+    console.error("Error processing withdrawals:", err)
+  );
   res.json({ balance: balances[req.userId], wid: id });
 });
 
@@ -795,6 +797,8 @@ async function processWithdrawals() {
   await loadAddr();
   await loadWithdrawals();
   resetRound();      
+  // обработать накопленные выводы сразу при старте
+  processWithdrawals().catch(console.error);
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
