@@ -91,8 +91,11 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
 
 /* ───── JWT ───── */
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";   // Задайте в .env
-const JWT_LIFE   = "30d";                                    // Время жизни токена
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET must be set in environment (process.env.JWT_SECRET)");
+}
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_LIFE   = "30d";  // Время жизни токена
 
 /* ───── RATE-LIMIT (от  DoS/брут/спама) ──── */
 const apiLimiter = rateLimit({
