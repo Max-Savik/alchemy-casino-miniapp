@@ -271,7 +271,8 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(express.static(__dirname));   // раздаём фронт
+const publicDir = path.join(__dirname, '../public');
+app.use(express.static(publicDir));
 app.use(apiLimiter);  
 // === LOGIN ===  (вызывается телеграм-клиентом один раз)
 app.post("/auth/login", (req, res) => {
