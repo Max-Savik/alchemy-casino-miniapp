@@ -22,33 +22,15 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { parse as parseCookie } from "cookie";
-import {
-  DATA_DIR,
-  HISTORY_FILE,
-  balances,
-  txs,
-  withdrawals,
-  addrMap,
-  loadHistory,
-  saveHistory,
-  loadBalances,
-  saveBalances,
-  loadTx,
-  saveTx,
-  loadWithdrawals,
-  saveWithdrawals,
-  loadAddr,
-  saveAddr
-} from "./storage.js";
-import { wallet } from "./wallet.js";
-import { apiLimiter, JWT_SECRET, JWT_LIFE, adminAuth } from "./utils.js";
 dotenv.config();  
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ───────────────────────── Config & Disk ─────────────────────────
 const PORT      = process.env.PORT || 3000;
+const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render disk
 const DEPOSIT_ADDR   = process.env.DEPOSIT_ADDR;
 const TON_API        = process.env.TONCENTER_API || "https://toncenter.com/api/v2/";
 const TON_API_KEY    = process.env.TONCENTER_KEY || "";
@@ -85,13 +67,187 @@ if (!WalletClass) {
 
 const hotWallet  = new WalletClass(provider, { publicKey: keyPair.publicKey });
 
+const HISTORY_FILE = path.join(DATA_DIR, "history.json");
+const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
+const TX_FILE       = path.join(DATA_DIR, "transactions.json");
+const WD_FILE       = path.join(DATA_DIR, "withdrawals.json"); 
+const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
+let addrMap = {};           // { [userId]: "EQB…" }
+
 if (!DEPOSIT_ADDR) throw new Error("DEPOSIT_ADDR not set");
 
+async function loadAddr(){
+  try{ addrMap = JSON.parse(await fs.readFile(ADDR_FILE,'utf8')); }
+  catch(e){ if(e.code!=="ENOENT") console.error(e); addrMap={}; }
+}
+async function saveAddr(){
+  const tmp=ADDR_FILE+'.tmp';
+  await fs.writeFile(tmp,JSON.stringify(addrMap,null,2));
+  await fs.rename(tmp,ADDR_FILE);
+}
+
+
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
+if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN not set');
+
+/* ───── JWT ───── */
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";   // Задайте в .env
+const JWT_LIFE   = "30d";                                    // Время жизни токена
+
+/* ───── RATE-LIMIT (от  DoS/брут/спама) ──── */
+const apiLimiter = rateLimit({
+  windowMs: 60_000,   // 1 минута
+  max     : 60,       // ≤60 запросов/мин с одного IP
+});
+// ensure /data exists (Render mounts it, но локально нужно создать)
+await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
+
+// ─────────────────── JSON‑history helpers ──────────────────────
+let history = [];
 const palette = [
   '#fee440','#d4af37','#8ac926','#1982c4',
   '#ffca3a','#6a4c93','#d79a59','#218380'
 ];
+async function loadHistory() {
+  try {
+    const txt = await fs.readFile(HISTORY_FILE, "utf8");
+    history = JSON.parse(txt);
+    console.log(`Loaded ${history.length} history records.`);
+  } catch (e) {
+    if (e.code !== "ENOENT") console.error("History read error:", e);
+    history = []; // файл ещё не создан – начинаем с пустого массива
+  }
+}
 
+async function saveHistory() {
+  const tmp = HISTORY_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(history, null, 2));
+  await fs.rename(tmp, HISTORY_FILE);
+}
+
+// ─────────────── BALANCES helpers ─────────────── ➋
+let balances = {};          // { [userId]: number }
+async function loadBalances() {
+  try {
+    const txt = await fs.readFile(BALANCES_FILE, "utf8");
+    balances = JSON.parse(txt);
+    console.log("Loaded balances:", balances);
+  } catch (e) {
+    if (e.code !== "ENOENT") console.error("Balances read error:", e);
+    balances = {};
+  }
+}
+async function saveBalances() {
+  const tmp = BALANCES_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(balances, null, 2));
+  await fs.rename(tmp, BALANCES_FILE);
+}
+
+function userAuth(req, res, next) {
+  try {
+    const token =
+      req.cookies?.sid || (req.get("Authorization") || "").replace("Bearer ", "");
+    if (!token) return res.status(401).json({ error: "no token" });
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.userId = payload.uid;
+    next();
+  } catch {
+    return res.status(401).json({ error: "invalid token" });
+  }
+}
+
+/* pending withdrawals  [{id,userId,amount,to,ts,status}] */
+let withdrawals = [];
+async function loadWithdrawals() {
+  try {
+    withdrawals = JSON.parse(await fs.readFile(WD_FILE, "utf8"));
+  } catch (e) {
+    if (e.code !== "ENOENT") console.error(e);
+    withdrawals = [];
+  }
+}
+async function saveWithdrawals() {
+  const tmp = WD_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(withdrawals, null, 2));
+  await fs.rename(tmp, WD_FILE); 
+}   
+const wallet = express.Router();
+wallet.use(apiLimiter, userAuth);   // защита и для JWT-роутов
+
+/* GET /wallet/balance?userId=123 */
+wallet.get("/balance", (req, res) => {
+  const bal = balances[req.userId] || 0;
+  res.json({ balance: bal });
+});
+
+/* POST /wallet/withdraw { userId, amount } */
+wallet.post("/withdraw", async (req, res) => {
+  const amt = Number(req.body.amount);
+
+  /* 1️⃣ базовые проверки */
+  if (!amt || amt <= 0)  return res.status(400).json({ error: "amount>0" });
+  const bal = balances[req.userId] || 0;
+  if (bal < amt)         return res.status(400).json({ error: "insufficient" });
+
+  /* 2️⃣ нужен привязанный адрес */
+  const toAddr = addrMap[req.userId];
+  if (!toAddr)           return res.status(400).json({ error: "no linked address" });
+
+  /* 3️⃣ резервируем средства и пишем pending */
+  balances[req.userId] = bal - amt;
+  await saveBalances();
+
+  const id = crypto.randomUUID();
+  withdrawals.push({
+    id, userId: req.userId, amount: amt, to: toAddr,
+    ts: Date.now(), status: "pending"           // позже будет «sent» / «fail»
+  });
+  await saveWithdrawals();
+
+  txs.push({
+    userId : req.userId,
+    type   : "withdraw",
+    amount : amt,
+    ts     : Date.now(),
+    status : "pending"        
+  });
+  await saveTx();
+
+  res.json({ balance: balances[req.userId], wid: id });
+});
+
+/* POST /wallet/link { userId, address }  */
+wallet.post('/link', async (req,res)=>{
+  const {address} = req.body || {};
+  if(!address) return res.status(400).json({error:'address required'});
+  addrMap[req.userId] = address;
+  await saveAddr();
+  res.json({ ok:true, address });
+});
+
+
+ /* GET /wallet/history?limit=30 */
+wallet.get('/history', (req,res)=>{
+  const lim = Math.min( Number(req.query.limit||50), 200);
+  const list = txs
+      .filter(t=>t.userId===req.userId)
+      .slice(-lim)          // последние N
+      .reverse();          // от нового к старому
+  res.json(list);
+});       
+
+/* -------- WALLET TX helpers -------- */
+let txs = [];   // [{userId,type,amount,ts,hash?}]
+async function loadTx() {
+  try{
+    txs = JSON.parse(await fs.readFile(TX_FILE,'utf8'));
+  }catch(e){ if (e.code!=="ENOENT") console.error(e); txs=[]; }
+}
+async function saveTx(){
+  const tmp = TX_FILE+'.tmp';
+  await fs.writeFile(tmp, JSON.stringify(txs,null,2));
+  await fs.rename(tmp, TX_FILE);
+}
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
 app.use(helmet({ crossOriginResourcePolicy: false }));
@@ -296,6 +452,12 @@ history.push({
 }
 
 // ─── middleware для /admin/* ──────────────
+function adminAuth(req, res, next) {
+  const token = req.get('X-Admin-Token');
+  if (token !== ADMIN_TOKEN) return res.sendStatus(403);
+  next();
+}
+
 // ─── admin-роуты ──────────────────────────
 const admin = express.Router();
 admin.use(adminAuth);
