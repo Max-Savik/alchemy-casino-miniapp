@@ -293,7 +293,7 @@ function arc(cx,cy,r,start,end,color){
 // ========================== РЕНДЕР-ХЕЛПЕРЫ ==========================
 // 0. Новая переменная для порядка сортировки
 let sortAsc = true;
-
+let txRefreshTimer = null; 
 
 function cardHTML(nft, extra='') {
   return `
@@ -931,7 +931,6 @@ walletDepositBtn.addEventListener('click', async () => {
     });
 
     /* ===== 2. UI после отправки ===== */
-    walletOverlay.classList.add('hidden');
     walletAmountInp.value = "";
 
     // Оптимистично ждём 3 с и обновляем (пока без он-чейн проверки)
@@ -992,7 +991,14 @@ function setTab(which){               // 'dep' | 'wd'
   panelWithdraw.classList.toggle('hidden', !wd);
   panelTx      .classList.toggle('hidden', !tx);
 
-  if (tx) loadTxHistory();        // подгружаем при открытии
+  if (tx) {
+    loadTxHistory();                     // разовая загрузка
+    if (!txRefreshTimer)                 // и дальше обновляем каждые 15 с
+      txRefreshTimer = setInterval(loadTxHistory, 15000);
+  } else {
+    clearInterval(txRefreshTimer ?? 0);  // остановили авто-опрос
+    txRefreshTimer = null;
+  }
 }
 
 tabDeposit .addEventListener('click', () => setTab('dep'));
