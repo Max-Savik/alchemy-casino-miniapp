@@ -741,3 +741,14 @@ input[type=range]::-moz-range-thumb {
     0%, 100% { stroke-opacity: 1; }
     50%      { stroke-opacity: .3; }
   }
+
+/* ====== мой сектор ====== */
+.my-marker{
+  fill:#00e8ff;                        /* неон-бирюза */
+  filter:drop-shadow(0 0 4px #00e8ff);
+  animation:blinkMarker 1s ease-in-out infinite alternate;
+}
+@keyframes blinkMarker{
+  0%   { opacity:.35; transform:scale(.85); }
+  100% { opacity:1;   transform:scale(1);   }
+}
