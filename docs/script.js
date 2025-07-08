@@ -419,7 +419,18 @@ function drawWheel() {
         ${(p.name || '?').length > 14 ? p.name.slice(0,12)+'…' : p.name}
       </text>`
     );
-
+    /* --- если это мой сектор ─ добавляем стрелку-маркер --- */
+    if (isMe){
+      const mid   = start + sweep/2;                      // середина сектора
+      const tip   = polar(200,200,198,  mid);             // кончик стрелки (чуть за краем)
+      const left  = polar(200,200,188,  mid-4);           // основание слева
+      const right = polar(200,200,188,  mid+4);           // основание справа
+      svg.insertAdjacentHTML(
+        'beforeend',
+        `<polygon points="${left.x},${left.y} ${right.x},${right.y} ${tip.x},${tip.y}"
+                  class="my-marker"></polygon>`
+      );
+    }
     start = end;                                     // следующий сектор
   });
 }
