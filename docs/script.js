@@ -388,7 +388,6 @@ function drawWheel() {
     const sweep = (p.value / totalTON) * 360;
     const end = start + sweep;
 
-    // рисуем сектор
     if (players.length > 1) {
       group.insertAdjacentHTML(
         'beforeend',
