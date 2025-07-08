@@ -212,7 +212,7 @@ async function refreshBalance(){
 }
 
 // =========================== Элементы страницы ===========================
-const svg         = document.getElementById('wheelSvg');
+const group = document.getElementById('wheelGroup');
 const list        = document.getElementById('players');
 const pot         = document.getElementById('pot');
 const picker      = document.getElementById('nftPicker');
@@ -379,7 +379,7 @@ function renderProfile() {
 }
 
 function drawWheel() {
-  svg.innerHTML = '';
+  group.innerHTML = '';
   if (!totalTON) return;
 
   let start = -90;
@@ -390,13 +390,13 @@ function drawWheel() {
 
     // рисуем сектор
     if (players.length > 1) {
-      svg.insertAdjacentHTML(
+      group.insertAdjacentHTML(
         'beforeend',
         arc(200, 200, 190, start, end, p.color)
           .replace('<path ', '<path data-player="' + p.name + '" ')
       );
     } else {
-      svg.insertAdjacentHTML(
+      group.insertAdjacentHTML(
         'beforeend',
         `<circle cx="200" cy="200" r="190" fill="${p.color}" data-player="${p.name}"></circle>`
       );
@@ -412,7 +412,7 @@ function drawWheel() {
     }
 
     // добавляем подпись
-    svg.insertAdjacentHTML('beforeend', `
+    group.insertAdjacentHTML('beforeend', `
       <text x="${pos.x}" y="${pos.y}"
             transform="rotate(${angle} ${pos.x} ${pos.y})"
             font-size="15"
@@ -427,7 +427,7 @@ function drawWheel() {
   });
 
   // ПОСЛЕ ОТРИСОВКИ ВСЕХ СЕКТОРОВ — добавляем класс нужному
-  const mySlices = svg.querySelectorAll(`[data-player="${myName}"]`);
+  const mySlices = group.querySelectorAll(`[data-player="${myName}"]`);
   mySlices.forEach(el => el.classList.add('my-slice'));
 }
 
@@ -713,7 +713,7 @@ async function weightedPick(seed, players) {
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
 function highlightWinner(winner){
-  const slice = svg.querySelectorAll(`[data-player="${winner.name}"]`);
+  const slice = group.querySelectorAll(`[data-player="${winner.name}"]`);
   slice.forEach(el => {
     gsap.fromTo(el,
       { filter: 'brightness(1)' },
@@ -751,11 +751,10 @@ function runSpinAnimation(winner, spins, offsetDeg) {
   /* 7. Копим общий угол, анимируем GSAP-ом и подсвечиваем победителя   */
   cumulativeRotation += delta;
 
-  gsap.to('#wheelSvg', {
-    rotation: cumulativeRotation,
+  gsap.to('#wheelGroup', {
+    attr: { transform: `rotate(${cumulativeRotation} 200 200)` },
     duration: 6,
     ease: 'power4.out',
-    transformOrigin: '50% 50%',
     onComplete: () => highlightWinner(winner)
   });
 }
