@@ -212,7 +212,7 @@ async function refreshBalance(){
 }
 
 // =========================== Элементы страницы ===========================
-const group = document.getElementById('wheelGroup');
+const svg         = document.getElementById('wheelSvg');
 const list        = document.getElementById('players');
 const pot         = document.getElementById('pot');
 const picker      = document.getElementById('nftPicker');
@@ -289,15 +289,6 @@ function arc(cx,cy,r,start,end,color){
         large = (end - start) <= 180 ? 0 : 1;
   return `<path d="M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y} Z" fill="${color}"/>`;
 }
-
-// Возвращает d-атрибут только для дуги по окружности радиуса r
-function arcOnly(cx, cy, r, startDeg, endDeg) {
-  const start = polar(cx, cy, r, startDeg);
-  const end   = polar(cx, cy, r, endDeg);
-  const large = (endDeg - startDeg) <= 180 ? 0 : 1;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} 0 ${end.x} ${end.y}`;
-}
-
 
 // ========================== РЕНДЕР-ХЕЛПЕРЫ ==========================
 // 0. Новая переменная для порядка сортировки
@@ -379,56 +370,60 @@ function renderProfile() {
 }
 
 function drawWheel() {
-  group.innerHTML = '';
+  // 1. Очищаем холст
+  svg.innerHTML = '';
   if (!totalTON) return;
 
-  let start = -90;
+  /*  ВАЖНО:
+      у каждого объекта p из players должен быть либо p.userId, 
+      либо p.id, который совпадает с myId.
+      Если сервер такого поля ещё не шлёт ─ легко заменить
+      строку сравнения ниже на p.name === myName.
+  */
+
+  let start = -90;                        // рисуем с «северного полюса»
   players.forEach(p => {
-    // размер сектора
-    const sweep = (p.value / totalTON) * 360;
-    const end = start + sweep;
+    /* ────────────── сектор ────────────── */
+    const sweep = (p.value / totalTON) * 360;   // угол сектора
+    const end   = start + sweep;
 
-    if (players.length > 1) {
-      group.insertAdjacentHTML(
-        'beforeend',
-        arc(200, 200, 190, start, end, p.color)
-          .replace('<path ', '<path data-player="' + p.name + '" ')
-      );
-    } else {
-      group.insertAdjacentHTML(
-        'beforeend',
-        `<circle cx="200" cy="200" r="190" fill="${p.color}" data-player="${p.name}"></circle>`
-      );
-    }
+    // Флаг «это мой сектор?»
+    const isMe = p.userId === myId;             // ← при необходимости поменяй
 
-    // позиция и ориентация текста
-    const mid = start + sweep / 2;
-    const pos = polar(200, 200, 120, mid);
-    let angle = mid + 90;
-    // если текст окажется "вниз головой", переворачиваем на 180°
-    if (angle > 90 && angle < 270) {
-      angle += 180;
-    }
+    // Формируем SVG-путь
+    const sliceMarkup = players.length > 1
+      ? arc(200,200,190,start,end,p.color)
+          .replace(
+            '<path ',
+            `<path data-player="${p.name}"${isMe ? ' class="my-slice"' : ''} `
+          )
+      : `<circle cx="200" cy="200" r="190" fill="${p.color}" 
+                 data-player="${p.name}"${isMe ? ' class="my-slice"' : ''}></circle>`;
 
-    // добавляем подпись
-    group.insertAdjacentHTML('beforeend', `
-      <text x="${pos.x}" y="${pos.y}"
-            transform="rotate(${angle} ${pos.x} ${pos.y})"
-            font-size="15"
-            fill="#000"
-            text-anchor="middle"
-            dominant-baseline="middle">
-        ${(p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name}
-      </text>
-    `);
+    svg.insertAdjacentHTML('beforeend', sliceMarkup);
 
-    start = end;
+    /* ────────────── подпись ────────────── */
+    const mid  = start + sweep / 2;                   // середина сектора
+    const pos  = polar(200, 200, 120, mid);           // точка для текста
+    let angle  = mid + 90;                            // вращаем так, чтобы текст шёл вдоль радиуса
+    if (angle > 90 && angle < 270) angle += 180;      // переворачиваем «вниз-головой» текст
+
+    svg.insertAdjacentHTML(
+      'beforeend',
+      `<text x="${pos.x}" y="${pos.y}"
+             transform="rotate(${angle} ${pos.x} ${pos.y})"
+             font-size="15"
+             fill="#000"
+             text-anchor="middle"
+             dominant-baseline="middle">
+        ${(p.name || '?').length > 14 ? p.name.slice(0,12)+'…' : p.name}
+      </text>`
+    );
+
+    start = end;                                     // следующий сектор
   });
-
-  // ПОСЛЕ ОТРИСОВКИ ВСЕХ СЕКТОРОВ — добавляем класс нужному
-  const mySlices = group.querySelectorAll(`[data-player="${myName}"]`);
-  mySlices.forEach(el => el.classList.add('my-slice'));
 }
+
 
 // переключаем панель
 fairBtn.onclick = () => {
@@ -712,7 +707,7 @@ async function weightedPick(seed, players) {
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
 function highlightWinner(winner){
-  const slice = group.querySelectorAll(`[data-player="${winner.name}"]`);
+  const slice = svg.querySelectorAll(`[data-player="${winner.name}"]`);
   slice.forEach(el => {
     gsap.fromTo(el,
       { filter: 'brightness(1)' },
@@ -750,10 +745,11 @@ function runSpinAnimation(winner, spins, offsetDeg) {
   /* 7. Копим общий угол, анимируем GSAP-ом и подсвечиваем победителя   */
   cumulativeRotation += delta;
 
-  gsap.to('#wheelGroup', {
-    attr: { transform: `rotate(${cumulativeRotation} 200 200)` },
+  gsap.to('#wheelSvg', {
+    rotation: cumulativeRotation,
     duration: 6,
     ease: 'power4.out',
+    transformOrigin: '50% 50%',
     onComplete: () => highlightWinner(winner)
   });
 }
