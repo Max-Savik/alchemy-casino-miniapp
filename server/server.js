@@ -733,57 +733,56 @@ setInterval(processWithdrawals, 5_000);
 async function processWithdrawals() {
   if (sending) return;
   sending = true;
-
   try {
-    while (true) {                       // обработаем сразу все ожидания
+    // 1. Получаем актуальный seqno один раз в начале, чтобы убрать лишние RPC-вызовы
+    const chainSeqno = Number(await hotWallet.methods.seqno().call());
+    if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
+
+    // 2. Обрабатываем все ожидания в одном проходе
+    while (true) {
       const w = withdrawals.find(x => x.status === 'pending');
-      if (!w) break;                     // очередь пуста
+      if (!w) break;
 
-      // 1. seqno
-      const chainSeqno = Number(await hotWallet.methods.seqno().call());
-      if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
+      try {
+        // Формируем и отправляем транзакцию
+        const transfer = hotWallet.methods.transfer({
+          secretKey: keyPair.secretKey,
+          toAddress: w.to,
+          amount: TonWeb.utils.toNano(String(w.amount)),
+          seqno: nextSeqno,
+          sendMode: 3
+        });
+        const cell = await transfer.getQuery();
+        const boc = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
+        await tonApi('sendBoc', { boc });
+        console.log(`✅ ${w.id}: seqno ${nextSeqno} → ${w.to} (${w.amount} TON)`);
 
-      // 2. формируем перевод
-      const transfer = hotWallet.methods.transfer({
-        secretKey : keyPair.secretKey,
-        toAddress : w.to,
-        amount    : TonWeb.utils.toNano(String(w.amount)),
-        seqno     : nextSeqno,
-        sendMode  : 3
-      });
-
-     const cell   = await transfer.getQuery();
-     const boc    = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
-
-      // 3. отправляем
-      await tonApi('sendBoc', { boc });
-      console.log(`✅ ${w.id}: seqno ${nextSeqno} → ${w.to} (${w.amount} TON)`);
-
-      // 4. отмечаем
-      w.txHash = boc.slice(0, 16);
-      w.status = 'sent';
-      w.seqno  = nextSeqno;
-      nextSeqno += 1;
-      await saveWithdrawals();
-    }
-
-  } catch (err) {
-    const txt = String(err);
-    if (txt.includes('exit code 33') || txt.includes('duplicate')) {
-      console.log('ℹ️ дубликат seqno — увеличиваем счётчик');
-      nextSeqno += 1;
-    } else {
-      console.error('processWithdrawals:', err);
-      const wpend = withdrawals.find(x => x.status === 'pending');
-      if (wpend) {
-        wpend.status = 'fail';
-        wpend.error  = txt.slice(0, 150);
-        wpend.seqno  = nextSeqno;
+        // Отмечаем успешный вывод
+        w.txHash = boc.slice(0, 16);
+        w.status = 'sent';
+        w.seqno = nextSeqno;
+        nextSeqno += 1;
         await saveWithdrawals();
+
+      } catch (innerErr) {
+        const txt = String(innerErr);
+        if (txt.includes('exit code 33') || txt.includes('duplicate')) {
+          // При дубликате seqno повышаем счётчик и пробуем снова для той же записи
+          console.log('ℹ️ дубликат seqno — увеличиваем счётчик и повторяем');
+          nextSeqno += 1;
+          continue;
+        }
+        // Для любых других ошибок помечаем вывод как неудачный и переходим к следующему
+        console.error('processWithdrawals error:', innerErr);
+        w.status = 'fail';
+        w.error = txt.slice(0, 150);
+        w.seqno = nextSeqno;
+        await saveWithdrawals();
+        continue;
       }
     }
   } finally {
-    sending = false;               // обязательно снимаем «замок»
+    sending = false;
   }
 }
 
