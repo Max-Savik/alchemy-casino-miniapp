@@ -704,12 +704,27 @@ input[type=range]::-moz-range-thumb {
 #copyCommit:active svg { transform: scale(0.9); }
 #fairBtn {padding-right: 0.5rem;}
 
-  /* Тонкая дуга по окружности */
-  .my-arc {
-    fill: none;                 /* без заливки */
-    stroke: #fbbf24;            /* яркий золотой цвет */
-    stroke-width: 8;            /* толщина обводки */
-    stroke-linecap: round;      /* скруглённые концы */
+  /* Подсветка вашего сектора */
+  #wheelSvg .my-slice {
+    /* два теневых дропа: белый ближний + золотой дальний */
+    filter:
+      drop-shadow(0 0 6px #fff)
+      drop-shadow(0 0 12px #fbbf24);
+    animation: pulseSlice 1.6s ease-in-out infinite;
+    transform-origin: 50% 50%;
+  }
+
+  @keyframes pulseSlice {
+    0%, 100% {
+      filter:
+        drop-shadow(0 0 6px #fff)
+        drop-shadow(0 0 12px #fbbf24);
+    }
+    50% {
+      filter:
+        drop-shadow(0 0 10px #fff)
+        drop-shadow(0 0 20px #fbbf24);
+    }
   }
 
 
