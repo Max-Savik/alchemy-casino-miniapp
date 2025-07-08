@@ -290,6 +290,15 @@ function arc(cx,cy,r,start,end,color){
   return `<path d="M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y} Z" fill="${color}"/>`;
 }
 
+// Возвращает d-атрибут только для дуги по окружности радиуса r
+function arcOnly(cx, cy, r, startDeg, endDeg) {
+  const start = polar(cx, cy, r, startDeg);
+  const end   = polar(cx, cy, r, endDeg);
+  const large = (endDeg - startDeg) <= 180 ? 0 : 1;
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} 0 ${end.x} ${end.y}`;
+}
+
+
 // ========================== РЕНДЕР-ХЕЛПЕРЫ ==========================
 // 0. Новая переменная для порядка сортировки
 let sortAsc = true;
@@ -416,9 +425,21 @@ function drawWheel() {
 
     start = end;
   });
-    // ПОСЛЕ ОТРИСОВКИ ВСЕХ СЕКТОРОВ — добавляем класс нужному
-  const mySlices = svg.querySelectorAll(`[data-player="${myName}"]`);
-  mySlices.forEach(el => el.classList.add('my-slice'));
+  // 2) Находим ваш сектор и рисуем поверх него чистую дугу
+  let acc = -90;
+  for (const p of players) {
+    const sweep = (p.value / totalTON) * 360;
+    if (p.name === myName) {
+      const startAngle = acc;
+      const endAngle   = acc + sweep;
+      const d = arcOnly(200, 200, 190, startAngle, endAngle);
+      svg.insertAdjacentHTML('beforeend',
+        `<path d="${d}" class="my-arc"/>`
+      );
+      break;
+    }
+    acc += sweep;
+  }
 }
 
 // переключаем панель
