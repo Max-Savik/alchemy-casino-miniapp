@@ -703,5 +703,11 @@ input[type=range]::-moz-range-thumb {
 #fairCommit { backdrop-filter: blur(4px); }
 #copyCommit:active svg { transform: scale(0.9); }
 
+
+#wheelSvg .my-slice {
+    stroke: #fbbf24;       /* золотой контур */
+    stroke-width: 4;       /* толщина контура */
+  }
+
 #fairBtn {padding-right: 0.5rem;}
 
