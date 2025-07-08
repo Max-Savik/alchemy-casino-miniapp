@@ -718,7 +718,10 @@ async function pollDeposits() {
 }
 
 // ─────────────── globals ────────────────
-let nextSeqno = Number(await hotWallet.methods.seqno().call()); // актуальный на старте
+// Локальный счётчик последовательности. Берём стартовое значение из сети,
+// а дальше доверяем самому себе — так мы не зависим от «запаздывающего»
+// ответа Toncenter и не посылаем два сообщения с одним seqno.
+let nextSeqno = Number(await hotWallet.methods.seqno().call());
 let sending   = false;                                          // «замок»
 
 // каждые 5 с проверяем очередь
@@ -739,48 +742,61 @@ async function waitSeqnoChange(oldSeqno, timeout = 30_000) {
 }
 
 async function processWithdrawals() {
-  if (sending) return;
+  if (sending) return;                  // защита от параллельных запусков
   sending = true;
   try {
+    // берём первый pending-вывод
     const w = withdrawals.find(x => x.status === 'pending');
-    if (!w) return;                 // очередь пуста
+    if (!w) return;                     // очередь пуста
 
-    // 1. актуальный seqno
-    const chainSeqno = Number(await hotWallet.methods.seqno().call());
-    if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
+    /* 1️⃣  синхронизируемся, если кто-то тратил кошелёк вручную */
+    const chainSeqno = Number(await hotWallet.methods.seqno().call());    if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
 
-    // 2. готовим перевод
+    /* 2️⃣  резервируем локальный seqno именно для ЭТОЙ выплаты */
+    const mySeq = nextSeqno;
+
+    /* 3️⃣  формируем транзакцию */
     const transfer = hotWallet.methods.transfer({
       secretKey : keyPair.secretKey,
       toAddress : w.to,
       amount    : TonWeb.utils.toNano(String(w.amount)),
-      seqno     : nextSeqno,
+      seqno     : mySeq,
       sendMode  : 3
     });
     const cell = await transfer.getQuery();
     const boc  = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
 
-    // 3. шлём
+    /* 4️⃣  отправляем BOC */
     await tonApi('sendBoc', { boc });
-    console.log(`✅ ${w.id}: seqno ${nextSeqno} → ${w.to} (${w.amount} TON)`);
+    console.log(`✅ ${w.id}: seqno ${mySeq} → ${w.to} (${w.amount} TON)`);
 
-    // 4. ждём подтверждение в блоке
-    nextSeqno = await waitSeqnoChange(nextSeqno);
+    /* 5️⃣  ждём, пока seqno увеличится в сети → транзакция принята */
+    await waitSeqnoChange(mySeq);
+    nextSeqno = mySeq + 1;              // бронируем следующий
 
-    // 5. отмечаем успех
+    /* 6️⃣  помечаем вывод успешным */
     w.txHash = boc.slice(0, 16);
     w.status = 'sent';
-    w.seqno  = nextSeqno;
+    w.seqno  = mySeq;
     await saveWithdrawals();
 
   } catch (err) {
-    console.error('processWithdrawals:', err);
-    const wpend = withdrawals.find(x => x.status === 'pending');
-    if (wpend) {
-      wpend.status = 'fail';
-      wpend.error  = String(err).slice(0, 150);
-      wpend.seqno  = nextSeqno;
-      await saveWithdrawals();
+    const txt = String(err);
+
+    /* exit code 33 / duplicate — seqno уже использован.
+       Сдвигаемся вперёд и оставляем вывод pending. */
+    if (txt.includes('exit code 33') || txt.includes('duplicate')) {
+      console.log('ℹ️  seqno duplicate, увеличиваем nextSeqno и повторим позже');
+      nextSeqno += 1;
+    } else {
+      console.error('processWithdrawals:', err);
+      const wpend = withdrawals.find(x => x.status === 'pending');
+      if (wpend) {
+        wpend.status = 'fail';
+        wpend.error  = txt.slice(0, 150);
+        wpend.seqno  = nextSeqno;
+        await saveWithdrawals();
+      }
     }
   } finally {
     sending = false;
