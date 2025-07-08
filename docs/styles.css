@@ -727,4 +727,14 @@ input[type=range]::-moz-range-thumb {
     }
   }
 
+#wheelGroup .my-slice {
+  stroke: #fbbf24;       /* яркая золотая */
+  stroke-width: 4;       /* толщина обводки */
+  vector-effect: non-scaling-stroke; /* чтобы толщина не менялась при трансформациях */
+}
 
+/* Рендер-подсказки для текста */
+#wheelGroup text {
+  shape-rendering: geometricPrecision;
+  text-rendering: optimizeLegibility;
+}
