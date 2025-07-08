@@ -370,71 +370,53 @@ function renderProfile() {
 }
 
 function drawWheel() {
-  // 1. Очищаем холст
   svg.innerHTML = '';
   if (!totalTON) return;
 
-  /*  ВАЖНО:
-      у каждого объекта p из players должен быть либо p.userId, 
-      либо p.id, который совпадает с myId.
-      Если сервер такого поля ещё не шлёт ─ легко заменить
-      строку сравнения ниже на p.name === myName.
-  */
-
-  let start = -90;                        // рисуем с «северного полюса»
+  let start = -90;
   players.forEach(p => {
-    /* ────────────── сектор ────────────── */
-    const sweep = (p.value / totalTON) * 360;   // угол сектора
-    const end   = start + sweep;
+    // размер сектора
+    const sweep = (p.value / totalTON) * 360;
+    const end = start + sweep;
 
-    // Флаг «это мой сектор?»
-    const isMe = p.userId === myId;             // ← при необходимости поменяй
-
-    // Формируем SVG-путь
-    const sliceMarkup = players.length > 1
-      ? arc(200,200,190,start,end,p.color)
-          .replace(
-            '<path ',
-            `<path data-player="${p.name}"${isMe ? ' class="my-slice"' : ''} `
-          )
-      : `<circle cx="200" cy="200" r="190" fill="${p.color}" 
-                 data-player="${p.name}"${isMe ? ' class="my-slice"' : ''}></circle>`;
-
-    svg.insertAdjacentHTML('beforeend', sliceMarkup);
-
-    /* ────────────── подпись ────────────── */
-    const mid  = start + sweep / 2;                   // середина сектора
-    const pos  = polar(200, 200, 120, mid);           // точка для текста
-    let angle  = mid + 90;                            // вращаем так, чтобы текст шёл вдоль радиуса
-    if (angle > 90 && angle < 270) angle += 180;      // переворачиваем «вниз-головой» текст
-
-    svg.insertAdjacentHTML(
-      'beforeend',
-      `<text x="${pos.x}" y="${pos.y}"
-             transform="rotate(${angle} ${pos.x} ${pos.y})"
-             font-size="15"
-             fill="#000"
-             text-anchor="middle"
-             dominant-baseline="middle">
-        ${(p.name || '?').length > 14 ? p.name.slice(0,12)+'…' : p.name}
-      </text>`
-    );
-    /* --- если это мой сектор ─ добавляем стрелку-маркер --- */
-    if (isMe){
-      const mid   = start + sweep/2;                      // середина сектора
-      const tip   = polar(200,200,198,  mid);             // кончик стрелки (чуть за краем)
-      const left  = polar(200,200,188,  mid-4);           // основание слева
-      const right = polar(200,200,188,  mid+4);           // основание справа
+    // рисуем сектор
+    if (players.length > 1) {
       svg.insertAdjacentHTML(
         'beforeend',
-        `<polygon points="${left.x},${left.y} ${right.x},${right.y} ${tip.x},${tip.y}"
-                  class="my-marker"></polygon>`
+        arc(200, 200, 190, start, end, p.color)
+          .replace('<path ', '<path data-player="' + p.name + '" ')
+      );
+    } else {
+      svg.insertAdjacentHTML(
+        'beforeend',
+        `<circle cx="200" cy="200" r="190" fill="${p.color}" data-player="${p.name}"></circle>`
       );
     }
-    start = end;                                     // следующий сектор
+
+    // позиция и ориентация текста
+    const mid = start + sweep / 2;
+    const pos = polar(200, 200, 120, mid);
+    let angle = mid + 90;
+    // если текст окажется "вниз головой", переворачиваем на 180°
+    if (angle > 90 && angle < 270) {
+      angle += 180;
+    }
+
+    // добавляем подпись
+    svg.insertAdjacentHTML('beforeend', `
+      <text x="${pos.x}" y="${pos.y}"
+            transform="rotate(${angle} ${pos.x} ${pos.y})"
+            font-size="15"
+            fill="#000"
+            text-anchor="middle"
+            dominant-baseline="middle">
+        ${(p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name}
+      </text>
+    `);
+
+    start = end;
   });
 }
-
 
 // переключаем панель
 fairBtn.onclick = () => {
