@@ -667,7 +667,9 @@ async function tonApi(method, params = {}) {
 
   /* остальные методы – как и раньше, GET */
   const url = new URL(method, TON_API);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  // пропускаем undefined / null – API TonCenter этого не любит
+  for (const [k, v] of Object.entries(params))
+    if (v !== undefined && v !== null) url.searchParams.set(k, v);
   if (TON_API_KEY) url.searchParams.set("api_key", TON_API_KEY);
   const r = await fetch(url);
   const j = await r.json();
@@ -681,11 +683,10 @@ async function pollDeposits() {
   try {
     let ltCursor;                       // постранично вперёд
     while (true) {
-      const page = await tonApi("getTransactions", {
-        address : DEPOSIT_ADDR,
-        limit   : DEPOSIT_LIMIT,
-        lt      : ltCursor              // undefined на первой странице
-      });
+      const page = await tonApi("getTransactions", ltCursor
+        ? { address: DEPOSIT_ADDR, limit: DEPOSIT_LIMIT, lt: ltCursor }
+        : { address: DEPOSIT_ADDR, limit: DEPOSIT_LIMIT }
+      );
 
       for (const tx of page) {
         const lt = BigInt(tx.transaction_id.lt);
