@@ -416,6 +416,9 @@ function drawWheel() {
 
     start = end;
   });
+    // ПОСЛЕ ОТРИСОВКИ ВСЕХ СЕКТОРОВ — добавляем класс нужному
+  const mySlices = svg.querySelectorAll(`[data-player="${myName}"]`);
+  mySlices.forEach(el => el.classList.add('my-slice'));
 }
 
 // переключаем панель
