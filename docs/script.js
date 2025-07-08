@@ -425,21 +425,10 @@ function drawWheel() {
 
     start = end;
   });
-  // 2) Находим ваш сектор и рисуем поверх него чистую дугу
-  let acc = -90;
-  for (const p of players) {
-    const sweep = (p.value / totalTON) * 360;
-    if (p.name === myName) {
-      const startAngle = acc;
-      const endAngle   = acc + sweep;
-      const d = arcOnly(200, 200, 190, startAngle, endAngle);
-      svg.insertAdjacentHTML('beforeend',
-        `<path d="${d}" class="my-arc"/>`
-      );
-      break;
-    }
-    acc += sweep;
-  }
+
+  // ПОСЛЕ ОТРИСОВКИ ВСЕХ СЕКТОРОВ — добавляем класс нужному
+  const mySlices = svg.querySelectorAll(`[data-player="${myName}"]`);
+  mySlices.forEach(el => el.classList.add('my-slice'));
 }
 
 // переключаем панель
