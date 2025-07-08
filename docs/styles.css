@@ -727,14 +727,17 @@ input[type=range]::-moz-range-thumb {
     }
   }
 
-#wheelGroup .my-slice {
-  stroke: #fbbf24;       /* яркая золотая */
-  stroke-width: 4;       /* толщина обводки */
-  vector-effect: non-scaling-stroke; /* чтобы толщина не менялась при трансформациях */
-}
+  /* рамка + лёгкое свечение */
+  .my-slice {
+    stroke: #fbbf24;         /* золото */
+    stroke-width: 5;
+    filter: drop-shadow(0 0 6px rgba(251,191,36,.85));
+    animation: pulseBorder 2s ease-in-out infinite;
+    vector-effect: non-scaling-stroke; /* чтобы толщина не "сжималась" при scale */
+  }
 
-/* Рендер-подсказки для текста */
-#wheelGroup text {
-  shape-rendering: geometricPrecision;
-  text-rendering: optimizeLegibility;
-}
+  /* мягкая пульсация */
+  @keyframes pulseBorder {
+    0%, 100% { stroke-opacity: 1; }
+    50%      { stroke-opacity: .3; }
+  }
