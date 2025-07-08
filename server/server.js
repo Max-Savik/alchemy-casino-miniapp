@@ -72,6 +72,7 @@ const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
 const WD_FILE       = path.join(DATA_DIR, "withdrawals.json"); 
 const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
+const DEPOSIT_LIMIT = Number(process.env.DEPOSIT_LIMIT || 100);
 let addrMap = {};           // { [userId]: "EQB…" }
 
 if (!DEPOSIT_ADDR) throw new Error("DEPOSIT_ADDR not set");
@@ -212,7 +213,8 @@ wallet.post("/withdraw", async (req, res) => {
     type   : "withdraw",
     amount : amt,
     ts     : Date.now(),
-    status : "pending"        
+    status : "pending",
+    wid    : id 
   });
   await saveTx();
 
@@ -223,6 +225,12 @@ wallet.post("/withdraw", async (req, res) => {
 wallet.post('/link', async (req,res)=>{
   const {address} = req.body || {};
   if(!address) return res.status(400).json({error:'address required'});
+  /* TON-адреса бывают двух типов:
+     ① base64url (48-49 симв., без «=»)
+     ② raw-hex с workchain: «0:<64hex>» или «-1:<64hex>»
+     Принимаем оба варианта.                                */
+  if(!/^([A-Za-z0-9_\-]{48,49}|-?0:[0-9a-fA-F]{64})$/.test(address))
+    return res.status(400).json({error:'bad address'});
   addrMap[req.userId] = address;
   await saveAddr();
   res.json({ ok:true, address });
@@ -671,44 +679,46 @@ let lastLt = 0n;                         // сдвигаемся только в
 
 async function pollDeposits() {
   try {
-    const txsList = await tonApi("getTransactions", {
-      address: DEPOSIT_ADDR,
-      limit: 20
-    });
+    let ltCursor;                       // постранично вперёд
+    while (true) {
+      const page = await tonApi("getTransactions", {
+        address : DEPOSIT_ADDR,
+        limit   : DEPOSIT_LIMIT,
+        lt      : ltCursor              // undefined на первой странице
+      });
 
-    for (const tx of txsList) {
-      const lt   = BigInt(tx.transaction_id.lt);
-      if (lt <= lastLt) break;          // всё старое уже учли
+      for (const tx of page) {
+        const lt = BigInt(tx.transaction_id.lt);
+        if (lt <= lastLt) { ltCursor = null; break; }   // дошли до старых
 
-      const valueTon = Number(tx.in_msg.value) / 1e9;
-      /* --- достаём текст комментария, как делает Toncenter --- */
-      const bodyText =
-        tx.in_msg.message                         // старые кошельки
-        || tx.in_msg.msg_data?.text               // msg.dataText
-        || ""; 
+        const valueTon = Number(tx.in_msg.value) / 1e9;
+        const bodyText = tx.in_msg.message || tx.in_msg.msg_data?.text || "";
 
-      if (bodyText.startsWith("uid:") && valueTon > 0) {
+        if (bodyText.startsWith("uid:") && valueTon > 0) {
+          const userId = bodyText.slice(4).trim();
 
-        const userId = bodyText.slice(4).trim();
+          // дубликаты по hash
+          if (txs.some(t => t.hash === tx.transaction_id.hash)) continue;
 
-        /* пропускаем, если уже записали этот hash */
-        if (txs.some(t => t.hash === tx.transaction_id.hash)) continue;
+          console.log(`➕ Deposit ${valueTon} TON from ${userId}`);
+          balances[userId] = (balances[userId] || 0) + valueTon;
+          await saveBalances();
 
-        console.log(`➕ Deposit ${valueTon} TON from ${userId}`);
-        balances[userId] = (balances[userId] || 0) + valueTon;
-        await saveBalances();
+          txs.push({
+            userId,
+            type  : "deposit",
+            amount: valueTon,
+            ts    : tx.utime * 1000,
+            hash  : tx.transaction_id.hash
+          });
+          await saveTx();
+        }
 
-        txs.push({
-          userId,
-          type:   "deposit",
-          amount: valueTon,
-          ts:     tx.utime * 1000,
-          hash:   tx.transaction_id.hash
-        });
-        await saveTx();
+        lastLt = lt;
       }
 
-      lastLt = lt;
+      if (ltCursor === null || page.length < DEPOSIT_LIMIT) break;
+      ltCursor = page.at(-1).transaction_id.lt;         // следующая страница
     }
   } catch (e) {
     console.error("pollDeposits:", e.message);
@@ -744,13 +754,15 @@ async function waitSeqnoChange(oldSeqno, timeout = 30_000) {
 async function processWithdrawals() {
   if (sending) return;                  // защита от параллельных запусков
   sending = true;
+  let w, txRec;                         // нужны и в catch
   try {
-    // берём первый pending-вывод
-    const w = withdrawals.find(x => x.status === 'pending');
-    if (!w) return;                     // очередь пуста
+    w = withdrawals.find(x => x.status === 'pending');
+    if (!w) return;
+    txRec = txs.find(t => t.wid === w.id);
 
     /* 1️⃣  синхронизируемся, если кто-то тратил кошелёк вручную */
-    const chainSeqno = Number(await hotWallet.methods.seqno().call());    if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
+    const chainSeqno = Number(await hotWallet.methods.seqno().call());
+    if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
 
     /* 2️⃣  резервируем локальный seqno именно для ЭТОЙ выплаты */
     const mySeq = nextSeqno;
@@ -780,6 +792,12 @@ async function processWithdrawals() {
     w.seqno  = mySeq;
     await saveWithdrawals();
 
+    if (txRec) {
+      txRec.status = 'sent';
+      txRec.hash   = w.txHash;
+      await saveTx();
+    }
+
   } catch (err) {
     const txt = String(err);
 
@@ -790,12 +808,21 @@ async function processWithdrawals() {
       nextSeqno += 1;
     } else {
       console.error('processWithdrawals:', err);
-      const wpend = withdrawals.find(x => x.status === 'pending');
-      if (wpend) {
-        wpend.status = 'fail';
-        wpend.error  = txt.slice(0, 150);
-        wpend.seqno  = nextSeqno;
+      if (w) {
+        /* возвращаем деньги пользователю */
+        balances[w.userId] = (balances[w.userId] || 0) + w.amount;
+        await saveBalances();
+
+        w.status = 'fail';
+        w.error  = txt.slice(0, 150);
+        w.seqno  = nextSeqno;
         await saveWithdrawals();
+
+        if (txRec) {
+          txRec.status = 'fail';
+          txRec.error  = w.error;
+          await saveTx();
+        }
       }
     }
   } finally {
