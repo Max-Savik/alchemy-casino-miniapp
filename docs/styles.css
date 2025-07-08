@@ -702,12 +702,14 @@ input[type=range]::-moz-range-thumb {
 
 #fairCommit { backdrop-filter: blur(4px); }
 #copyCommit:active svg { transform: scale(0.9); }
+#fairBtn {padding-right: 0.5rem;}
 
-
-#wheelSvg .my-slice {
-    stroke: #fbbf24;       /* золотой контур */
-    stroke-width: 4;       /* толщина контура */
+  /* Тонкая дуга по окружности */
+  .my-arc {
+    fill: none;                 /* без заливки */
+    stroke: #fbbf24;            /* яркий золотой цвет */
+    stroke-width: 8;            /* толщина обводки */
+    stroke-linecap: round;      /* скруглённые концы */
   }
 
-#fairBtn {padding-right: 0.5rem;}
 
