@@ -728,64 +728,64 @@ setInterval(processWithdrawals, 5_000);
 //  processWithdrawals — единственная точка,
 //  где мы реально шлём деньги из hot-кошелька
 // ─────────────────────────────────────────
+async function waitSeqnoChange(oldSeqno, timeout = 30_000) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeout) {
+    const s = Number(await hotWallet.methods.seqno().call());
+    if (s > oldSeqno) return s;
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  throw new Error(`seqno ${oldSeqno} not confirmed in ${timeout} ms`);
+}
+
 async function processWithdrawals() {
   if (sending) return;
   sending = true;
-
   try {
-    while (true) {                       // обработаем сразу все ожидания
-      const w = withdrawals.find(x => x.status === 'pending');
-      if (!w) break;                     // очередь пуста
+    const w = withdrawals.find(x => x.status === 'pending');
+    if (!w) return;                 // очередь пуста
 
-      // 1. seqno
-      const chainSeqno = Number(await hotWallet.methods.seqno().call());
-      if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
+    // 1. актуальный seqno
+    const chainSeqno = Number(await hotWallet.methods.seqno().call());
+    if (chainSeqno > nextSeqno) nextSeqno = chainSeqno;
 
-      // 2. формируем перевод
-      const transfer = hotWallet.methods.transfer({
-        secretKey : keyPair.secretKey,
-        toAddress : w.to,
-        amount    : TonWeb.utils.toNano(String(w.amount)),
-        seqno     : nextSeqno,
-        sendMode  : 3
-      });
+    // 2. готовим перевод
+    const transfer = hotWallet.methods.transfer({
+      secretKey : keyPair.secretKey,
+      toAddress : w.to,
+      amount    : TonWeb.utils.toNano(String(w.amount)),
+      seqno     : nextSeqno,
+      sendMode  : 3
+    });
+    const cell = await transfer.getQuery();
+    const boc  = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
 
-     const cell   = await transfer.getQuery();
-     const boc    = TonWeb.utils.bytesToBase64(await cell.toBoc(false));
+    // 3. шлём
+    await tonApi('sendBoc', { boc });
+    console.log(`✅ ${w.id}: seqno ${nextSeqno} → ${w.to} (${w.amount} TON)`);
 
-      // 3. отправляем
-      await tonApi('sendBoc', { boc });
-      console.log(`✅ ${w.id}: seqno ${nextSeqno} → ${w.to} (${w.amount} TON)`);
+    // 4. ждём подтверждение в блоке
+    nextSeqno = await waitSeqnoChange(nextSeqno);
 
-      // 4. отмечаем
-      w.txHash = boc.slice(0, 16);
-      w.status = 'sent';
-      w.seqno  = nextSeqno;
-      nextSeqno += 1;
-      await saveWithdrawals();
-    }
+    // 5. отмечаем успех
+    w.txHash = boc.slice(0, 16);
+    w.status = 'sent';
+    w.seqno  = nextSeqno;
+    await saveWithdrawals();
 
   } catch (err) {
-    const txt = String(err);
-    if (txt.includes('exit code 33') || txt.includes('duplicate')) {
-      console.log('ℹ️ дубликат seqno — увеличиваем счётчик');
-      nextSeqno += 1;
-    } else {
-      console.error('processWithdrawals:', err);
-      const wpend = withdrawals.find(x => x.status === 'pending');
-      if (wpend) {
-        wpend.status = 'fail';
-        wpend.error  = txt.slice(0, 150);
-        wpend.seqno  = nextSeqno;
-        await saveWithdrawals();
-      }
+    console.error('processWithdrawals:', err);
+    const wpend = withdrawals.find(x => x.status === 'pending');
+    if (wpend) {
+      wpend.status = 'fail';
+      wpend.error  = String(err).slice(0, 150);
+      wpend.seqno  = nextSeqno;
+      await saveWithdrawals();
     }
   } finally {
-    sending = false;               // обязательно снимаем «замок»
+    sending = false;
   }
 }
-
-
 
 // ──────────────────────── Bootstrap ───────────────────────────
 (async () => {
