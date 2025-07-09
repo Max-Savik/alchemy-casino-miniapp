@@ -953,7 +953,11 @@ walletWithdrawBtn.addEventListener('click', async () => {
     );
     tonBalance = balance;
     document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
-    walletOverlay.classList.add('hidden');
+
+    /* оставляем панель открытой, просто обнуляем ввод
+       и блокируем кнопку, пока снова не введут число */
+    withdrawInp.value = '';
+    walletWithdrawBtn.disabled = true;
   }catch(e){ alert('Withdraw error: '+e.message); }
 });
 
