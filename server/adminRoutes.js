@@ -172,6 +172,64 @@ export default function createAdminRouter(opts) {
     const list = st ? withdrawals.filter(w => w.status === st) : withdrawals;
     res.json(list.slice(-200).reverse());
   });
+  // ────────────────────────────────────────────────────────────────
+  //  C O M M I S S I O N   (service revenue, uid = "__service__")
+  // ────────────────────────────────────────────────────────────────
 
+  /* 13) GET /admin/commission
+         👉  { balance, totalCollected }                        */
+  router.get("/commission", (_req, res) => {
+    const bal  = balances.__service__ || 0;
+    const total = txs
+      .filter(t => t.type === "commission")
+      .reduce((s, t) => s + t.amount, 0);
+    res.json({ balance: bal, totalCollected: total });
+  });
+
+  /* 14) POST /admin/commission/withdraw        body: { amount, address }
+         • адрес берётся из body → не нужно привязывать в addrMap
+         • создаём «pending»-вывод так же, как обычным пользователям   */
+  router.post(
+    "/commission/withdraw",
+    express.json(),
+    async (req, res) => {
+      const amt  = Number(req.body.amount);
+      const addr = (req.body.address || "").trim();
+      if (!(amt > 0) || !addr)
+        return res.status(400).json({ error: "amount & address required" });
+
+      const bal = balances.__service__ || 0;
+      if (bal < amt) return res.status(400).json({ error: "insufficient" });
+
+      /* 1️⃣ списываем баланс «тех-счёта» */
+      balances.__service__ = bal - amt;
+      await saveBalances();
+
+      /* 2️⃣ ставим вывод в очередь */
+      const id = crypto.randomUUID();
+      withdrawals.push({
+        id,
+        userId : "__service__",
+        amount : amt,
+        to     : addr,
+        ts     : Date.now(),
+        status : "pending",
+      });
+      await saveWithdrawals();
+
+      /* 3️⃣ записываем в историю транзакций */
+      txs.push({
+        userId : "__service__",
+        type   : "commission_wd",
+        amount : amt,
+        ts     : Date.now(),
+        wid    : id,
+        status : "pending",
+      });
+      await saveTx();
+
+      res.json({ ok: true, pendingId: id, newBalance: balances.__service__ });
+    }
+  );
   return router;
  }
