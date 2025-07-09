@@ -176,4 +176,3 @@ export default function createAdminRouter(opts) {
 
   return router;
  }
-}
