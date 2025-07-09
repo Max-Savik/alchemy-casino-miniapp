@@ -957,6 +957,7 @@ walletWithdrawBtn.addEventListener('click', async () => {
        и блокируем кнопку, пока снова не введут число */
     withdrawInp.value = '';
     walletWithdrawBtn.disabled = true;
+    walletOverlay.classList.add('hidden');
   }catch(e){ alert('Withdraw error: '+e.message); }
 });
 
