@@ -498,10 +498,18 @@ function adminAuth(req, res, next) {
 app.use(
   "/admin",
   createAdminRouter({
+    /* базовое */
     ADMIN_TOKEN,
     HISTORY_FILE,
     history,
     saveHistory,
+    /* TON & балансы/транзакции */
+    balances,
+    saveBalances,
+    txs,
+    saveTx,
+    withdrawals,
+    saveWithdrawals,
   })
 );
 
