@@ -13,6 +13,12 @@ export default function createAdminRouter(opts) {
     HISTORY_FILE,
     history,
     saveHistory,
+    balances,
+    saveBalances,
+    txs,
+    saveTx,
+    withdrawals,
+    saveWithdrawals,
   } = opts;
 
   if (!ADMIN_TOKEN) throw new Error("ADMIN_TOKEN not set");
@@ -115,4 +121,59 @@ export default function createAdminRouter(opts) {
   });
 
   return router;
+
+  /* ────────────────────────────────────────────────────────────
+     B A L A N C E   &   T R A N S A C T I O N S
+  ──────────────────────────────────────────────────────────── */
+
+  /* 8) GET /admin/balance?uid=123 */
+  router.get("/balance", (req, res) => {
+    const uid = (req.query.uid || "").trim();
+    if (!uid) return res.status(400).json({ error: "uid required" });
+    return res.json({ uid, balance: balances[uid] || 0 });
+  });
+
+  /* 9) POST /admin/balance/adjust  { uid, delta } */
+  router.post("/balance/adjust", express.json(), async (req, res) => {
+    const { uid, delta } = req.body || {};
+    const d = Number(delta);
+    if (!uid || !Number.isFinite(d)) return res.status(400).json({ error: "uid & delta" });
+
+    balances[uid] = (balances[uid] || 0) + d;
+    await saveBalances();
+
+    txs.push({
+      userId : uid,
+      type   : d > 0 ? "admin_add" : "admin_sub",
+      amount : Math.abs(d),
+      ts     : Date.now(),
+    });
+    await saveTx();
+
+    res.json({ uid, balance: balances[uid] });
+  });
+
+  /* 10) GET /admin/tx/list?limit=100 */
+  router.get("/tx/list", (req, res) => {
+    const lim = Math.min(Number(req.query.limit || 100), 500);
+    res.json(txs.slice(-lim).reverse());
+  });
+
+  /* 11) GET /admin/tx/user?uid=123&limit=50 */
+  router.get("/tx/user", (req, res) => {
+    const uid = (req.query.uid || "").trim();
+    if (!uid) return res.status(400).json({ error: "uid required" });
+    const lim = Math.min(Number(req.query.limit || 100), 500);
+    res.json(txs.filter(t => t.userId === uid).slice(-lim).reverse());
+  });
+
+  /* 12) GET /admin/withdrawals?status=pending|sent|fail */
+  router.get("/withdrawals", (req, res) => {
+    const st = (req.query.status || "").trim();
+    const list = st ? withdrawals.filter(w => w.status === st) : withdrawals;
+    res.json(list.slice(-200).reverse());
+  });
+
+  return router;
+ }
 }
