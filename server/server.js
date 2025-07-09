@@ -38,6 +38,12 @@ const HOT_PRIV_KEY   = process.env.HOT_PRIV_KEY;
 const HOT_WALLET_TYPE= process.env.HOT_WALLET_TYPE || "v4r2";
 if (!HOT_PRIV_KEY) throw new Error("HOT_PRIV_KEY not set");
 
+// ───── L I M I T S ─────────────────────────────────────────────
+// Можно переопределить через переменные окружения
+const MIN_DEPOSIT           = Number(process.env.MIN_DEPOSIT          || 0.1); // ≥0.1 TON
+const MIN_WITHDRAW          = Number(process.env.MIN_WITHDRAW         || 0.5); // ≥0.5 TON
+const WITHDRAW_RATE_LIMIT   = Number(process.env.WITHDRAW_RATE_LIMIT  || 2);   // ≤2 вывода/мин/UID
+
 const raw = TonWeb.utils.hexToBytes(
   HOT_PRIV_KEY.startsWith("0x") ? HOT_PRIV_KEY.slice(2) : HOT_PRIV_KEY
 );
@@ -189,7 +195,17 @@ wallet.post("/withdraw", async (req, res) => {
   const amt = Number(req.body.amount);
 
   /* 1️⃣ базовые проверки */
-  if (!amt || amt <= 0)  return res.status(400).json({ error: "amount>0" });
+  // ➊ Минимальная сумма вывода
+  if (!amt || amt < MIN_WITHDRAW)
+    return res.status(400).json({ error: `min ${MIN_WITHDRAW} TON` });
+
+  // ➋ Rate-limit: не более 2 выводов за последние 60 с
+  const now = Date.now();
+  const recent = withdrawals.filter(
+    w => w.userId === req.userId && now - w.ts < 60_000
+  );
+  if (recent.length >= WITHDRAW_RATE_LIMIT)
+    return res.status(429).json({ error: "rate limit: 2 withdrawals/min" });
   const bal = balances[req.userId] || 0;
   if (bal < amt)         return res.status(400).json({ error: "insufficient" });
 
@@ -693,6 +709,8 @@ async function pollDeposits() {
         if (lt <= lastLt) { ltCursor = null; break; }   // дошли до старых
 
         const valueTon = Number(tx.in_msg.value) / 1e9;
+        // ⛔ Отбрасываем всё, что меньше минимального депозита
+        if (valueTon < MIN_DEPOSIT) continue;
         const bodyText = tx.in_msg.message || tx.in_msg.msg_data?.text || "";
 
         if (bodyText.startsWith("uid:") && valueTon > 0) {
