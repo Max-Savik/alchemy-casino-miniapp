@@ -148,12 +148,17 @@ async function saveHistory() {
 let balances = {};          // { [userId]: number }
 async function loadBalances() {
   try {
-    const txt = await fs.readFile(BALANCES_FILE, "utf8");
-    balances = JSON.parse(txt);
+    const txt  = await fs.readFile(BALANCES_FILE, "utf8");
+    const data = JSON.parse(txt);
+
+    /* ⭕ Сохраняем исходную ссылку, чтобы admin-роутер,
+       получивший её ДО bootstrap-а, видел актуальные данные. */
+    Object.assign(balances, data);          // мутация вместо присваивания
     console.log("Loaded balances:", balances);
   } catch (e) {
     if (e.code !== "ENOENT") console.error("Balances read error:", e);
-    balances = {};
+    /* чистим, но не меняем объект */
+    for (const k of Object.keys(balances)) delete balances[k];
   }
 }
 async function saveBalances() {
