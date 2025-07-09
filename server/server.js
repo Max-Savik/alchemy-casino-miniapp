@@ -24,6 +24,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { parse as parseCookie } from "cookie";
+import createAdminRouter from "./adminRoutes.js";
 dotenv.config();  
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -485,112 +486,16 @@ function adminAuth(req, res, next) {
   if (token !== ADMIN_TOKEN) return res.sendStatus(403);
   next();
 }
-
-// ─── admin-роуты ──────────────────────────
-const admin = express.Router();
-admin.use(adminAuth);
-
-/* 1) Скачать history.json или конкретный backup
-   GET /admin/history/download            – актуальный файл
-   GET /admin/history/download?id=…bak    – бэкап по id           */
-admin.get('/history/download', async (req, res) => {
-  const id   = (req.query.id || '').trim();      // пусто ⇒ основной файл
-  const file = path.join(DATA_DIR, id || 'history.json');
-
-  try {
-    await fs.access(file);        // убедимся, что файл существует
-    res.download(file);
-  } catch {
-    res.sendStatus(404);
-  }
-});
-
-// 2) Очистить историю (с резервной копией)
-admin.post('/history/clear', async (req, res) => {
-  const backup = HISTORY_FILE + '.' + Date.now() + '.bak';
-  await fs.copyFile(HISTORY_FILE, backup).catch(() => {});  // silently skip if нет файла
-  history = [];
-  await saveHistory();
-  res.json({ ok: true, backup });
-});
-
-// 3) Краткая статистика (топ победителей)
-admin.get('/history/top', (req, res) => {
-  const topN = Number(req.query.n || 10);
-  const map = new Map();
-  for (const rec of history) {
-    map.set(rec.winner, (map.get(rec.winner) || 0) + rec.total);
-  }
-  const top = [...map.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, topN)
-    .map(([name, sum]) => ({ name, sum }));
-  res.json(top);
-});
-
-/* 4) Игровая статистика конкретного игрока
-   GET /admin/history/player?name=Alice */
-admin.get('/history/player', (req, res) => {
-  const qName = (req.query.name || '').trim();
-  if (!qName) return res.status(400).json({ error: 'name empty' });
-
-  let games = 0, wins = 0;
-  for (const rec of history) {
-    if (rec.participants.some(p => p.name === qName)) games++;
-    if (rec.winner === qName) wins++;
-  }
-  const winPct = games ? (wins / games) * 100 : 0;
-  res.json({ name: qName, games, wins, winPct });
-});
-
-/* 5) Сделать «голый» backup history.json */
-admin.post('/history/backup', async (_req, res) => {
-  const backup = HISTORY_FILE + '.' + Date.now() + '.bak';
-  await fs.copyFile(HISTORY_FILE, backup);
-  res.json({ backup: path.basename(backup) });
-});
-
-/* 6) Prune — удалить записи старше N дней (с бэкапом)           
-   POST /admin/history/prune?days=30 */
-admin.post('/history/prune', async (req, res) => {
-  const days = Number(req.query.days);
-  if (!days || days <= 0) return res.status(400).json({ error: 'days required' });
-
-  // 1) backup
-  const backup = HISTORY_FILE + '.' + Date.now() + '.bak';
-  await fs.copyFile(HISTORY_FILE, backup).catch(() => {});
-  
-  // 2) prune
-  const cutoff = Date.now() - days * 86_400_000;
-  const before = history.length;
-  history = history.filter(r => new Date(r.timestamp).getTime() >= cutoff);
-  await saveHistory();
-
-  res.json({
-    removed: before - history.length,
-    left: history.length,
-    backup: path.basename(backup)
-  });
-});
-
-/* 7) Restore бэкапа
-   POST /admin/history/restore?id=history.json.1719226800000.bak */
-admin.post('/history/restore', async (req, res) => {
-  const id = (req.query.id || '').trim();
-  if (!id) return res.status(400).json({ error: 'id required' });
-
-  const file = path.join(DATA_DIR, id);
-  try {
-    const txt = await fs.readFile(file, 'utf8');
-    history = JSON.parse(txt);
-    await saveHistory();      // перезаписываем актуальный history.json
-    res.json({ ok: true, restored: id, count: history.length });
-  } catch (e) {
-    res.status(404).json({ error: 'backup not found' });
-  }
-});
-
-app.use('/admin', admin);
+/* ───── Admin router (вынесен) ───── */
+app.use(
+  "/admin",
+  createAdminRouter({
+    ADMIN_TOKEN,
+    HISTORY_FILE,
+    history,
+    saveHistory,
+  })
+);
 
 // ───────────────────── Socket handlers ─────────────────────────
 io.use((socket, next) => {
