@@ -907,7 +907,7 @@ walletCloseBtn.addEventListener('click', () => {
 
 walletAmountInp.addEventListener('input', () => {
   const v = parseFloat(walletAmountInp.value);
-  walletDepositBtn.disabled = !(v>0);
+  walletDepositBtn.disabled = !(v >= 0.1); // ≥0.1 TON);
 });
 
 walletDepositBtn.addEventListener('click', async () => {
@@ -944,7 +944,7 @@ walletDepositBtn.addEventListener('click', async () => {
 
 walletWithdrawBtn.addEventListener('click', async () => {
   const amt = parseFloat(withdrawInp.value);
-  if(!(amt>0)) return;
+  if (!(amt >= 0.5)) return;            // клиентский guard
   try{
         const { balance } = await postJSON(
         `${API_ORIGIN}/wallet/withdraw`,
@@ -1014,7 +1014,7 @@ setTab('dep');
 
 withdrawInp.addEventListener('input', () => {
   const v = parseFloat(withdrawInp.value);
-  walletWithdrawBtn.disabled = !(v>0);
+  walletWithdrawBtn.disabled = !(v >= 0.5); // ≥0.5 TON
 });
 
 async function loadTxHistory(){
