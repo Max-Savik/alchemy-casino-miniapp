@@ -1,6 +1,5 @@
 // ============================ script.js ============================
 
-
 /* === TonConnect === */
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
   manifestUrl: "https://max-savik.github.io/alchemy-casino-miniapp/tonconnect-manifest.json",
