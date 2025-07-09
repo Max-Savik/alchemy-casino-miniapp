@@ -121,12 +121,20 @@ const palette = [
 ];
 async function loadHistory() {
   try {
-    const txt = await fs.readFile(HISTORY_FILE, "utf8");
-    history = JSON.parse(txt);
+    const txt  = await fs.readFile(HISTORY_FILE, "utf8");
+    const data = JSON.parse(txt);
+
+    /* ✅  НЕ переопределяем переменную, а мутируем массив.
+       Admin-роутер получил ссылку на history ещё до bootstrap-а,
+       поэтому ссылка должна остаться той же, иначе он «не видит»
+       новые данные и возвращает нули.                              */
+    history.length = 0;
+    history.push(...data);
+
     console.log(`Loaded ${history.length} history records.`);
   } catch (e) {
     if (e.code !== "ENOENT") console.error("History read error:", e);
-    history = []; // файл ещё не создан – начинаем с пустого массива
+    history.length = 0;            // оставляем прежнюю ссылку, просто чистим
   }
 }
 
