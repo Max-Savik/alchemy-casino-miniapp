@@ -45,6 +45,16 @@ const MIN_DEPOSIT           = Number(process.env.MIN_DEPOSIT          || 0.1); /
 const MIN_WITHDRAW          = Number(process.env.MIN_WITHDRAW         || 0.5); // ≥0.5 TON
 const WITHDRAW_RATE_LIMIT   = Number(process.env.WITHDRAW_RATE_LIMIT  || 2);   // ≤2 вывода/мин/UID
 
+/* ───── COMMISSION ───────────────────────────────────────────────
+   Процент сервиса, удерживаемый ТОЛЬКО с TON-ставок других игроков,
+   т.е. победитель всегда получает свою собственную ставку целиком.  
+   Значение читается из env-переменной COMMISSION_RATE (0…1).
+   По умолчанию 5 % (0.05).                                         */
+const COMMISSION_RATE = Math.min(
+  Math.max(Number(process.env.COMMISSION_RATE ?? 0.05), 0),
+  1
+);
+
 const raw = TonWeb.utils.hexToBytes(
   HOT_PRIV_KEY.startsWith("0x") ? HOT_PRIV_KEY.slice(2) : HOT_PRIV_KEY
 );
@@ -454,26 +464,52 @@ function startSpin() {
       /* ───────── начисляем приз (только TON) ───────── */
       const uid = String(winner.userId);
       if (uid) {
-        /* считаем общий TON-банк: суммируем NFT-токены, id которых
-           мы создавали вида  "ton-<ts>"  */
-        const potTON = game.players.reduce((sum, p) =>
-          sum +
-          p.nfts
-           .filter(n => n.id.startsWith("ton-"))
-           .reduce((s, n) => s + n.price, 0)
-        , 0);
+        /* 1) Общий TON-банк текущего раунда */
+        const potTON = game.players.reduce(
+          (sum, p) =>
+            sum +
+            p.nfts
+              .filter(n => n.id.startsWith("ton-"))
+              .reduce((s, n) => s + n.price, 0),
+          0
+        );
 
         if (potTON > 0) {
-          balances[uid] = (balances[uid] || 0) + potTON;
+          /* 2) TON, внесённый победителем лично */
+          const winnerStake = winner.nfts
+            .filter(n => n.id.startsWith("ton-"))
+            .reduce((s, n) => s + n.price, 0);
+
+          /* 3) TON других игроков – только с него берём комиссию */
+          const othersStake = potTON - winnerStake;
+
+          const commission = othersStake * COMMISSION_RATE;   // 0, если играл один
+          const payout     = potTON - commission;            // сумма, уходящая победителю
+
+          /* 4) Увеличиваем баланс победителя */
+          balances[uid] = (balances[uid] || 0) + payout;
+
+          /* 5) Накапливаем комиссию на спец-счёте '__service__'
+                (можно выводить админ-роутом точно так же, как пользователи) */
+          balances.__service__ = (balances.__service__ || 0) + commission;
           await saveBalances();
 
           /* записываем prize-транзакцию */
           txs.push({
             userId : uid,
             type   : "prize",
-            amount : potTON,
+            amount : payout,
             ts     : Date.now()
           });
+          /* отдельная запись о комиссии (пригодится для учёта) */
+          if (commission > 0) {
+            txs.push({
+              userId : "__service__",
+              type   : "commission",
+              amount : commission,
+              ts     : Date.now()
+            });
+          }
           await saveTx();
         }
       }
