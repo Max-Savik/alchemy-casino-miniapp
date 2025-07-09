@@ -120,7 +120,6 @@ export default function createAdminRouter(opts) {
     }
   });
 
-  return router;
 
   /* ────────────────────────────────────────────────────────────
      B A L A N C E   &   T R A N S A C T I O N S
