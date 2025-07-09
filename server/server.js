@@ -184,10 +184,12 @@ function userAuth(req, res, next) {
 let withdrawals = [];
 async function loadWithdrawals() {
   try {
-    withdrawals = JSON.parse(await fs.readFile(WD_FILE, "utf8"));
+    const data = JSON.parse(await fs.readFile(WD_FILE, "utf8"));
+    withdrawals.length = 0;
+    withdrawals.push(...data);
   } catch (e) {
     if (e.code !== "ENOENT") console.error(e);
-    withdrawals = [];
+    withdrawals.length = 0;
   }
 }
 async function saveWithdrawals() {
@@ -280,9 +282,14 @@ wallet.get('/history', (req,res)=>{
 /* -------- WALLET TX helpers -------- */
 let txs = [];   // [{userId,type,amount,ts,hash?}]
 async function loadTx() {
-  try{
-    txs = JSON.parse(await fs.readFile(TX_FILE,'utf8'));
-  }catch(e){ if (e.code!=="ENOENT") console.error(e); txs=[]; }
+  try {
+    const data = JSON.parse(await fs.readFile(TX_FILE, "utf8"));
+    txs.length = 0;
+    txs.push(...data);
+  } catch(e) {
+    if (e.code !== "ENOENT") console.error(e);
+    txs.length = 0;
+  }
 }
 async function saveTx(){
   const tmp = TX_FILE+'.tmp';
