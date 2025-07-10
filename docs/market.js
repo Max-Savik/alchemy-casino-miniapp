@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ───── роутинг bottom-nav ───── */
   const nav = {
-    navGame:    'index.html',
-    navMarket:  'market.html',       // остаёмся здесь
-    navProfile: 'profile.html',
-    navEarn:    'earn.html'
+    navGame:    'index.html#game',
+    navMarket:  'market.html',        // остаёмся здесь
+    navProfile: 'index.html#profile',
+    navEarn:    'index.html#earn'
   };
 
   Object.entries(nav).forEach(([btn, url]) => {
@@ -23,4 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!el) return;
     el.addEventListener('click', () => location.href = url);
   });
+  /* ── убираем стартовую прозрачность (мягкий fade-in) ── */
+  requestAnimationFrame(() => document.body.classList.remove('opacity-0'));
 });
