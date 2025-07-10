@@ -868,7 +868,13 @@ toggleBtn.addEventListener('click', () => {
 
 // =================== SIMPLE NAV ===================
 navGame.addEventListener('click',   () => show('game'));
-navMarket.addEventListener('click', () => show('market'));
+
+// ▸▸▸ КНОПКА «МАРКЕТ»  ▸▸▸
+// Вместо внутреннего переключения секций теперь ведём
+// пользователя на отдельную страницу `market.html`.
+navMarket.addEventListener('click', () => {
+  window.location.href = 'market.html';
+});
 navProfile.addEventListener('click',() => show('profile'));
 navEarn.addEventListener('click',   () => show('earn'));
 function show(view){
