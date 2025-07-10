@@ -101,14 +101,19 @@ function initSocketEvents() {
     if (s.commitHash) setCommit(s.commitHash);
     refreshUI();
 
+    /* ── убираем прелоадер и мягко показываем контент ── */
     const overlay = document.getElementById('lottieOverlay');
-    if (overlay) overlay.remove();
+    overlay?.remove();
+
     const main = document.getElementById('mainContent');
     requestAnimationFrame(() => {
-      main.classList.remove('opacity-0');
-      main.classList.add('opacity-100');
-    });
+      main.classList.replace('opacity-0', 'opacity-100');
 
+      /*  Safari / mobile-Chrome иногда «забывают» отрисовать
+          SVG-графику, пока элемент был прозрачным.
+          Форсируем перерисовку — вызываем drawWheel() ещё раз.      */
+      drawWheel();
+    });
     if (s.phase === "countdown") {
       updateStatus(Math.ceil((s.endsAt - Date.now()) / 1000));
     } else {
@@ -1104,8 +1109,11 @@ gsap.fromTo('#steam', { scale: .6, opacity: 0 }, {
 });
 
 // ======================= INIT =======================
-const initialView = (location.hash || '#game').slice(1); // game | profile | earn
-show(initialView);
+const initialView =
+  ['#game', '#profile', '#earn'].includes(location.hash)
+    ? location.hash.slice(1)
+    : 'game';
++show(initialView);
 refreshUI();
 refreshBalance();  
 
