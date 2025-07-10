@@ -868,16 +868,21 @@ toggleBtn.addEventListener('click', () => {
 });
 
 // =================== SIMPLE NAV ===================
-navGame.addEventListener('click',   () => show('game'));
-
-// ▸▸▸ КНОПКА «МАРКЕТ»  ▸▸▸
-// Вместо внутреннего переключения секций теперь ведём
-// пользователя на отдельную страницу `market.html`.
-navMarket.addEventListener('click', () => {
-  window.location.href = 'market.html';
+navGame.addEventListener('click', () => {
+  location.hash = '#game';
+  show('game');
 });
-navProfile.addEventListener('click',() => show('profile'));
-navEarn.addEventListener('click',   () => show('earn'));
+navMarket.addEventListener('click', () => location.href = 'market.html');
+
+navProfile.addEventListener('click', () => {
+  location.hash = '#profile';
+  show('profile');
+});
+
+navEarn.addEventListener('click', () => {
+  location.hash = '#earn';
+  show('earn');
+});
 function show(view){
   gameSection   .classList.toggle('hidden', view !== 'game');
   profileSection.classList.toggle('hidden', view !== 'profile');
@@ -1099,7 +1104,8 @@ gsap.fromTo('#steam', { scale: .6, opacity: 0 }, {
 });
 
 // ======================= INIT =======================
-show('game');
+const initialView = (location.hash || '#game').slice(1); // game | profile | earn
+show(initialView);
 refreshUI();
 refreshBalance();  
 
