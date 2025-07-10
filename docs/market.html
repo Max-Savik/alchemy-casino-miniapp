@@ -16,16 +16,14 @@
   <link rel="stylesheet" href="styles.css" />
 
   <style>
-    /* —- небольшая подсветка активного пункта меню -— */
-    .nav-link.active .nav-lbl,
-    .nav-link.active .nav-ico { color:#fbbf24; }
+     .bottom-nav .nav-link.active { color:#ffda87; }
   </style>
 
   <!-- логика страницы -->
   <script src="market.js" defer></script>
 </head>
 
-<body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
+<body class="flex flex-col min-h-screen bg-gray-950 text-gray-200 opacity-0 transition-opacity duration-300 ease-out">
 
   <!-- ╔═════════ HEADER ═════════╗ -->
   <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
