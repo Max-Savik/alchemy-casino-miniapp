@@ -167,12 +167,12 @@ async def sync_owned_gifts(app) -> None:
 
     try:
         og = await app.bot.get_business_account_gifts(
-            business_connection_id=BC_ID
+            business_connection_id=BUSINESS_CONNECTION_ID
         )
         merged = og.gifts                          # общий список OwnedGift
         new = 0
         for owned in merged:
-            uid = str(owned.sender_user.id) if owned.sender_user else "unknown"
+            uid = str(owned.user.id) if owned.user else "unknown"
             gifts = _gifts.setdefault(uid, [])
 
             if owned.type == "regular":
@@ -194,7 +194,7 @@ async def sync_owned_gifts(app) -> None:
                         "gift_id": gift_id,
                         "owned_id": owned_id,
                         "name": name,
-                        "ts": int(owned.send_date.timestamp() * 1000),
+                        "ts": int(owned.date.timestamp() * 1000),
                         "file_id": file_id,
                     }
                 )
