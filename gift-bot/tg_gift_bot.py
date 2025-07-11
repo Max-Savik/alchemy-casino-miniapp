@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from telegram import Update
-from typing import Optional
+from typing import Optional, Any
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -75,6 +75,12 @@ def save_gifts() -> None:
 load_gifts()
 
 # ─────────── helpers ────────────────────────────────────────────────────────
+# возвращает первое существующее поле
+def first_attr(obj: Any, *names):
+    for n in names:
+        if (v := getattr(obj, n, None)) is not None:
+            return v
+    return None
 def persist_bc_id(bc_id: str) -> None:
     """Сохраняем ID на диск, чтобы при перезапуске сразу знать его."""
     global BUSINESS_CONNECTION_ID
@@ -176,26 +182,28 @@ async def sync_owned_gifts(app) -> None:
         og = await app.bot.get_business_account_gifts(
             business_connection_id=BUSINESS_CONNECTION_ID
         )
-        merged = og.gifts                          # общий список OwnedGift
+        merged = og.gifts                          # список OwnedGift
         new = 0
         for owned in merged:
-            # Regular → from_user;  Unique → sender
-            src_user = getattr(owned, "from_user", None) or getattr(owned, "sender", None)
-            uid = str(src_user.id) if src_user else "unknown"
+            # отправитель: from_user | sender_user | user
+            sender = first_attr(owned, "from_user", "sender_user", "user")
+            uid = str(sender.id) if sender else "unknown"
             gifts = _gifts.setdefault(uid, [])
 
-            if owned.type == "regular":
+            # узнаём тип по наличию поля
+            if hasattr(owned, "gift"):            # regular
                 base = owned.gift           # Gift
-                name = base.name
-                file_id = base.sticker.file_id if base.sticker else None
-                owned_id = owned.owned_gift_id
                 gift_id = base.unique_id
-            else:                           # unique
+                file_id = base.sticker.file_id if base.sticker else None
+            else:                                 # unique
                 base = owned.unique_gift    # UniqueGift
-                name = base.name
-                file_id = base.symbol.file_id if getattr(base, "symbol", None) else None
-                owned_id = owned.owned_gift_id
                 gift_id = base.id
+                file_id = base.symbol.file_id if getattr(base, "symbol", None) else None
+
+            name      = base.name
+            owned_id  = owned.owned_gift_id
+            ts        = first_attr(owned, "date", "send_date")
+            ts_ms     = int(ts.timestamp()*1000) if ts else int(time.time()*1000)
 
             if not any(x.get("owned_id") == owned_id for x in gifts):
                 gifts.append(
@@ -203,7 +211,7 @@ async def sync_owned_gifts(app) -> None:
                         "gift_id": gift_id,
                         "owned_id": owned_id,
                         "name": name,
-                        "ts": int(owned.date.timestamp() * 1000),
+                        "ts": ts_ms,
                         "file_id": file_id,
                     }
                 )
