@@ -10,7 +10,7 @@ from telegram.ext import (
     ApplicationBuilder, MessageHandler, ContextTypes, filters
 )
 
-BOT_TOKEN  = os.getenv("BOT_TOKEN")
+BOT_TOKEN  = os.getenv("GIFTS_BOT_TOKEN")
 DATA_DIR   = Path(os.getenv("DATA_DIR", "./data"))
 GIFTS_FILE = DATA_DIR / "gifts.json"
 
