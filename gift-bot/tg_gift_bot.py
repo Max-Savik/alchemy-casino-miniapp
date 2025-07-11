@@ -116,8 +116,15 @@ async def gift_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     user_id = str(update.effective_user.id)
-    gift_id  = getattr(gift, "unique_id", None) or getattr(gift, "gift", None) and gift.gift.unique_id \
-               or f"gift-{msg.id}"
+    # ① ID подарка: у regular ⇒ gift.unique_id, у unique ⇒ gift.id
+    if hasattr(gift, "unique_id"):            # RegularGift / GiftInfo
+        gift_id = gift.unique_id
+    elif hasattr(gift, "id"):                 # UniqueGift / UniqueGiftInfo
+        gift_id = gift.id
+    elif getattr(gift, "gift", None) and hasattr(gift.gift, "unique_id"):
+        gift_id = gift.gift.unique_id         # вложенный GiftInfo
+    else:
+        gift_id = f"gift-{msg.id}"
     owned_id = getattr(gift, "owned_gift_id", None)
 
     def file_id_from_gift(g) -> Optional[str]:
@@ -172,7 +179,7 @@ async def sync_owned_gifts(app) -> None:
         merged = og.gifts                          # общий список OwnedGift
         new = 0
         for owned in merged:
-            uid = str(owned.user.id) if owned.user else "unknown"
+            uid = str(owned.from_user.id) if owned.from_user else "unknown"
             gifts = _gifts.setdefault(uid, [])
 
             if owned.type == "regular":
@@ -184,9 +191,9 @@ async def sync_owned_gifts(app) -> None:
             else:                           # unique
                 base = owned.unique_gift    # UniqueGift
                 name = base.name
-                file_id = base.symbol.file_id if base.symbol else None
+                file_id = base.symbol.file_id if getattr(base, "symbol", None) else None
                 owned_id = owned.owned_gift_id
-                gift_id = base.unique_id
+                gift_id = base.id
 
             if not any(x.get("owned_id") == owned_id for x in gifts):
                 gifts.append(
