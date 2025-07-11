@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from telegram import Update
+from typing import Optional
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -115,17 +116,33 @@ async def gift_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     user_id = str(update.effective_user.id)
-    gift_id = getattr(gift, "unique_id", None) or f"gift-{msg.id}"
+    gift_id  = getattr(gift, "unique_id", None) or getattr(gift, "gift", None) and gift.gift.unique_id \
+               or f"gift-{msg.id}"
     owned_id = getattr(gift, "owned_gift_id", None)
+
+    def file_id_from_gift(g) -> Optional[str]:
+        # GiftInfo → g.gift.sticker, UniqueGiftInfo → g.symbol
+        if getattr(g, "sticker", None):
+            return g.sticker.file_id
+        if getattr(g, "symbol", None):
+            return g.symbol.file_id
+        if getattr(g, "gift", None) and getattr(g.gift, "sticker", None):
+            return g.gift.sticker.file_id
+        return None
+
+    name = (
+        getattr(gift, "name", None)
+        or getattr(getattr(gift, "gift", None), "name", None)
+    )
 
     record = {
         "gift_id"   : gift_id,
         "owned_id"  : owned_id,
-        "name"      : getattr(gift, "name", None),
+        "name"      : name,
         "base_name" : getattr(gift, "base_name", None),
         "number"    : getattr(gift, "number", None),
         "star_count": getattr(gift, "star_count", None),
-        "file_id"   : gift.sticker.file_id if gift.sticker else None,
+        "file_id"   : file_id_from_gift(gift),
         "ts"        : int(time.time() * 1000),
     }
 
@@ -150,23 +167,35 @@ async def sync_owned_gifts(app) -> None:
 
     try:
         og = await app.bot.get_business_account_gifts(
-            business_connection_id=BUSINESS_CONNECTION_ID
+            business_connection_id=BC_ID
         )
-        merged = og.regular + og.unique
+        merged = og.gifts                          # общий список OwnedGift
         new = 0
-        for g in merged:
-            uid = str(g.user.id) if g.user else "unknown"
+        for owned in merged:
+            uid = str(owned.sender_user.id) if owned.sender_user else "unknown"
             gifts = _gifts.setdefault(uid, [])
-            if not any(x.get("owned_id") == g.owned_gift_id for x in gifts):
+
+            if owned.type == "regular":
+                base = owned.gift           # Gift
+                name = base.name
+                file_id = base.sticker.file_id if base.sticker else None
+                owned_id = owned.owned_gift_id
+                gift_id = base.unique_id
+            else:                           # unique
+                base = owned.unique_gift    # UniqueGift
+                name = base.name
+                file_id = base.symbol.file_id if base.symbol else None
+                owned_id = owned.owned_gift_id
+                gift_id = base.unique_id
+
+            if not any(x.get("owned_id") == owned_id for x in gifts):
                 gifts.append(
                     {
-                        "gift_id"  : g.gift.unique_id if g.gift else None,
-                        "owned_id" : g.owned_gift_id,
-                        "name"     : getattr(g.gift, "name", None),
-                        "ts"       : int(g.date.timestamp() * 1000),
-                        "file_id"  : g.gift.sticker.file_id
-                                     if g.gift and g.gift.sticker
-                                     else None,
+                        "gift_id": gift_id,
+                        "owned_id": owned_id,
+                        "name": name,
+                        "ts": int(owned.send_date.timestamp() * 1000),
+                        "file_id": file_id,
                     }
                 )
                 new += 1
