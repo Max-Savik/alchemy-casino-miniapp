@@ -3,7 +3,7 @@
 #  Отслеживает входящие regular/unique gifts и сохраняет их
 #  в DATA_DIR/gifts.json, которую читает Node-сервер.
 #  ENV: BOT_TOKEN, DATA_DIR (та же папка, что у Jackpot-сервера)
-import os, json, asyncio, logging, time
+import os, json, logging, time
 from pathlib import Path
 from telegram import Update
 from telegram.ext import (
@@ -69,13 +69,21 @@ async def gift_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             pass
 
 # ---------- bootstrap ---------------------------------------------------------
-async def main() -> None:
+def main() -> None:
+    """
+    Entry-point без дополнительного event-loop:
+    Application.run_polling() сам создаёт и управляет asyncio-циклом.
+    """
     if not BOT_TOKEN:
         raise RuntimeError("BOT_TOKEN env not set")
+
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.ALL, gift_received))
+
     logging.info("Gift-tracker bot started")
-    await app.run_polling()
+    # блокирующий вызов; если упадёт — Render перезапустит контейнер
+    app.run_polling(stop_signals=None)
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
