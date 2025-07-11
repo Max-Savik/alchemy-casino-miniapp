@@ -179,7 +179,9 @@ async def sync_owned_gifts(app) -> None:
         merged = og.gifts                          # общий список OwnedGift
         new = 0
         for owned in merged:
-            uid = str(owned.from_user.id) if owned.from_user else "unknown"
+            # Regular → from_user;  Unique → sender
+            src_user = getattr(owned, "from_user", None) or getattr(owned, "sender", None)
+            uid = str(src_user.id) if src_user else "unknown"
             gifts = _gifts.setdefault(uid, [])
 
             if owned.type == "regular":
