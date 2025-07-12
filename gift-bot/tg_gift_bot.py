@@ -40,16 +40,25 @@ async def on_update(upd: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 # ---------- getBusinessConnections Fallback -------------------------------
 async def fetch_bc_via_rest(app) -> None:
+    """
+    Для PTB 22: делаем сырой POST к Bot API.
+    Ответ формата:
+      { "ok":true,
+        "result":[ { "id":"XXXX", "user":{…}, "is_enabled":true, … } ] }
+    """
     if BUSINESS_CONNECTION_ID:
-        return                     # уже есть
+        return
     try:
-        conns = await app.bot.get_business_connections()
+        resp: dict = await app.bot.request.post(
+            "getBusinessConnections", data={}
+        )
+        conns = resp.get("result", [])
         if conns:
-            save_bc_id(conns[0].id)
+            save_bc_id(conns[0]["id"])
         else:
             log.warning("getBusinessConnections → 0 results")
     except Exception as e:
-        log.error("getBusinessConnections failed: %s", e)
+        log.error("getBusinessConnections failed (raw): %s", e)
 
 # ---------- bootstrap -----------------------------------------------------
 def main() -> None:
