@@ -49,9 +49,7 @@ async def fetch_bc_via_rest(app) -> None:
     if BUSINESS_CONNECTION_ID:
         return
     try:
-        resp: dict = await app.bot.request.post(
-            "getBusinessConnections", data={}
-        )
+        resp: dict = await app.bot.request.post("getBusinessConnections")
         conns = resp.get("result", [])
         if conns:
             save_bc_id(conns[0]["id"])
