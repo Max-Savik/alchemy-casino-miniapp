@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, TypeHandler
 
-BOTПАЛАМАЛ_TOKEN = os.getenv("GIFTS_BOT_TOKEN")
+BOT_TOKEN = os.getenv("GIFTS_BOT_TOKEN")
 DATA_DIR  = Path(os.getenv("DATA_DIR", "./data"))
 DATA_DIR.mkdir(exist_ok=True, parents=True)
 GIFTS_JSON = DATA_DIR / "gifts.json"
