@@ -143,13 +143,13 @@ def main() -> None:
     # *** КЛЮЧЕВОЕ *** – просим бизнес-апдейты тоже
     app.run_polling(
         stop_signals=None,
+        drop_pending_updates=True,          # ← СБРОС offset'а на старте
         allowed_updates=[
-            "message",               # обычные Message
-            "business_message",      # ⬅ подарки приходят здесь
-            "business_connection",   # ⬅ первый апдейт даёт BC-ID
+            "message",
+            "business_message",
+            "business_connection",
         ],
     )
-
 
 if __name__ == "__main__":
     main()
