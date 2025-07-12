@@ -10,7 +10,8 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, TypeHandler
 
 BOT_TOKEN = os.getenv("GIFTS_BOT_TOKEN")
-DATA_DIR  = Path(os.getenv("DATA_DIR", "./data")); DATA_DIR.mkdir(exist_ok=True)
+DATA_DIR  = Path(os.getenv("DATA_DIR", "./data"))
+DATA_DIR.mkdir(exist_ok=True, parents=True)
 GIFTS_JSON = DATA_DIR / "gifts.json"
 BC_FILE    = DATA_DIR / "bc_id.txt"
 
@@ -57,7 +58,12 @@ def main() -> None:
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(TypeHandler(Update, on_update))
-    app.post_init = lambda a,*_: asyncio.create_task(fetch_bc_via_rest(a))
+
+    # post_init должен быть КОРУТИНА – run_polling сам её Await-ит
+    async def _post_init(application, *_):
+        await fetch_bc_via_rest(application)
+
+    app.post_init = _post_init
 
     log.info("startup (BC-ID=%s)", BUSINESS_CONNECTION_ID or "—")
     app.run_polling(stop_signals=None)
