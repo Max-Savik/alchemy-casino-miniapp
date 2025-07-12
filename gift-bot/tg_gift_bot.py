@@ -138,8 +138,17 @@ def main() -> None:
 
     app.post_init = _post_init
 
-    log.info("DEBUG gift-bot started (BC_ID=%s)", BUSINESS_CONNECTION_ID or "—")
-    app.run_polling(stop_signals=None)   # no allowed_updates → ВСЕ апдейты
+    log.info("gift-bot started (BC_ID=%s)", BUSINESS_CONNECTION_ID or "—")
+
+    # *** КЛЮЧЕВОЕ *** – просим бизнес-апдейты тоже
+    app.run_polling(
+        stop_signals=None,
+        allowed_updates=[
+            "message",               # обычные Message
+            "business_message",      # ⬅ подарки приходят здесь
+            "business_connection",   # ⬅ первый апдейт даёт BC-ID
+        ],
+    )
 
 
 if __name__ == "__main__":
