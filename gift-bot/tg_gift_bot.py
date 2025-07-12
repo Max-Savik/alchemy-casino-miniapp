@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 # ────────────────────────────────────────────────────────────────────────────
-#  tg_gift_bot.py ― Gift-tracker для Telegram-Business-аккаунта
+#  tg_gift_bot.py  –  Gift-tracker для Telegram-Business-аккаунта
 #  --------------------------------------------------------------------------
-#  • Ловит входящие regular / unique gifts в управляемом бизнес-аккаунте.
-#  • Поддерживает двухстороннюю синхронизацию:
-#      ① real-time через сервис-сообщения;
-#      ② раз в 60 с ― запросом getBusinessAccountGifts, чтобы «догнать»
-#         подарки, полученные, пока бот был оффлайн.
-#  • Хранит данные в  JSON-файле  DATA_DIR/gifts.json  (читается Node-сервером)
-#    и кеширует business_connection_id в  DATA_DIR/bc_id.txt .
+#  • Ловит входящие regular / unique gifts (service-messages) в Business-акке.
+#  • Раз в 60 с делает getBusinessAccountGifts → ничего не потеряется,
+#    даже если бот был оффлайн и сервис-сообщение не пришло.
+#  • Пишет всё в  DATA_DIR/gifts.json   (читает Node-бекенд)
+#    и хранит business_connection_id в  DATA_DIR/bc_id.txt .
 #
 #  ENV:
-#      GIFTS_BOT_TOKEN          токен BotFather (Business Mode ON)
-#      DATA_DIR=/data           общий persist-диск (как у Jackpot-сервера)
-#      BUSINESS_CONNECTION_ID   (необяз.) можно задать вручную
-# ---------------------------------------------------------------------------
-#  Требования: python-telegram-bot >= 22.1
+#     GIFTS_BOT_TOKEN          токен BotFather (Business Mode = ON)
+#     DATA_DIR=/data           тот же persist-диск, что у Jackpot-сервера
+#     BUSINESS_CONNECTION_ID   (optional)  если хотите задать вручную
+#
+#  pip install  "python-telegram-bot[job-queue]>=22.2"
 # ---------------------------------------------------------------------------
 
 import asyncio
@@ -24,10 +22,9 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from telegram import Update
-from typing import Optional
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -36,14 +33,13 @@ from telegram.ext import (
 )
 
 # ─────────── конфиг ─────────────────────────────────────────────────────────
-BOT_TOKEN = os.getenv("GIFTS_BOT_TOKEN")           # MUST-HAVE
+BOT_TOKEN = os.getenv("GIFTS_BOT_TOKEN")           # ‼️ обязательно
 DATA_DIR = Path(os.getenv("DATA_DIR", "./data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 GIFTS_PATH = DATA_DIR / "gifts.json"
-BC_PATH = DATA_DIR / "bc_id.txt"                   # кешируем ID сюда
+BC_PATH    = DATA_DIR / "bc_id.txt"                # кешируем BC-ID
 
-# env-override (если задали вручную)
 BUSINESS_CONNECTION_ID: str | None = os.getenv("BUSINESS_CONNECTION_ID") or None
 
 # ─────────── логирование ────────────────────────────────────────────────────
@@ -53,19 +49,19 @@ logging.basicConfig(
 )
 log = logging.getLogger("gift-bot")
 
-# ─────────── in-memory хранилище ────────────────────────────────────────────
-_gifts: Dict[str, List[dict]] = {}                 # { user_id: [gift,…] }
+# ─────────── in-memory база ────────────────────────────────────────────────
+_gifts: Dict[str, List[dict]] = {}                 # { user_id : [ gifts ] }
 
 def load_gifts() -> None:
     global _gifts
     try:
         _gifts = json.loads(GIFTS_PATH.read_text("utf-8"))
-        log.info("Loaded %d users with gifts", len(_gifts))
     except FileNotFoundError:
         _gifts = {}
     except Exception as e:
         log.exception("Can't read %s: %s", GIFTS_PATH, e)
         _gifts = {}
+    log.info("Loaded %d users with gifts", len(_gifts))
 
 def save_gifts() -> None:
     tmp = GIFTS_PATH.with_suffix(".tmp")
@@ -76,33 +72,47 @@ load_gifts()
 
 # ─────────── helpers ────────────────────────────────────────────────────────
 def persist_bc_id(bc_id: str) -> None:
-    """Сохраняем ID на диск, чтобы при перезапуске сразу знать его."""
+    """Запоминаем business_connection_id."""
     global BUSINESS_CONNECTION_ID
     if BUSINESS_CONNECTION_ID:
-        return                       # уже был
+        return
     BUSINESS_CONNECTION_ID = bc_id
     try:
         BC_PATH.write_text(bc_id)
-        log.info("Captured BUSINESS_CONNECTION_ID = %s", bc_id)
     except Exception as e:
         log.warning("Can't write bc_id.txt: %s", e)
+    log.info("Captured BUSINESS_CONNECTION_ID → %s", bc_id)
 
-# при старте ─ пробуем прочитать сохранённое значение
 if not BUSINESS_CONNECTION_ID and BC_PATH.exists():
     BUSINESS_CONNECTION_ID = BC_PATH.read_text().strip() or None
     if BUSINESS_CONNECTION_ID:
         log.info("Loaded BUSINESS_CONNECTION_ID from file")
 
-# ─────────── main handlers ──────────────────────────────────────────────────
+# ---------------------------------------------------------------------------#
+#                                HANDLERS                                    #
+# ---------------------------------------------------------------------------#
+def file_id_from_gift(obj) -> Optional[str]:
+    """
+    • regular → obj.sticker.file_id
+    • unique  → obj.symbol.file_id
+    """
+    if getattr(obj, "sticker", None):
+        return obj.sticker.file_id
+    if getattr(obj, "symbol", None):
+        return obj.symbol.file_id
+    if getattr(obj, "gift", None) and getattr(obj.gift, "sticker", None):
+        return obj.gift.sticker.file_id
+    return None
+
 async def gift_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Обрабатывает любое сообщение, ловим:
-      • Gift / UniqueGift  → сохраняем в JSON;
-      • business_connection_id        → кешируем.
+    Обрабатывает все сообщения:
+      1) Вытаскивает business_connection_id.
+      2) Если это gift / unique_gift → добавляет запись.
     """
     msg = update.effective_message
 
-    # 1) авто-детект business_connection_id
+    # авто-детект Business-connection
     bc_in_msg = getattr(msg, "business_connection_id", None)
     bc_in_upd = getattr(update, "business_connection", None)
     if bc_in_msg:
@@ -110,127 +120,113 @@ async def gift_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     elif bc_in_upd:
         persist_bc_id(bc_in_upd.id)
 
-    # 2) обрабатываем подарок
     gift = getattr(msg, "unique_gift", None) or getattr(msg, "gift", None)
     if not gift:
-        return
+        return                                    # не подарок → выходим
 
     user_id = str(update.effective_user.id)
-    # ① ID подарка: у regular ⇒ gift.unique_id, у unique ⇒ gift.id
-    if hasattr(gift, "unique_id"):            # RegularGift / GiftInfo
+
+    # ID подарка
+    if hasattr(gift, "unique_id"):                # regular gift
         gift_id = gift.unique_id
-    elif hasattr(gift, "id"):                 # UniqueGift / UniqueGiftInfo
+    elif hasattr(gift, "id"):                     # unique gift
         gift_id = gift.id
-    elif getattr(gift, "gift", None) and hasattr(gift.gift, "unique_id"):
-        gift_id = gift.gift.unique_id         # вложенный GiftInfo
+    elif getattr(gift, "gift", None):
+        gift_id = gift.gift.unique_id
     else:
         gift_id = f"gift-{msg.id}"
+
     owned_id = getattr(gift, "owned_gift_id", None)
-
-    def file_id_from_gift(g) -> Optional[str]:
-        # GiftInfo → g.gift.sticker, UniqueGiftInfo → g.symbol
-        if getattr(g, "sticker", None):
-            return g.sticker.file_id
-        if getattr(g, "symbol", None):
-            return g.symbol.file_id
-        if getattr(g, "gift", None) and getattr(g.gift, "sticker", None):
-            return g.gift.sticker.file_id
-        return None
-
-    name = (
-        getattr(gift, "name", None)
-        or getattr(getattr(gift, "gift", None), "name", None)
-    )
 
     record = {
         "gift_id"   : gift_id,
         "owned_id"  : owned_id,
-        "name"      : name,
-        "base_name" : getattr(gift, "base_name", None),
-        "number"    : getattr(gift, "number", None),
-        "star_count": getattr(gift, "star_count", None),
-        "file_id"   : file_id_from_gift(gift),
+        "name"      : getattr(gift, "name", None)
+                      or getattr(getattr(gift, "gift", None), "name", None),
         "ts"        : int(time.time() * 1000),
+        "file_id"   : file_id_from_gift(gift),
     }
 
     gifts = _gifts.setdefault(user_id, [])
-    if not any(g.get("owned_id") == owned_id for g in gifts):
+    if not any(g["owned_id"] == owned_id for g in gifts):
         gifts.append(record)
         save_gifts()
-        log.info("User %s obtained gift %s", user_id, record["name"])
-        try:
-            await msg.reply_text("Подарок сохранён ✅", quote=False)
-        except Exception:
-            pass
+        log.info("▶ saved realtime gift (uid=%s, id=%s)", user_id, gift_id)
 
-# ─────────── periodic sync ─────────────────────────────────────────────────
+# ---------------------------------------------------------------------------#
+#                               SYNC LOOP                                    #
+# ---------------------------------------------------------------------------#
 async def sync_owned_gifts(app) -> None:
     """
-    Раз в 60 с опрашиваем getBusinessAccountGifts.
-    Позволяет увидеть всё, что пришло, пока бот был оффлайн.
+    Раз в минуту опрашиваем getBusinessAccountGifts – дособираем «потерянные»
+    подарки.  Ограничений по количеству ответ даёт до 1000 предметов.
     """
     if not BUSINESS_CONNECTION_ID:
-        return  # ждём, пока поймаем ID
+        return
 
     try:
         og = await app.bot.get_business_account_gifts(
             business_connection_id=BUSINESS_CONNECTION_ID
         )
-        merged = og.gifts                          # общий список OwnedGift
-        new = 0
+        merged = og.gifts or []                   # список OwnedGift*
+        new_cnt = 0
+
         for owned in merged:
+            # user может быть None, если подарили анонимно
             uid = str(owned.from_user.id) if owned.from_user else "unknown"
             gifts = _gifts.setdefault(uid, [])
 
-            if owned.type == "regular":
-                base = owned.gift           # Gift
-                name = base.name
-                file_id = base.sticker.file_id if base.sticker else None
-                owned_id = owned.owned_gift_id
-                gift_id = base.unique_id
-            else:                           # unique
-                base = owned.unique_gift    # UniqueGift
-                name = base.name
-                file_id = base.symbol.file_id if getattr(base, "symbol", None) else None
-                owned_id = owned.owned_gift_id
-                gift_id = base.id
+            if owned.gift:                        # regular
+                ginfo = owned.gift
+                gift_id  = ginfo.unique_id
+                file_id  = ginfo.sticker.file_id if ginfo.sticker else None
+            else:                                 # unique
+                ginfo = owned.unique_gift
+                gift_id = ginfo.id
+                file_id = ginfo.symbol.file_id if ginfo.symbol else None
 
-            if not any(x.get("owned_id") == owned_id for x in gifts):
-                gifts.append(
-                    {
-                        "gift_id": gift_id,
-                        "owned_id": owned_id,
-                        "name": name,
-                        "ts": int(owned.date.timestamp() * 1000),
-                        "file_id": file_id,
-                    }
-                )
-                new += 1
-        if new:
+            rec = {
+                "gift_id"  : gift_id,
+                "owned_id" : owned.owned_gift_id,
+                "name"     : ginfo.name,
+                "ts"       : owned.date * 1000,   # API выдаёт Unix-time (сек.)
+                "file_id"  : file_id,
+            }
+
+            if not any(x["owned_id"] == rec["owned_id"] for x in gifts):
+                gifts.append(rec)
+                new_cnt += 1
+
+        if new_cnt:
             save_gifts()
-            log.info("Synced %+d gifts from business account", new)
-    except Exception as e:
-        log.exception("getBusinessAccountGifts failed: %s", e)
+            log.info("⬆ synced %d gifts via getBusinessAccountGifts", new_cnt)
 
-# ─────────── bootstrap ─────────────────────────────────────────────────────
+    except Exception as e:
+        log.exception("sync error: %s", e)
+
+# ---------------------------------------------------------------------------#
+#                                 BOOTSTRAP                                  #
+# ---------------------------------------------------------------------------#
 def main() -> None:
     if not BOT_TOKEN:
-        raise RuntimeError("GIFTS_BOT_TOKEN env not set")
+        raise RuntimeError("GIFTS_BOT_TOKEN env missing")
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    # global catch-all: получаем все типы сообщений
+    #   получаем все апдейты (service-messages тоже «messages»)
     app.add_handler(MessageHandler(filters.ALL, gift_received))
 
-    # периодический sync (каждые 60 с)
-    app.job_queue.run_repeating(
-        lambda *_: asyncio.create_task(sync_owned_gifts(app)),
-        interval=60,
-        first=10,
-    )
+    #   периодический sync (каждые 60 с)
+    if app.job_queue:
+        app.job_queue.run_repeating(
+            lambda *_: asyncio.create_task(sync_owned_gifts(app)),
+            interval=60,
+            first=10,
+        )
+    else:
+        log.warning("JobQueue not available – background sync disabled")
 
-    log.info("Gift-tracker bot started (BC_ID=%s)", BUSINESS_CONNECTION_ID or "—")
-    # блокирующий вызов; если упадёт — оркестратор перезапустит контейнер
+    log.info("Started  (BC_ID = %s)", BUSINESS_CONNECTION_ID or "—")
     app.run_polling(stop_signals=None)
 
 if __name__ == "__main__":
