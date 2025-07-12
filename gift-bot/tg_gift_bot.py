@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
-# tg_gift_bot.py — Gift-tracker для бизнес-аккаунта
-# pip install "python-telegram-bot[job-queue]>=22.2"
+# tg_gift_bot.py — Gift-tracker c DEBUG-логами
+# ------------------------------------------------------------------
+#  • Пишет все raw Update-ы в data/updates.log
+#  • Если бизнес-апдейты реально приходят — увидите их целиком.
+#  • После запуска делает один getBusinessAccountGifts и пишет,
+#    сколько позиций вернул сервер.
+#
+#  ENV:  GIFTS_BOT_TOKEN  ·  DATA_DIR=/data
+# ------------------------------------------------------------------
 
 import asyncio, json, logging, os, time
 from pathlib import Path
@@ -9,21 +16,24 @@ from typing import Dict, List, Optional
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, TypeHandler
 
-# ─── ENV / paths ───────────────────────────────────────────────────────────
+# ───── конфиг ──────────────────────────────────────────────────────────────
 BOT_TOKEN = os.getenv("GIFTS_BOT_TOKEN")
 DATA_DIR  = Path(os.getenv("DATA_DIR", "./data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-GIFTS_JSON = DATA_DIR / "gifts.json"
-BC_FILE    = DATA_DIR / "bc_id.txt"
+GIFTS_JSON  = DATA_DIR / "gifts.json"
+UPD_LOG     = DATA_DIR / "updates.log"
+BC_FILE     = DATA_DIR / "bc_id.txt"
 BUSINESS_CONNECTION_ID: str | None = os.getenv("BUSINESS_CONNECTION_ID") or None
 
-# ─── logging ───────────────────────────────────────────────────────────────
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s %(levelname)s %(message)s")
+# ───── логирование ─────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.DEBUG,                       # ← DEBUG
+    format="%(asctime)s %(levelname)s %(name)s:%(lineno)d  %(message)s",
+)
 log = logging.getLogger("gift-bot")
 
-# ─── runtime storage ───────────────────────────────────────────────────────
+# ───── runtime-база ────────────────────────────────────────────────────────
 _gifts: Dict[str, List[dict]] = {}
 if GIFTS_JSON.exists():
     try:
@@ -36,7 +46,7 @@ def save_gifts() -> None:
     tmp.write_text(json.dumps(_gifts, ensure_ascii=False, indent=2))
     tmp.replace(GIFTS_JSON)
 
-# ─── helpers ───────────────────────────────────────────────────────────────
+# ───── helpers ─────────────────────────────────────────────────────────────
 def remember_bc_id(bc: str) -> None:
     global BUSINESS_CONNECTION_ID
     if BUSINESS_CONNECTION_ID:
@@ -49,30 +59,31 @@ if not BUSINESS_CONNECTION_ID and BC_FILE.exists():
     BUSINESS_CONNECTION_ID = BC_FILE.read_text().strip() or None
 
 def file_id_from(obj) -> Optional[str]:
-    return (
-        getattr(obj, "sticker", None) and obj.sticker.file_id
-        or getattr(obj, "symbol",  None) and obj.symbol.file_id
+    if getattr(obj, "sticker", None):
+        return obj.sticker.file_id
+    if getattr(obj, "symbol", None):
+        return obj.symbol.file_id
+    return None
+
+# ───── главный handler ─────────────────────────────────────────────────────
+async def on_update(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    # пишем raw-update в файл (одна строка = один update)
+    UPD_LOG.write_text(
+        json.dumps(update.to_dict(), ensure_ascii=False) + "\n",
+        encoding="utf-8",
+        mode="a",
     )
 
-# ─── main update handler ───────────────────────────────────────────────────
-async def on_update(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Ловим ВСЕ Update-ы и выдёргиваем подарки."""
-
-    # 1️⃣  Business-connection ID
+    # коллектим BC-ID (на всякий случай)
     if update.business_connection:
         remember_bc_id(update.business_connection.id)
+    if update.business_message:
+        remember_bc_id(update.business_message.business_connection_id)
 
-    # 2️⃣  Сообщения бизнес-аккаунта (plural!)
-    biz_msgs = getattr(update, "business_messages", None)
-    if biz_msgs:                                 # список Message
-        for m in biz_msgs:
-            await handle_message(m)
-
-    # 3️⃣  Обычные личные сообщения (если разрешены privacy-настройками)
-    if update.message:
-        await handle_message(update.message)
-
-async def handle_message(msg) -> None:
+    # проверяем, не подарок ли
+    msg = update.message or update.business_message
+    if not msg:
+        return
     gift = getattr(msg, "unique_gift", None) or getattr(msg, "gift", None)
     if not gift:
         return
@@ -81,63 +92,36 @@ async def handle_message(msg) -> None:
     owned_id = getattr(gift, "owned_gift_id", None)
     gift_id  = getattr(gift, "unique_id", None) or getattr(gift, "id", None)
 
-    entry = {
+    if not gift_id:
+        gift_id = f"gift-{msg.message_id}"
+
+    rec = {
         "gift_id":  gift_id,
         "owned_id": owned_id,
         "name":     getattr(gift, "name", None),
-        "ts":       int(time.time() * 1000),
+        "ts":       int(time.time()*1000),
         "file_id":  file_id_from(gift),
     }
 
-    lst = _gifts.setdefault(uid, [])
-    if not any(x["owned_id"] == owned_id for x in lst):
-        lst.append(entry)
+    if not any(x["owned_id"] == owned_id for x in _gifts.setdefault(uid, [])):
+        _gifts[uid].append(rec)
         save_gifts()
-        log.info("▶ realtime gift (uid=%s id=%s)", uid, gift_id)
+        log.info("saved realtime gift (uid=%s id=%s)", uid, gift_id)
 
-# ─── periodic REST sync ────────────────────────────────────────────────────
-async def sync_gifts(app) -> None:
+# ───── тестовый REST-запрос сразу после старта ─────────────────────────────
+async def initial_check(app) -> None:
     if not BUSINESS_CONNECTION_ID:
+        log.warning("initial_check: BC_ID unknown")
         return
     try:
-        og = await app.bot.get_business_account_gifts(
-            business_connection_id=BUSINESS_CONNECTION_ID, limit=1000
+        data = await app.bot.get_business_account_gifts(
+            business_connection_id=BUSINESS_CONNECTION_ID, limit=10
         )
-        added = 0
-        for owned in og.gifts or []:
-            uid   = str(getattr(owned.from_user, "id", "unknown"))
-            lst   = _gifts.setdefault(uid, [])
-            if any(x["owned_id"] == owned.owned_gift_id for x in lst):
-                continue
-
-            if owned.gift:                       # regular
-                g = owned.gift
-                gift_id = g.unique_id
-                name    = g.name
-                file_id = g.sticker.file_id if g.sticker else None
-            else:                                # unique
-                g = owned.unique_gift
-                gift_id = g.id
-                name    = g.name
-                file_id = g.symbol.file_id if g.symbol else None
-
-            lst.append({
-                "gift_id":  gift_id,
-                "owned_id": owned.owned_gift_id,
-                "name":     name,
-                "ts":       owned.date * 1000,
-                "file_id":  file_id,
-            })
-            added += 1
-
-        if added:
-            save_gifts()
-            log.info("⬆ synced %d gifts via REST", added)
-
+        log.info("initial_check: TonCenter returned %d items", len(data.gifts or []))
     except Exception as e:
-        log.exception("sync error: %s", e)
+        log.exception("initial_check error: %s", e)
 
-# ─── bootstrap ─────────────────────────────────────────────────────────────
+# ───── bootstrap ───────────────────────────────────────────────────────────
 def main() -> None:
     if not BOT_TOKEN:
         raise SystemExit("GIFTS_BOT_TOKEN env missing")
@@ -145,15 +129,11 @@ def main() -> None:
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(TypeHandler(Update, on_update))
 
-    # фоновой REST-синк
-    app.job_queue.run_repeating(
-        lambda *_: asyncio.create_task(sync_gifts(app)),
-        interval=60, first=10,
-    )
+    # один раз после запуска
+    app.post_init = lambda _app, *_: asyncio.create_task(initial_check(_app))
 
-    log.info("gift-bot started (BC_ID=%s)", BUSINESS_CONNECTION_ID or "—")
-    # ⚠️  allowed_updates НЕ задаём → Telegram шлёт все типы, в т.ч. business_messages
-    app.run_polling(stop_signals=None)
+    log.info("DEBUG gift-bot started (BC_ID=%s)", BUSINESS_CONNECTION_ID or "—")
+    app.run_polling(stop_signals=None)           # no allowed_updates → ВСЁ
 
 if __name__ == "__main__":
     main()
