@@ -8,7 +8,7 @@ node server/server.js &
 NODE_PID=$!
 
 # 2. Gift-бот
-python gift-bot/tg_gift_bot.py &
+python gift-bot/gifts_holder.py &
 PY_PID=$!
 
 # 3. Ждём завершения ЛЮБОГО
