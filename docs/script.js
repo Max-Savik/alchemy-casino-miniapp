@@ -657,6 +657,24 @@ async function ensureJwt() {
 (async () => {
   await ensureJwt();
 
+  /* 1) Забираем реальные подарки после логина */
+  try {
+    const res = await fetch(`${API_ORIGIN}/wallet/gifts`, {
+      credentials: "include",
+      headers: jwtToken ? { "Authorization": "Bearer " + jwtToken } : {}
+    });
+    const giftArr = await res.json();
+    inventory.push(
+      ...giftArr.map(g => ({
+        id: g.ownedId,
+        name: g.name,
+        price: g.price,
+        img: g.img,
+        staked: false
+      }))
+    );
+  } catch (e) { console.warn("Gift fetch error", e); }                                  
+
   const token = (document.cookie.split("; ")
       .find(c => c.startsWith("sid=")) || "")
       .split("=")[1] || jwtToken;
