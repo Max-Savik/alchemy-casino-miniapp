@@ -88,9 +88,11 @@ const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
 const WD_FILE       = path.join(DATA_DIR, "withdrawals.json"); 
+const GIFTS_FILE    = path.join(DATA_DIR, "gifts.json"); 
 const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
 const DEPOSIT_LIMIT = Number(process.env.DEPOSIT_LIMIT || 100);
 let addrMap = {};           // { [userId]: "EQB…" }
+let gifts   = [];           // { gid, ownedId, name, price, img, ownerId, staked }
 
 if (!DEPOSIT_ADDR) throw new Error("DEPOSIT_ADDR not set");
 
@@ -207,6 +209,16 @@ async function saveWithdrawals() {
   await fs.writeFile(tmp, JSON.stringify(withdrawals, null, 2));
   await fs.rename(tmp, WD_FILE); 
 }   
+// ---------- GIFTS ----------
+async function loadGifts() {
+  try { gifts = JSON.parse(await fs.readFile(GIFTS_FILE, "utf8")); }
+  catch (e) { if (e.code !== "ENOENT") console.error(e); gifts = []; }
+}
+async function saveGifts() {
+  const tmp = GIFTS_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(gifts, null, 2));
+  await fs.rename(tmp, GIFTS_FILE);
+}
 const wallet = express.Router();
 wallet.use(apiLimiter, userAuth);   // защита и для JWT-роутов
 
@@ -214,6 +226,11 @@ wallet.use(apiLimiter, userAuth);   // защита и для JWT-роутов
 wallet.get("/balance", (req, res) => {
   const bal = balances[req.userId] || 0;
   res.json({ balance: bal });
+});
+
+/* GET /wallet/gifts  — список НЕ поставленных подарков */
+wallet.get("/gifts", (req, res) => {
+  res.json(gifts.filter(g => g.ownerId === req.userId && !g.staked));
 });
 
 /* POST /wallet/withdraw { userId, amount } */
@@ -353,6 +370,15 @@ app.post("/auth/login", (req, res) => {
 });
 app.get("/history", (req, res) => res.json(history));
 app.use("/wallet", wallet);
+// === INTERNAL: получить новый подарок ===
+app.post("/internal/receiveGift", adminAuth, async (req, res) => {
+  const { gid, ownedId, name, price, img, ownerId } = req.body || {};
+  if (!gid || !ownedId || !ownerId) return res.status(400).json({ error: "bad gift" });
+  if (gifts.some(g => g.ownedId === ownedId)) return res.json({ ok: true }); // дубль
+  gifts.push({ gid, ownedId, name, price, img, ownerId, staked: false });
+  await saveGifts();
+  res.json({ ok: true });
+});
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -609,6 +635,14 @@ socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
       price: tonAmount
     });
   }
+  // 1) Берём подарки из серверного хранилища ---------------------
+  nfts = nfts.map(obj => {
+    const g = gifts.find(x => x.ownedId === obj.id && x.ownerId === userId && !x.staked);
+    if (g) { g.staked = true; }           // помечаем занятыми
+    return obj;
+  });
+  await saveGifts();
+
   let player = game.players.find(p => p.userId === userId);
   if (!player) {
     player = {
@@ -825,6 +859,7 @@ async function processWithdrawals() {
   await loadTx();
   await loadAddr();
   await loadWithdrawals();
+  await loadGifts(); 
   resetRound();      
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
