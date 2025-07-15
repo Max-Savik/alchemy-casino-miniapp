@@ -32,7 +32,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // ───────────────────────── Config & Disk ─────────────────────────
 const PORT      = process.env.PORT || 3000;
 const DATA_DIR  = process.env.DATA_DIR || "/data";  // ← mountPath in Render disk
-const GIFTS_FILE = path.join(DATA_DIR, "gifts.json");
 const DEPOSIT_ADDR   = process.env.DEPOSIT_ADDR;
 const TON_API        = process.env.TONCENTER_API || "https://toncenter.com/api/v2/";
 const TON_API_KEY    = process.env.TONCENTER_KEY || "";
@@ -157,16 +156,6 @@ async function saveHistory() {
 
 // ─────────────── BALANCES helpers ─────────────── ➋
 let balances = {};          // { [userId]: number }
-// ─────────────── GIFTS helpers ───────────────
-let gifts = {};              // { [userId]: [ {gift_id, owned_id, …}, … ] }
-async function loadGifts() {
-  try {
-    Object.assign(gifts, JSON.parse(await fs.readFile(GIFTS_FILE, "utf8")));
-    console.log("Loaded gifts:", Object.keys(gifts).length, "users with gifts");
-  } catch (e) {
-    if (e.code !== "ENOENT") console.error("Gifts read error:", e);
-  }
-}
 async function loadBalances() {
   try {
     const txt  = await fs.readFile(BALANCES_FILE, "utf8");
@@ -225,11 +214,6 @@ wallet.use(apiLimiter, userAuth);   // защита и для JWT-роутов
 wallet.get("/balance", (req, res) => {
   const bal = balances[req.userId] || 0;
   res.json({ balance: bal });
-});
-
-/* GET /wallet/gifts → список всех подарков пользователя */
-wallet.get("/gifts", (req, res) => {
-  res.json(gifts[req.userId] || []);
 });
 
 /* POST /wallet/withdraw { userId, amount } */
@@ -838,12 +822,10 @@ async function processWithdrawals() {
 (async () => {
   await loadHistory();
   await loadBalances();
-  await loadGifts();
   await loadTx();
   await loadAddr();
   await loadWithdrawals();
   resetRound();      
-  setInterval(loadGifts, 20_000);
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
