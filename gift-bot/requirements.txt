@@ -1,2 +1,0 @@
-python-telegram-bot[job-queue]==22.2
-python-dotenv>=1.0
