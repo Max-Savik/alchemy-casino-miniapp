@@ -513,6 +513,32 @@ function makeNFTIcon(nftObj) {
   `;
   wrapper.appendChild(priceBadge);
 
+  /* === кнопка «Вывести» (если не staked) === */
+  if (!nftObj.staked) {
+    const btn = document.createElement("button");
+    btn.className =
+      "absolute top-0 right-0 text-[10px] bg-amber-600/90 hover:bg-amber-500 px-1 rounded-bl";
+    btn.textContent = "⇄";
+    btn.title = "Вывести";
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      try {
+        const r = await postJSON(`${API_ORIGIN}/wallet/withdrawGift`, {
+          ownedId: nftObj.id,
+        });
+        /* открываем инвойс Stars */
+        if (window.Telegram?.WebApp?.openInvoice) {
+          Telegram.WebApp.openInvoice(r.link);
+        } else {
+          window.open(r.link, "_blank");
+        }
+      } catch (err) {
+        alert("Ошибка: " + err.message);
+      }
+    };
+    wrapper.appendChild(btn);
+  }
+
 wrapper.addEventListener('click', () => {
     // 1) Скрыть все другие
     document.querySelectorAll('.nft-icon.expanded').forEach(el => {
