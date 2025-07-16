@@ -372,6 +372,13 @@ function renderProfile() {
     const extra = n.staked ? 'staked' : '';
     grid.insertAdjacentHTML('beforeend', cardHTML(n, extra));
   });
+  if (!n.staked) {
+  const btn = document.createElement('button');
+  btn.textContent = 'Вывести';
+  btn.className = 'withdraw-btn';
+  btn.onclick = () => withdrawGift(n.id);
+  card.appendChild(btn);
+}
 }
 
 function drawWheel() {
@@ -787,6 +794,18 @@ function updateStatus(sec = null){
   } else if (phase === "spinning"){
     statusEl.textContent = "Игра началась!";
   }
+}
+
+
+async function withdrawGift(ownedId){
+  try{
+    const r = await postJSON(`${API_ORIGIN}/wallet/withdrawGift/create`, { ownedId });
+    Telegram.WebApp.openInvoice(r.invoiceSlug, (status)=>{
+      if(status==='paid'){
+         alert('Запрос на вывод получен! Передача подарка займёт ≤1 мин.');
+      }
+    });
+  }catch(e){ alert(e.message); }
 }
 
 // =================== PICKER & BET ===================
