@@ -752,3 +752,11 @@ input[type=range]::-moz-range-thumb {
   0%   { opacity:.35; transform:scale(.85); }
   100% { opacity:1;   transform:scale(1);   }
 }
+
+/* новая кнопка */
+.withdraw-btn {
+  box-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.withdraw-btn:disabled {
+  opacity:.55; cursor:not-allowed;
+}
