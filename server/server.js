@@ -89,6 +89,15 @@ const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
 const WD_FILE       = path.join(DATA_DIR, "withdrawals.json"); 
 const GIFTS_FILE    = path.join(DATA_DIR, "gifts.json"); 
+
+/* === 25 Stars за вывод подарка === */
+const STARS_PRICE      = 25;               // фикс цена
+const BOT_TOKEN        = process.env.APP_BOT_TOKEN;   // тот же, что у листенера
+if (!BOT_TOKEN) throw new Error("APP_BOT_TOKEN not set");
+
+/* для createInvoiceLink */
+const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`
+
 const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
 const DEPOSIT_LIMIT = Number(process.env.DEPOSIT_LIMIT || 100);
 let addrMap = {};           // { [userId]: "EQB…" }
@@ -233,6 +242,42 @@ wallet.get("/gifts", (req, res) => {
   res.json(gifts.filter(g => g.ownerId === req.userId && !g.staked));
 });
 
+/* POST /wallet/withdrawGift { ownedId } ➋ */
+wallet.post("/withdrawGift", async (req, res) => {
+  const { ownedId } = req.body || {};
+  const gift = gifts.find(
+    g => g.ownedId === ownedId && g.ownerId === req.userId && !g.staked
+  );
+  if (!gift) return res.status(404).json({ error: "gift not found" });
+
+  /* если уже ждём оплату — возвращаем прежний link */
+  if (gift.status === "pending_withdraw" && gift.invoiceLink)
+    return res.json({ link: gift.invoiceLink });
+
+  try {
+    const link = await createStarsInvoice(req.userId, ownedId);
+    gift.status      = "pending_withdraw";
+    gift.invoiceLink = link;
+    await saveGifts();
+    res.json({ link });
+  } catch (e) {
+    res.status(500).json({ error: String(e) });
+  }
+});
+
+/* INTERNAL: Stars оплата подтверждена (вызывает листенер‑бот) */
+app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
+  const { ownedId, payerId } = req.body || {};
+  const gift = gifts.find(g => g.ownedId === ownedId && g.ownerId === payerId);
+  if (!gift || gift.status !== "pending_withdraw")
+    return res.status(400).json({ error: "bad gift" });
+
+  /* помечаем как sent — листенер отправит фактический подарок */
+  gift.status = "sent";
+  await saveGifts();
+  res.json({ ok: true });
+});
+
 /* POST /wallet/withdraw { userId, amount } */
 wallet.post("/withdraw", async (req, res) => {
   const amt = Number(req.body.amount);
@@ -279,6 +324,29 @@ wallet.post("/withdraw", async (req, res) => {
 
   res.json({ balance: balances[req.userId], wid: id });
 });
+
+/* --- helper: создаём инвойс Stars (с payload вида "withdraw:<ownedId>") --- */
+async function createStarsInvoice(userId, ownedId) {
+  const payload = `withdraw:${ownedId}`;
+  const body = {
+    title              : "Вывод подарка",
+    description        : "Комиссия за вывод подарка в Telegram",
+    payload,
+    provider_token     : "STARS",      // спец‑токен Stars
+    currency           : "STARS",
+    prices             : [{ label: "Вывод", amount: STARS_PRICE * 100 }],
+    need_name          : false,
+    need_email         : false,
+    max_tip_amount     : 0,
+  };
+  const r = await fetch(`${TG_API}/createInvoiceLink`, {
+    method : "POST",
+    headers: { "Content-Type": "application/json" },
+    body   : JSON.stringify(body),
+  }).then(x => x.json());
+  if (!r.ok) throw new Error(r.description || "invoice error");
+  return r.result;
+}
 
 /* POST /wallet/link { userId, address }  */
 wallet.post('/link', async (req,res)=>{
