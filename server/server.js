@@ -318,15 +318,15 @@ wallet.post("/withdraw", async (req, res) => {
 async function createStarsInvoice(userId, ownedId) {
   const payload = `withdraw:${ownedId}`;
   const body = {
-    title              : "Вывод подарка",
-    description        : "Комиссия за вывод подарка в Telegram",
-    payload,
-    provider_token     : "STARS",      // спец‑токен Stars
-    currency           : "STARS",
-    prices             : [{ label: "Вывод", amount: STARS_PRICE * 100 }],
-    need_name          : false,
-    need_email         : false,
-    max_tip_amount     : 0,
+    title           : "Вывод подарка",
+    description     : "Комиссия за вывод NFT‑подарка",
+    payload,                                  // вернётся в pre_checkout / successful_payment
+    provider_token  : "",                     // ← оставляем пустым!
+    currency        : "XTR",                  // единая валюта Stars
+    prices          : [{ label: "Вывод", amount: STARS_PRICE * 100 }],
+    need_name       : false,
+    need_email      : false,
+    max_tip_amount  : 0
   };
   const r = await fetch(`${TG_API}/createInvoiceLink`, {
     method : "POST",
