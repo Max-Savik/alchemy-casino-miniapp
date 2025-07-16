@@ -92,7 +92,7 @@ const GIFTS_FILE    = path.join(DATA_DIR, "gifts.json");
 
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
-const BOT_TOKEN        = process.env.APP_BOT_TOKEN;   // тот же, что у листенера
+const BOT_TOKEN        = process.env.APP_BOT_TOKEN; 
 if (!BOT_TOKEN) throw new Error("APP_BOT_TOKEN not set");
 
 /* для createInvoiceLink */
