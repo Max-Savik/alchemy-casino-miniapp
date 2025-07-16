@@ -250,9 +250,6 @@ wallet.post("/withdrawGift", async (req, res) => {
   );
   if (!gift) return res.status(404).json({ error: "gift not found" });
 
-  /* если уже ждём оплату — возвращаем прежний link */
-  if (gift.status === "pending_withdraw" && gift.invoiceLink)
-    return res.json({ link: gift.invoiceLink });
 
   try {
     const link = await createStarsInvoice(req.userId, ownedId);
@@ -320,10 +317,10 @@ async function createStarsInvoice(userId, ownedId) {
   const body = {
     title           : "Вывод подарка",
     description     : "Комиссия за вывод NFT‑подарка",
-    payload,                                  // вернётся в pre_checkout / successful_payment
-    provider_token  : "",                     // ← оставляем пустым!
-    currency        : "XTR",                  // единая валюта Stars
-    prices         : [{ label: "Вывод", amount: STARS_PRICE }],
+    payload,                                  // вернётся в webhook
+    provider_token  : "STARS",                // ← ОБЯЗАТЕЛЬНО «STARS»
+    currency        : "XTR",
+    prices          : [{ label: "Вывод", amount: STARS_PRICE }], // 25 → 25 ⭐️
     need_name       : false,
     need_email      : false,
     max_tip_amount  : 0
