@@ -265,18 +265,7 @@ wallet.post("/withdrawGift", async (req, res) => {
   }
 });
 
-/* INTERNAL: Stars оплата подтверждена (вызывает листенер‑бот) */
-app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
-  const { ownedId, payerId } = req.body || {};
-  const gift = gifts.find(g => g.ownedId === ownedId && g.ownerId === payerId);
-  if (!gift || gift.status !== "pending_withdraw")
-    return res.status(400).json({ error: "bad gift" });
 
-  /* помечаем как sent — листенер отправит фактический подарок */
-  gift.status = "sent";
-  await saveGifts();
-  res.json({ ok: true });
-});
 
 /* POST /wallet/withdraw { userId, amount } */
 wallet.post("/withdraw", async (req, res) => {
@@ -447,6 +436,24 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
   await saveGifts();
   res.json({ ok: true });
 });
+
+/* ───────── Stars‑webhook: платеж подтверждён ───────── */
+app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
+  const { ownedId, payerId } = req.body || {};
+
+  /* ищем подарок владельца, который ждёт вывод */
+  const gift = gifts.find(
+    (g) => g.ownedId === ownedId && g.ownerId === String(payerId)
+  );
+  if (!gift || gift.status !== "pending_withdraw")
+    return res.status(400).json({ error: "gift not pending" });
+
+  /* помечаем как «sent» — бот уже отправил его пользователю */
+  gift.status = "sent";
+  await saveGifts();
+  res.json({ ok: true });
+});
+
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
   cors: {
