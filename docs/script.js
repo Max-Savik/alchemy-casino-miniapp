@@ -300,15 +300,34 @@ function arc(cx,cy,r,start,end,color){
 let sortAsc = true;
 let txRefreshTimer = null; 
 
-function cardHTML(nft, extra='') {
+/**
+ * cardHTML
+ * @param {object} nft
+ * @param {string} extra – доп.классы (`staked` и т.п.)
+ * @param {boolean} addBtn – добавлять ли кнопку «Вывести»
+ */
+function cardHTML(nft, extra='', addBtn=false) {
   return `
-    <div class="nft-card ${extra}" data-id="${nft.id}">
-      <img src="${nft.img}" alt="${nft.name}" class="rounded-sm" />
-      <div class="text-sm mt-1">${nft.name}</div>
-      <div class="text-amber-300 font-semibold">$${nft.price}</div>
-    </div>
-  `;
-}
+    <div class="nft-card relative ${extra}" data-id="${nft.id}">
+      <img src="${nft.img}" alt="${nft.name}" class="rounded-md w-full" />
+
+      <div class="mt-1 flex items-center justify-between text-sm">
+        <span>${nft.name}</span>
+        <span class="text-amber-300 font-semibold">$${nft.price}</span>
+      </div>
+
+      ${
+        addBtn && !nft.staked
+          ? `<button
+               class="withdraw-btn mt-2 w-full inline-flex justify-center items-center gap-1
+                      py-1.5 rounded-md bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600
+                      text-[13px] font-semibold text-gray-900 transition"
+               data-owned="${nft.id}">
+               ⇄ Вывести <span class="text-[15px]">⭐25</span>
+             </button>`
+          : ""
+      }
+    </div>`;
 // Устанавливаем max для слайдера количества
 selectCount.max = inventory.length;
 
@@ -368,10 +387,37 @@ selectCount.addEventListener('input', () => {
 
 function renderProfile() {
   grid.innerHTML = '';
-  inventory.forEach(n => {
-    const extra = n.staked ? 'staked' : '';
-    grid.insertAdjacentHTML('beforeend', cardHTML(n, extra));
+  inventory.forEach(nft => {
+    const extra = nft.staked ? 'staked' : '';
+    grid.insertAdjacentHTML(
+      'beforeend',
+      cardHTML(nft, extra, /*addBtn=*/true)
+    );
   });
+
+  /* навешиваем один (!) обработчик на грид – делегирование */
+  grid.onclick = async e => {
+    const btn = e.target.closest('.withdraw-btn');
+    if (!btn) return;
+    const id = btn.dataset.owned;
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      const { link } = await postJSON(`${API_ORIGIN}/wallet/withdrawGift`, {
+        ownedId: id,
+      });
+      if (window.Telegram?.WebApp?.openInvoice) {
+        Telegram.WebApp.openInvoice(link);
+      } else {
+        window.open(link, '_blank');
+      }
+    } catch (err) {
+      alert('Ошибка: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⇄ Вывести ⭐25';
+    }
+  };
 }
 
 function drawWheel() {
