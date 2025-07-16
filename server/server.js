@@ -323,7 +323,7 @@ async function createStarsInvoice(userId, ownedId) {
     payload,                                  // вернётся в pre_checkout / successful_payment
     provider_token  : "",                     // ← оставляем пустым!
     currency        : "XTR",                  // единая валюта Stars
-    prices          : [{ label: "Вывод", amount: STARS_PRICE * 100 }],
+    prices         : [{ label: "Вывод", amount: STARS_PRICE }],
     need_name       : false,
     need_email      : false,
     max_tip_amount  : 0
