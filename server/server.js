@@ -89,15 +89,10 @@ const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
 const WD_FILE       = path.join(DATA_DIR, "withdrawals.json"); 
 const GIFTS_FILE    = path.join(DATA_DIR, "gifts.json"); 
-const STAR_PAY_FILE = path.join(DATA_DIR, "star_payments.json");
 const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
 const DEPOSIT_LIMIT = Number(process.env.DEPOSIT_LIMIT || 100);
 let addrMap = {};           // { [userId]: "EQB…" }
 let gifts   = [];           // { gid, ownedId, name, price, img, ownerId, staked }
-let starPays = [];             // { paymentId, ownedId, userId, amount }
-
-async function loadStarPays()  { … }   // аналогично loadGifts
-async function saveStarPays()  { … }
 
 if (!DEPOSIT_ADDR) throw new Error("DEPOSIT_ADDR not set");
 
@@ -235,82 +230,8 @@ wallet.get("/balance", (req, res) => {
 
 /* GET /wallet/gifts  — список НЕ поставленных подарков */
 wallet.get("/gifts", (req, res) => {
-  res.json(gifts.filter(g => g.ownerId === req.userId && g.status==="ready"));
+  res.json(gifts.filter(g => g.ownerId === req.userId && !g.staked));
 });
-
-/* POST /wallet/withdrawGift/create { ownedId } */
-wallet.post("/withdrawGift/create", async (req,res)=>{
-  const { ownedId } = req.body||{};
-  const g = gifts.find(x=>x.ownedId===ownedId && x.ownerId===req.userId);
-  if(!g || g.status!=="ready")
-    return res.status(400).json({error:"gift not found / locked"});
-
-  // ① создаём инвойс Stars.  Валюта Stars ⇒ "STARS", цена в копейках = 25*100
-  const payload = `withdraw:${ownedId}:${req.userId}`;
-  const inv = await createStarsInvoice(payload);   // ⬅️ helper ниже
-  res.json({ invoiceSlug: inv.slug, priceStars: 25 });
-});
-
-async function createStarsInvoice(payload){
-  /* делаем POST https://api.telegram.org/bot<TOKEN>/createInvoiceLink
-     currency=STARS, prices=[{label:'Gift transfer',amount:2500}] */
-  const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/createInvoiceLink`;
-  const body = {
-    title       : "Gift withdrawal",
-    description : "Оплата комиссии за вывод подарка",
-    currency    : "STARS",
-    prices      : [{ label:"transfer", amount: 2500 }],
-    payload
-  };
-  const r = await fetch(url,{method:"POST",headers:{'Content-Type':'application/json'},
-                             body:JSON.stringify(body)});
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.description);
-  return { slug: j.result };
-}
-
-/* INTERNAL: бот подтверждает, что платёж Stars прошёл */
-app.post("/internal/withdrawGift/paid", adminAuth, async (req,res)=>{
-  const { ownedId, uid, payment_id } = req.body||{};
-  const g = gifts.find(x=>x.ownedId===ownedId && x.ownerId===uid);
-  if(!g) return res.status(404).json({error:"gift not found"});
-  if(g.status!=="ready") return res.status(400).json({error:"bad status"});
-
-  starPays.push({ paymentId:payment_id, ownedId, userId:uid, amount:25 });
-  await saveStarPays();
-
-  g.status = "pendingTransfer";
-  await saveGifts();
-  res.json({ ok:true });
-});
-
-/* Gift‑transfer loop (каждые 5 с) */
-setInterval(processGiftTransfers, 5000);
-async function processGiftTransfers(){
-  const todo = gifts.find(g=>g.status==="pendingTransfer");
-  if(!todo) return;
-  try{
-     await sendGiftToUser(todo);          // helper ниже
-     todo.status = "sent";
-     await saveGifts();
-  }catch(e){
-     console.error("gift transfer error",e);
-  }
-}
-
-async function sendGiftToUser(g){
-  /* имеем chat_id из listener’а (g.chat_id)  */
-  const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendUniqueGift`;
-  const body = {
-     business_connection_id: BC_CACHE[g.chat_id],   // можете хранить в gifts
-     chat_id : g.chat_id,
-     owned_gift_id: g.ownedId
-  };
-  const r = await fetch(url,{method:"POST",headers:{'Content-Type':'application/json'},
-                            body:JSON.stringify(body)});
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.description);
-}
 
 /* POST /wallet/withdraw { userId, amount } */
 wallet.post("/withdraw", async (req, res) => {
@@ -454,7 +375,7 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
   const { gid, ownedId, name, price, img, ownerId } = req.body || {};
   if (!gid || !ownedId || !ownerId) return res.status(400).json({ error: "bad gift" });
   if (gifts.some(g => g.ownedId === ownedId)) return res.json({ ok: true }); // дубль
-  gifts.push({ gid, ownedId, name, price, img, ownerId, staked: false, status:"ready" });
+  gifts.push({ gid, ownedId, name, price, img, ownerId, staked: false });
   await saveGifts();
   res.json({ ok: true });
 });
@@ -939,7 +860,6 @@ async function processWithdrawals() {
   await loadAddr();
   await loadWithdrawals();
   await loadGifts(); 
-  await loadStarPays();
   resetRound();      
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
