@@ -370,15 +370,22 @@ function renderProfile() {
   grid.innerHTML = '';
   inventory.forEach(n => {
     const extra = n.staked ? 'staked' : '';
+
+    /* 1) вставляем html‑карточку */
     grid.insertAdjacentHTML('beforeend', cardHTML(n, extra));
+
+    /* 2) получаем только что вставленный элемент */
+    const card = grid.lastElementChild;
+
+    /* 3) если не стоит в игре → добавляем кнопку вывода */
+    if (!n.staked) {
+      const btn = document.createElement('button');
+      btn.textContent = 'Вывести';
+      btn.className   = 'withdraw-btn px-2 py-0.5 mt-1 rounded bg-amber-600/80 text-xs';
+      btn.addEventListener('click', () => withdrawGift(n.id));
+      card.appendChild(btn);
+    }
   });
-  if (!n.staked) {
-  const btn = document.createElement('button');
-  btn.textContent = 'Вывести';
-  btn.className = 'withdraw-btn';
-  btn.onclick = () => withdrawGift(n.id);
-  card.appendChild(btn);
-}
 }
 
 function drawWheel() {
@@ -1150,7 +1157,7 @@ const initialView =
   ['#game', '#profile', '#earn'].includes(location.hash)
     ? location.hash.slice(1)
     : 'game';
-+show(initialView);
+show(initialView);
 refreshUI();
 refreshBalance();  
 
