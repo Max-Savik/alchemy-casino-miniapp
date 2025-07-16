@@ -328,6 +328,8 @@ function cardHTML(nft, extra='', addBtn=false) {
           : ""
       }
     </div>`;
+}
+
 // Устанавливаем max для слайдера количества
 selectCount.max = inventory.length;
 
