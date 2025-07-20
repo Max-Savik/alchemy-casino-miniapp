@@ -307,8 +307,10 @@ let txRefreshTimer = null;
  * @param {boolean} addBtn – добавлять ли кнопку «Вывести»
  */
 function cardHTML(nft, extra='', addBtn=false) {
+  const withdrawing = nft.status === 'pending_withdraw';
+  const sent = nft.status === 'sent'; // на клиенте почти не увидим (мы его удалим), но оставим для совместимости
   return `
-    <div class="nft-card relative ${extra}" data-id="${nft.id}">
+    <div class="nft-card relative ${extra} ${withdrawing ? 'opacity-60 pointer-events-none' : ''}" data-id="${nft.id}">
       <img src="${nft.img}" alt="${nft.name}" class="rounded-md w-full" />
 
       <div class="mt-1 flex items-center justify-between text-sm">
@@ -317,7 +319,7 @@ function cardHTML(nft, extra='', addBtn=false) {
       </div>
 
       ${
-        addBtn && !nft.staked
+        addBtn && !nft.staked && !withdrawing && !sent
           ? `<button
                class="withdraw-btn mt-2 w-full inline-flex justify-center items-center gap-1
                       py-1.5 rounded-md bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600
@@ -325,7 +327,11 @@ function cardHTML(nft, extra='', addBtn=false) {
                data-owned="${nft.id}">
                ⇄ Вывести <span class="text-[15px]">⭐25</span>
              </button>`
-          : ""
+          : (withdrawing
+              ? `<div class="mt-2 w-full text-center text-[11px] text-amber-300 font-semibold select-none">
+                   ⏳ вывод...
+                 </div>`
+              : "")
       }
     </div>`;
 }
@@ -337,6 +343,8 @@ function applyFilters(nft) {
   const nameMatch  = nft.name.toLowerCase().includes(filterName);
   const priceMatch = nft.price <= filterMaxPr;
   const notStaked  = !nft.staked;
+  // убираем отправленные/не показываем (sent мы вообще удаляем, но на всякий случай)
+  if (nft.status === 'sent') return false;
   return nameMatch && priceMatch && notStaked;
 }
 
@@ -408,6 +416,13 @@ function renderProfile() {
       const { link } = await postJSON(`${API_ORIGIN}/wallet/withdrawGift`, {
         ownedId: id,
       });
+      // локально помечаем как pending, чтобы сразу задизэйблить
+      const nft = inventory.find(x => x.id === id);
+      if (nft) {
+        nft.status = 'pending_withdraw';
+        nft.staked = true;      // чтобы нельзя было поставить (фильтр)
+      }
+      renderProfile();
       if (window.Telegram?.WebApp?.openInvoice) {
         Telegram.WebApp.openInvoice(link);
       } else {
@@ -416,8 +431,6 @@ function renderProfile() {
     } catch (err) {
       alert('Ошибка: ' + err.message);
     } finally {
-      btn.disabled = false;
-      btn.textContent = '⇄ Вывести ⭐25';
     }
   };
 }
@@ -744,7 +757,8 @@ async function ensureJwt() {
         name: g.name,
         price: g.price,
         img: g.img,
-        staked: false
+        staked: false,
+        status: g.status || 'idle'
       }))
     );
   } catch (e) { console.warn("Gift fetch error", e); }                                  
@@ -913,6 +927,30 @@ placeBetBtn.addEventListener('click', () => {
   pickerOverlay.classList.add('hidden');
   socket.emit("placeBet", { name: myName, nfts });
 });
+
+// === Gift real-time updates ===
+function attachGiftUpdates() {
+  if (!socket) return;
+  socket.on('giftUpdate', ({ ownedId, status }) => {
+    const idx = inventory.findIndex(g => g.id === ownedId);
+    if (idx === -1) return;
+    if (status === 'pending_withdraw') {
+      inventory[idx].status = status;
+      inventory[idx].staked = true;
+    } else if (status === 'sent') {
+      // удаляем окончательно
+      inventory.splice(idx, 1);
+    }
+    renderProfile();
+  });
+}
+
+// вызовем после установки сокет-событий
+const _origInit = initSocketEvents;
+initSocketEvents = function() {
+  _origInit();
+  attachGiftUpdates();
+};
 /* ======== Открываем TON-пикер ======== */
 depositTONBtn.addEventListener('click', () => {
   tonPickerOverlay.classList.add('show');
