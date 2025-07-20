@@ -239,7 +239,23 @@ wallet.get("/balance", (req, res) => {
 
 /* GET /wallet/gifts  — список НЕ поставленных подарков */
 wallet.get("/gifts", (req, res) => {
-  res.json(gifts.filter(g => g.ownerId === req.userId && !g.staked));
+  // показываем все НЕ отправленные и не staked подарки, включая pending_withdraw
+  res.json(
+    gifts
+      .filter(g =>
+        g.ownerId === req.userId &&
+        !g.staked &&
+        g.status !== "sent"
+      )
+      .map(g => ({
+        gid: g.gid,
+        ownedId: g.ownedId,
+        name: g.name,
+        price: g.price,
+        img: g.img,
+        status: g.status || "idle"
+      }))
+  );
 });
 
 /* POST /wallet/withdrawGift { ownedId } ➋ */
@@ -256,6 +272,11 @@ wallet.post("/withdrawGift", async (req, res) => {
     gift.status      = "pending_withdraw";
     gift.invoiceLink = link;
     await saveGifts();
+    // немедленно сообщаем клиенту – чтобы задизэйблить карту
+    io.to("u:" + req.userId).emit("giftUpdate", {
+      ownedId,
+      status: "pending_withdraw"
+    });
     res.json({ link });
   } catch (e) {
     res.status(500).json({ error: String(e) });
@@ -429,7 +450,7 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
   const { gid, ownedId, name, price, img, ownerId } = req.body || {};
   if (!gid || !ownedId || !ownerId) return res.status(400).json({ error: "bad gift" });
   if (gifts.some(g => g.ownedId === ownedId)) return res.json({ ok: true }); // дубль
-  gifts.push({ gid, ownedId, name, price, img, ownerId, staked: false });
+  gifts.push({ gid, ownedId, name, price, img, ownerId, staked: false, status: "idle" });
   await saveGifts();
   res.json({ ok: true });
 });
@@ -448,6 +469,8 @@ app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
   /* помечаем как «sent» — бот уже отправил его пользователю */
   gift.status = "sent";
   await saveGifts();
+  // оповещаем только конкретного пользователя
+  io.to("u:" + payerId).emit("giftUpdate", { ownedId, status: "sent" });
   res.json({ ok: true });
 });
 
@@ -675,6 +698,10 @@ io.use((socket, next) => {
 
 io.on("connection", socket => {
   socket.emit("state", game);
+  // индивидуальная комната для точечных пушей
+  if (socket.userId) {
+    socket.join("u:" + socket.userId);
+  }
 
 socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
   const userId = socket.userId;
