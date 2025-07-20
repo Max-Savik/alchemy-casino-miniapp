@@ -38,10 +38,12 @@ async function refreshBalance() {
 }
 
 /* === DATA === */
-function buildImgLink(id) {
-  /* если бэкенд уже прислал ссылку — используем её */
-  if (id.startsWith("http")) return id;
-  return `https://nft.fragment.com/gift/${id}.medium.jpg`;
+function buildImgLink(idOrUrl) {
+  /* API иногда шлёт url, иногда только slug */
+  if (idOrUrl?.startsWith("http")) return idOrUrl;
+  /* убираем всё до «:» (если ownedId имеет вид collection:id) */
+  const slug = idOrUrl.split(":").pop();
+  return `https://nft.fragment.com/gift/${slug}.medium.jpg`;
 }
 
 async function loadGifts() {
@@ -73,8 +75,10 @@ function giftCardHTML(g) {
 
   return `
     <div data-id="${g.id}" class="${cls.join(" ")}">
-      <img src="${g.img}" alt="${g.name}" class="w-full aspect-square object-cover rounded-t-xl">
-      <div class="p-2 flex justify-between items-center text-sm">
+      <img src="${g.img}" alt="${g.name}"
+           class="w-full aspect-square object-cover rounded-t-xl"
+           onerror="this.src='https://placehold.co/300x300?text=NFT'">
+      <div class="px-2 py-1 flex justify-between items-center text-xs sm:text-sm">
         <span class="truncate">${g.name}</span>
         <span class="font-semibold text-amber-300">$${g.price}</span>
       </div>
@@ -87,6 +91,17 @@ function giftCardHTML(g) {
       <input type="checkbox" class="selBox absolute bottom-2 right-2 w-4 h-4
              accent-amber-500" ${sel ? "checked" : ""} />
     </div>`;
+}
+
+/* === Toast helper === */
+function toast(msg) {
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.className = "fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 px-4 py-2" +
+                " rounded-xl shadow-lg text-sm text-gray-100 opacity-0 transition";
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add("opacity-90"));
+  setTimeout(()=>{ t.classList.remove("opacity-90"); setTimeout(()=>t.remove(),300); }, 2500);
 }
 
 function renderGrid() {
@@ -148,9 +163,23 @@ async function doWithdraw(id) {
 
 async function withdrawSelected() {
   const ids = Array.from(selected);
-  for (const id of ids) await doWithdraw(id);
+  if (!ids.length) return;
+
+  toast(`Операции идут по очереди, комиссия 25 ⭐ за каждый NFT`);
+
+  for (const id of ids) {
+    await doWithdraw(id);            // создаём и открываем счёт
+    await new Promise(r => setTimeout(r, 800)); // пауза, чтобы не «заставить» TG
+  }
   selected.clear();
 }
+
+const now = Date.now();
+gifts.forEach(g=>{
+  if (g.status==="pending_withdraw" && now - (g.ts||0) > 60_000) {
+    g.status="idle";
+  }
+});      
 
 /* === EVENTS === */
 $("#searchInput").addEventListener("input", applyFilters);
