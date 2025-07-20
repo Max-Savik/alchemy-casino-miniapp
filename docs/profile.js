@@ -87,7 +87,8 @@ function renderGrid() {
   grid.innerHTML = "";
   inventory.forEach(n => grid.insertAdjacentHTML("beforeend", nftCardHTML(n)));
 
-  $("#emptyState").classList.toggle("hidden", inventory.length !== 0);
+  const empty = document.querySelector("#emptyState");
+  if (empty) empty.classList.toggle("hidden", viewGifts.length !== 0);
 
   grid.onclick = async e => {
     const btn  = e.target.closest(".withdraw-btn");
