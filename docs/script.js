@@ -116,12 +116,14 @@ function updateCounter() {
 
 /* === FILTER / SORT === */
 function applyFilters() {
-  const q = $("#searchInput").value.trim().toLowerCase();
+  /* поиск может отсутствовать, поэтому проверяем */
+  const q = ($("#searchInput")?.value || "").trim().toLowerCase();
 
   viewGifts = gifts.filter(g =>
        g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q));
 
-  const sort = $("#sortSelect").value;
+  /* сортировка тоже только если элемент существует */
+  const sort = $("#sortSelect")?.value || "priceDesc";
   viewGifts.sort((a,b)=>{
     if (sort==="priceAsc")  return a.price - b.price;
     if (sort==="priceDesc") return b.price - a.price;
