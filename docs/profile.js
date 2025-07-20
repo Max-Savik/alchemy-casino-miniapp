@@ -1,153 +1,148 @@
-// profile.js
+/* =================  CONSTANTS  ================= */
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
-let jwtToken = localStorage.getItem("jwt") || null;
+let jwtToken  = localStorage.getItem("jwt") || null;
 let inventory = [];
 let tonBalance = 0;
 
-/* ===== Telegram user ===== */
-const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
-const myId = tgUser.id || tgUser.user_id || 'guest-' + Math.random().toString(36).slice(2);
+/* ============  HELPERS  ============ */
+const $ = sel => document.querySelector(sel);
 
-/* ===== Utils ===== */
-async function postJSON(url, data){
+async function postJSON(url, data = {}) {
   const res = await fetch(url, {
-    method: 'POST',
-    headers:{
-      'Content-Type':'application/json',
-      ...(jwtToken && { 'Authorization': 'Bearer '+jwtToken })
+    method : "POST",
+    credentials: "include",
+    headers : {
+      "Content-Type": "application/json",
+      ...(jwtToken && { Authorization: "Bearer "+jwtToken })
     },
-    body: JSON.stringify(data),
-    credentials: "include"
+    body: JSON.stringify(data)
   });
-  if(!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
-async function ensureJwt(){
+async function ensureJwt() {
   if (document.cookie.split("; ").some(c => c.startsWith("sid="))) return;
   if (jwtToken) return;
   const r = await fetch(`${API_ORIGIN}/auth/login`, {
-    method: "POST",
+    method : "POST",
     credentials: "include",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ userId: myId })
+    headers : {"Content-Type":"application/json"},
+    body: JSON.stringify({ userId: getUid() })
   });
-  const j = await r.json();
-  jwtToken = j.token;
-  localStorage.setItem("jwt", jwtToken);
+  const { token } = await r.json();
+  jwtToken = token;
+  localStorage.setItem("jwt", token);
 }
 
-async function refreshBalance(){
-  try{
-    const res = await fetch(`${API_ORIGIN}/wallet/balance`, {
+function getUid() {
+  const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
+  return tgUser.id || tgUser.user_id || "guest-"+Math.random().toString(36).slice(2);
+}
+
+async function refreshBalance() {
+  try {
+    const r = await fetch(`${API_ORIGIN}/wallet/balance`, {
       credentials: "include",
-      headers: jwtToken ? { 'Authorization': 'Bearer '+jwtToken } : {}
+      headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
     });
-    if(res.ok){
-      const { balance=0 } = await res.json();
+    if (r.ok) {
+      const { balance = 0 } = await r.json();
       tonBalance = balance;
-      document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+      $("#tonBalance").textContent = tonBalance.toFixed(2);
     }
-  }catch(e){ console.warn('balance error', e); }
+  } catch (e) {
+    console.warn("balance:", e.message);
+  }
 }
 
-function cardHTML(nft){
-  const withdrawing = nft.status === 'pending_withdraw';
+/* ============  NFT GRID  ============ */
+function nftCardHTML(n) {
+  const withdrawing = n.status === "pending_withdraw";
+  const waitingCss  = withdrawing ? "opacity-60 pointer-events-none" : "";
   return `
-    <div class="nft-card relative ${nft.staked ? 'staked' : ''} ${withdrawing ? 'opacity-60 pointer-events-none' : ''}"
-         data-id="${nft.id}">
-      <img src="${nft.img}" alt="${nft.name}" class="rounded-md w-full object-cover" />
-      <div class="mt-1 flex items-center justify-between text-sm">
-        <span>${nft.name}</span>
-        <span class="text-amber-300 font-semibold">$${nft.price}</span>
+    <div data-id="${n.id}"
+         class="nft-card relative overflow-hidden rounded-xl bg-gray-800/80 backdrop-blur-md
+                border border-gray-700 shadow-lg hover:ring-2 hover:ring-amber-400
+                transition-transform hover:-translate-y-1 ${waitingCss}">
+      <img src="${n.img}" alt="${n.name}" class="w-full aspect-square object-cover">
+      <div class="p-2 flex items-center justify-between text-sm">
+        <span>${n.name}</span>
+        <span class="font-semibold text-amber-300">$${n.price}</span>
       </div>
       ${
-        !nft.staked && !withdrawing
-          ? `<button class="withdraw-btn mt-2 w-full inline-flex justify-center items-center gap-1
-                     py-1.5 rounded-md bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600
-                     text-[13px] font-semibold text-gray-900 transition">
-               ⇄ Вывести <span class="text-[15px]">⭐25</span>
+        !withdrawing
+          ? `<button class="withdraw-btn absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
+                         text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded-md shadow">
+               ⇄
              </button>`
-          : (withdrawing
-              ? `<div class="mt-2 w-full text-center text-[11px] text-amber-300 font-semibold select-none">
-                   ⏳ вывод...
-                 </div>`
-              : "")
+          : `<span class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[11px]
+                         text-amber-300 font-semibold select-none">⏳ вывод…</span>`
       }
-    </div>
-  `;
+    </div>`;
 }
 
-function renderProfile(){
-  const grid = document.getElementById('profileGrid');
-  grid.innerHTML = '';
-  inventory.forEach(n => {
-    grid.insertAdjacentHTML('beforeend', cardHTML(n));
-  });
+function renderGrid() {
+  const grid = $("#profileGrid");
+  grid.innerHTML = "";
+  inventory.forEach(n => grid.insertAdjacentHTML("beforeend", nftCardHTML(n)));
+
+  $("#emptyState").classList.toggle("hidden", inventory.length !== 0);
 
   grid.onclick = async e => {
-    const btn = e.target.closest('.withdraw-btn');
+    const btn  = e.target.closest(".withdraw-btn");
     if (!btn) return;
-    const card = btn.closest('.nft-card');
-    const id = card.dataset.id;
+    const card = btn.closest(".nft-card");
+    const id   = card.dataset.id;
+
     btn.disabled = true;
-    btn.textContent = '…';
+    btn.textContent = "…";
+
     try {
-      const { link } = await postJSON(`${API_ORIGIN}/wallet/withdrawGift`, {
-        ownedId: id
-      });
+      const { link } = await postJSON(`${API_ORIGIN}/wallet/withdrawGift`, { ownedId: id });
+
+      // помечаем локально
       const nft = inventory.find(x => x.id === id);
-      if (nft){
-        nft.status = 'pending_withdraw';
-        nft.staked = true;
-      }
-      renderProfile();
+      if (nft) nft.status = "pending_withdraw";
+      renderGrid();
+
+      // открываем инвойс на оплату комиссии
       if (window.Telegram?.WebApp?.openInvoice) {
         Telegram.WebApp.openInvoice(link);
       } else {
-        window.open(link, '_blank');
+        window.open(link, "_blank");
       }
-    } catch(err){
-      alert('Ошибка: '+err.message);
+    } catch (err) {
+      alert("Ошибка: "+err.message);
     }
   };
 }
 
-async function loadGifts(){
-  try{
-    const res = await fetch(`${API_ORIGIN}/wallet/gifts`, {
+/* ============  DATA  ============ */
+async function loadGifts() {
+  try {
+    const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
       credentials: "include",
-      headers: jwtToken ? { 'Authorization':'Bearer '+jwtToken } : {}
+      headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
     });
-    const arr = await res.json();
-    // чистим и заполняем заново (можно умнее — diff)
+    const arr = await r.json();
     inventory = arr.map(g => ({
-      id: g.ownedId,
-      name: g.name,
+      id   : g.ownedId,
+      name : g.name,
       price: g.price,
-      img: g.img,
-      staked: false,
-      status: g.status || 'idle'
+      img  : g.img,
+      status: g.status || "idle"
     }));
-    renderProfile();
-  }catch(e){
-    console.warn('gift fetch error', e);
+    renderGrid();
+  } catch (e) {
+    console.warn("gifts:", e.message);
   }
 }
 
-/* ===== INIT ===== */
+/* =====  INIT  ===== */
 (async () => {
   await ensureJwt();
-  await refreshBalance();
-  await loadGifts();
+  await Promise.all([ refreshBalance(), loadGifts() ]);
 })();
 
-document.getElementById('refreshGifts')
-  .addEventListener('click', loadGifts);
-
-/* ===== (Опционально) реалтайм обновления подарков =====
-   Можно подключить socket.io, если нужно:
-   const token = (document.cookie.split("; ").find(c=>c.startsWith("sid="))||"").split("=")[1] || jwtToken;
-   const socket = io(API_ORIGIN, { auth:{ token }, withCredentials:true });
-   socket.on('giftUpdate', ({ ownedId, status }) => { ... обновить inventory ... });
-*/
+$("#refreshGifts").addEventListener("click", loadGifts);
