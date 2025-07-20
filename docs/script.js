@@ -221,7 +221,6 @@ const svg         = document.getElementById('wheelSvg');
 const list        = document.getElementById('players');
 const pot         = document.getElementById('pot');
 const picker      = document.getElementById('nftPicker');
-const grid        = document.getElementById('profileGrid');
 const statusEl    = document.getElementById('countdown');
 
 const depositNFTBtn  = document.getElementById('depositNFT');
@@ -233,7 +232,6 @@ const historyBtn     = document.getElementById('historyBtn');
 
 const gameSection    = document.getElementById('gameSection');
 const marketSection  = document.getElementById('marketSection');
-const profileSection = document.getElementById('profileSection');
 const earnSection    = document.getElementById('earnSection');
 const navGame        = document.getElementById('navGame');
 const navMarket      = document.getElementById('navMarket');
@@ -395,45 +393,7 @@ selectCount.addEventListener('input', () => {
 });
 
 
-function renderProfile() {
-  grid.innerHTML = '';
-  inventory.forEach(nft => {
-    const extra = nft.staked ? 'staked' : '';
-    grid.insertAdjacentHTML(
-      'beforeend',
-      cardHTML(nft, extra, /*addBtn=*/true)
-    );
-  });
 
-  /* навешиваем один (!) обработчик на грид – делегирование */
-  grid.onclick = async e => {
-    const btn = e.target.closest('.withdraw-btn');
-    if (!btn) return;
-    const id = btn.dataset.owned;
-    btn.disabled = true;
-    btn.textContent = '…';
-    try {
-      const { link } = await postJSON(`${API_ORIGIN}/wallet/withdrawGift`, {
-        ownedId: id,
-      });
-      // локально помечаем как pending, чтобы сразу задизэйблить
-      const nft = inventory.find(x => x.id === id);
-      if (nft) {
-        nft.status = 'pending_withdraw';
-        nft.staked = true;      // чтобы нельзя было поставить (фильтр)
-      }
-      renderProfile();
-      if (window.Telegram?.WebApp?.openInvoice) {
-        Telegram.WebApp.openInvoice(link);
-      } else {
-        window.open(link, '_blank');
-      }
-    } catch (err) {
-      alert('Ошибка: ' + err.message);
-    } finally {
-    }
-  };
-}
 
 function drawWheel() {
   svg.innerHTML = '';
@@ -675,7 +635,6 @@ wrapper.addEventListener('click', () => {
   pot.textContent = `${formatNumber(totalTON)} TON`;
   drawWheel();
   renderPicker();
-  renderProfile();
 }
 // Поиск по имени
 nftSearch.addEventListener('input', () => {
@@ -922,7 +881,6 @@ placeBetBtn.addEventListener('click', () => {
   });
 
   selected.clear();
-  renderProfile();
   renderPicker();
   pickerOverlay.classList.add('hidden');
   socket.emit("placeBet", { name: myName, nfts });
@@ -941,7 +899,6 @@ function attachGiftUpdates() {
       // удаляем окончательно
       inventory.splice(idx, 1);
     }
-    renderProfile();
   });
 }
 
@@ -1009,10 +966,6 @@ navGame.addEventListener('click', () => {
 });
 navMarket.addEventListener('click', () => location.href = 'market.html');
 
-navProfile.addEventListener('click', () => {
-  location.hash = '#profile';
-  show('profile');
-});
 
 navEarn.addEventListener('click', () => {
   location.hash = '#earn';
@@ -1020,7 +973,6 @@ navEarn.addEventListener('click', () => {
 });
 function show(view){
   gameSection   .classList.toggle('hidden', view !== 'game');
-  profileSection.classList.toggle('hidden', view !== 'profile');
   marketSection .classList.toggle('hidden', view !== 'market');
   earnSection   .classList.toggle('hidden', view !== 'earn');
 
