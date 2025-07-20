@@ -153,28 +153,37 @@ async function withdrawSelected() {
 }
 
 /* === EVENTS === */
-$("#searchInput").addEventListener("input", applyFilters);
-$("#sortSelect").addEventListener("change", applyFilters);
+document.addEventListener("DOMContentLoaded", () => {
+  const search   = $("#searchInput");
+  const sortSel  = $("#sortSelect");
+  const wBtn     = $("#withdrawSelected");
+  const grid     = $("#profileGrid");
 
-$("#withdrawSelected").addEventListener("click", withdrawSelected);
+  /* — live‑поиск / сортировка — */
+  if (search)  search.addEventListener("input",  applyFilters);
+  if (sortSel) sortSel .addEventListener("change", applyFilters);
 
-$("#profileGrid").addEventListener("click", e => {
-  const card = e.target.closest("[data-id]");
-  if (!card) return;
-  const id = card.dataset.id;
+  /* — массовый вывод — */
+  if (wBtn) wBtn.addEventListener("click", withdrawSelected);
 
-  if (e.target.classList.contains("quickWithdraw")) {
-    doWithdraw(id);
-    return;
-  }
+  /* — клики по гриду — */
+  if (grid) grid.addEventListener("click", e => {
+    const card = e.target.closest("[data-id]");
+    if (!card) return;
+    const id = card.dataset.id;
 
-  /* чек‑бокс или клик по карте → toggle select */
-  if (selected.has(id)) selected.delete(id); else selected.add(id);
-  // instant UI feedback
-  card.classList.toggle("ring-amber-400");
-  card.classList.toggle("ring-2");
-  card.querySelector(".selBox").checked = selected.has(id);
-  updateCounter();
+    /* быстрый вывод ⇄ */
+    if (e.target.classList.contains("quickWithdraw")) {
+      doWithdraw(id);
+      return;
+    }
+    /* выделение / снятие */
+    selected.has(id) ? selected.delete(id) : selected.add(id);
+    card.classList.toggle("ring-amber-400");
+    card.classList.toggle("ring-2");
+    card.querySelector(".selBox").checked = selected.has(id);
+    updateCounter();
+  });
 });
 
 /* helper – postJSON with auth */
