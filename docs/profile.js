@@ -1,149 +1,198 @@
-/* =================  CONSTANTS  ================= */
+/* === CONSTANTS === */
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
-let jwtToken  = localStorage.getItem("jwt") || null;
-let inventory = [];
+let jwtToken   = localStorage.getItem("jwt") || null;
+let gifts      = [];             // оригинальный список
+let viewGifts  = [];             // после фильтра / сортировки
+let selected   = new Set();      // ownedId
 let tonBalance = 0;
 
-/* ============  HELPERS  ============ */
-const $ = sel => document.querySelector(sel);
+/* === Shortcuts === */
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
-async function postJSON(url, data = {}) {
-  const res = await fetch(url, {
-    method : "POST",
-    credentials: "include",
-    headers : {
-      "Content-Type": "application/json",
-      ...(jwtToken && { Authorization: "Bearer "+jwtToken })
-    },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
+/* === AUTH / BALANCE === */
 async function ensureJwt() {
   if (document.cookie.split("; ").some(c => c.startsWith("sid="))) return;
   if (jwtToken) return;
+  const userId = window?.Telegram?.WebApp?.initDataUnsafe?.user?.id
+              || "guest-" + Math.random().toString(36).slice(2);
   const r = await fetch(`${API_ORIGIN}/auth/login`, {
     method : "POST",
     credentials: "include",
-    headers : {"Content-Type":"application/json"},
-    body: JSON.stringify({ userId: getUid() })
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ userId })
   });
-  const { token } = await r.json();
-  jwtToken = token;
-  localStorage.setItem("jwt", token);
-}
-
-function getUid() {
-  const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
-  return tgUser.id || tgUser.user_id || "guest-"+Math.random().toString(36).slice(2);
+  jwtToken = (await r.json()).token;
+  localStorage.setItem("jwt", jwtToken);
 }
 
 async function refreshBalance() {
-  try {
-    const r = await fetch(`${API_ORIGIN}/wallet/balance`, {
-      credentials: "include",
-      headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
-    });
-    if (r.ok) {
-      const { balance = 0 } = await r.json();
-      tonBalance = balance;
-      $("#tonBalance").textContent = tonBalance.toFixed(2);
-    }
-  } catch (e) {
-    console.warn("balance:", e.message);
+  const r = await fetch(`${API_ORIGIN}/wallet/balance`, {
+    credentials: "include",
+    headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
+  });
+  if (r.ok) {
+    tonBalance = (await r.json()).balance || 0;
+    $("#tonBalance").textContent = tonBalance.toFixed(2);
   }
 }
 
-/* ============  NFT GRID  ============ */
-function nftCardHTML(n) {
-  const withdrawing = n.status === "pending_withdraw";
-  const waitingCss  = withdrawing ? "opacity-60 pointer-events-none" : "";
+/* === DATA === */
+function buildImgLink(id) {
+  /* если бэкенд уже прислал ссылку — используем её */
+  if (id.startsWith("http")) return id;
+  return `https://nft.fragment.com/gift/${id}.medium.jpg`;
+}
+
+async function loadGifts() {
+  const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
+    credentials: "include",
+    headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
+  });
+  const arr = await r.json();
+  gifts = arr.map(g => ({
+    id     : g.ownedId,
+    name   : g.name,
+    price  : g.price,
+    img    : buildImgLink(g.img || g.ownedId),
+    status : g.status || "idle"
+  }));
+  applyFilters();
+}
+
+/* === UI RENDER === */
+function giftCardHTML(g) {
+  const sel = selected.has(g.id);
+  const pend = g.status === "pending_withdraw";
+  const cls = [
+    "relative rounded-xl bg-gray-800/80 border border-gray-700 shadow-lg",
+    "transition-transform hover:-translate-y-1"
+  ];
+  if (sel) cls.push("ring-2 ring-amber-400");
+  if (pend) cls.push("opacity-60 pointer-events-none");
+
   return `
-    <div data-id="${n.id}"
-         class="nft-card relative overflow-hidden rounded-xl bg-gray-800/80 backdrop-blur-md
-                border border-gray-700 shadow-lg hover:ring-2 hover:ring-amber-400
-                transition-transform hover:-translate-y-1 ${waitingCss}">
-      <img src="${n.img}" alt="${n.name}" class="w-full aspect-square object-cover">
-      <div class="p-2 flex items-center justify-between text-sm">
-        <span>${n.name}</span>
-        <span class="font-semibold text-amber-300">$${n.price}</span>
+    <div data-id="${g.id}" class="${cls.join(" ")}">
+      <img src="${g.img}" alt="${g.name}" class="w-full aspect-square object-cover rounded-t-xl">
+      <div class="p-2 flex justify-between items-center text-sm">
+        <span class="truncate">${g.name}</span>
+        <span class="font-semibold text-amber-300">$${g.price}</span>
       </div>
-      ${
-        !withdrawing
-          ? `<button class="withdraw-btn absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
-                         text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded-md shadow">
-               ⇄
-             </button>`
-          : `<span class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[11px]
-                         text-amber-300 font-semibold select-none">⏳ вывод…</span>`
+
+      ${pend
+        ? `<div class="absolute inset-0 bg-black/50 flex items-center justify-center text-amber-300 text-xs">⏳ вывод…</div>`
+        : `<button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
+                          text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>`
       }
+      <input type="checkbox" class="selBox absolute bottom-2 right-2 w-4 h-4
+             accent-amber-500" ${sel ? "checked" : ""} />
     </div>`;
 }
 
 function renderGrid() {
   const grid = $("#profileGrid");
-  grid.innerHTML = "";
-  inventory.forEach(n => grid.insertAdjacentHTML("beforeend", nftCardHTML(n)));
+  grid.innerHTML = viewGifts.map(giftCardHTML).join("");
 
-  const empty = document.querySelector("#emptyState");
-  if (empty) empty.classList.toggle("hidden", viewGifts.length !== 0);
-
-  grid.onclick = async e => {
-    const btn  = e.target.closest(".withdraw-btn");
-    if (!btn) return;
-    const card = btn.closest(".nft-card");
-    const id   = card.dataset.id;
-
-    btn.disabled = true;
-    btn.textContent = "…";
-
-    try {
-      const { link } = await postJSON(`${API_ORIGIN}/wallet/withdrawGift`, { ownedId: id });
-
-      // помечаем локально
-      const nft = inventory.find(x => x.id === id);
-      if (nft) nft.status = "pending_withdraw";
-      renderGrid();
-
-      // открываем инвойс на оплату комиссии
-      if (window.Telegram?.WebApp?.openInvoice) {
-        Telegram.WebApp.openInvoice(link);
-      } else {
-        window.open(link, "_blank");
-      }
-    } catch (err) {
-      alert("Ошибка: "+err.message);
-    }
-  };
+  $("#emptyState").classList.toggle("hidden", viewGifts.length !== 0);
+  updateCounter();
 }
 
-/* ============  DATA  ============ */
-async function loadGifts() {
+/* === COUNTER & BUTTONS === */
+function totalValue(list) {
+  return list.reduce((s,g)=>s+g.price,0);
+}
+
+function updateCounter() {
+  const all = viewGifts.length;
+  const sel = selected.size;
+  const val = totalValue(viewGifts).toFixed(0);
+  $("#counter").textContent = `${sel} / ${all} ($${val})`;
+
+  const btn = $("#withdrawSelected");
+  btn.textContent = sel ? `Вывести ${sel}` : "Вывести 0";
+  btn.disabled = sel === 0;
+}
+
+/* === FILTER / SORT === */
+function applyFilters() {
+  const q = $("#searchInput").value.trim().toLowerCase();
+
+  viewGifts = gifts.filter(g =>
+       g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q));
+
+  const sort = $("#sortSelect").value;
+  viewGifts.sort((a,b)=>{
+    if (sort==="priceAsc")  return a.price - b.price;
+    if (sort==="priceDesc") return b.price - a.price;
+    return a.name.localeCompare(b.name,"ru");
+  });
+
+  renderGrid();
+}
+
+/* === WITHDRAW === */
+async function doWithdraw(id) {
   try {
-    const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
-      credentials: "include",
-      headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
-    });
-    const arr = await r.json();
-    inventory = arr.map(g => ({
-      id   : g.ownedId,
-      name : g.name,
-      price: g.price,
-      img  : g.img,
-      status: g.status || "idle"
-    }));
-    renderGrid();
-  } catch (e) {
-    console.warn("gifts:", e.message);
+    const { link } = await postJSON("/wallet/withdrawGift", { ownedId:id });
+    const g = gifts.find(x=>x.id===id);
+    if (g) g.status = "pending_withdraw";
+    applyFilters();
+
+    window.Telegram?.WebApp?.openInvoice
+      ? Telegram.WebApp.openInvoice(link)
+      : window.open(link,"_blank");
+  } catch(e) {
+    alert("Ошибка: "+e.message);
   }
 }
 
-/* =====  INIT  ===== */
-(async () => {
+async function withdrawSelected() {
+  const ids = Array.from(selected);
+  for (const id of ids) await doWithdraw(id);
+  selected.clear();
+}
+
+/* === EVENTS === */
+$("#searchInput").addEventListener("input", applyFilters);
+$("#sortSelect").addEventListener("change", applyFilters);
+
+$("#withdrawSelected").addEventListener("click", withdrawSelected);
+
+$("#profileGrid").addEventListener("click", e => {
+  const card = e.target.closest("[data-id]");
+  if (!card) return;
+  const id = card.dataset.id;
+
+  if (e.target.classList.contains("quickWithdraw")) {
+    doWithdraw(id);
+    return;
+  }
+
+  /* чек‑бокс или клик по карте → toggle select */
+  if (selected.has(id)) selected.delete(id); else selected.add(id);
+  // instant UI feedback
+  card.classList.toggle("ring-amber-400");
+  card.classList.toggle("ring-2");
+  card.querySelector(".selBox").checked = selected.has(id);
+  updateCounter();
+});
+
+/* helper – postJSON with auth */
+function postJSON(path, data) {
+  return fetch(API_ORIGIN + path, {
+    method : "POST",
+    credentials:"include",
+    headers: {
+      "Content-Type":"application/json",
+      ...(jwtToken && { Authorization:"Bearer "+jwtToken })
+    },
+    body: JSON.stringify(data)
+  }).then(r => r.ok ? r.json() : r.text().then(msg=>Promise.reject(new Error(msg))));
+}
+
+/* === INIT === */
+(async ()=> {
   await ensureJwt();
-  await Promise.all([ refreshBalance(), loadGifts() ]);
+  await Promise.all([refreshBalance(), loadGifts()]);
 })();
 
-$("#refreshGifts").addEventListener("click", loadGifts);
