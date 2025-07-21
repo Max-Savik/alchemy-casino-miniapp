@@ -39,25 +39,18 @@ async function refreshBalance() {
 
 /* === DATA === */
 function buildImgLink(g) {
-  /* ① берём slug из ownedId без префиксов gift:/collection: */
-  const raw = (g.ownedId || "")
-    .split(":")
-    .pop()
-    .toLowerCase();                      // «deskcalendar190442-243»
+  /* ① letters‑only из названия («DeskCalendar‑190442» → deskcalendar) */
+  const letters = (g.name || "")
+    .toLowerCase()
+    .replace(/[^a-z]+/g, "");
 
-  /* ② находим:   ^(letters)(digits)   */
-  const m = raw.match(/^([a-z]+?)(\d+)/);
+  /* ② цифры: сначала ищем в названии, иначе в ownedId, иначе gid */
+  const num =
+    (g.name.match(/\d+/)     ||   // «DeskCalendar‑190442»
+     g.ownedId.match(/\d+/)   ||   // «deskcalendar-243»
+     [g.gid || "0"])[0];
 
-  /* если всё ок — формируем «letters‑digits»  */
-  if (m) {
-    const [, letters, digits] = m;       // → deskcalendar / 190442
-    return `https://nft.fragment.com/gift/${letters}-${digits}.medium.jpg`;
-  }
-
-  /* ③ fallback: чистим name и первое число */
-  const letters = (g.name || "").toLowerCase().replace(/[^a-z]+/g, "") || "unknown";
-  const digits  = (g.ownedId.match(/\d+/) || [g.gid || "0"])[0];
-  return `https://nft.fragment.com/gift/${letters}-${digits}.medium.jpg`;
+  return `https://nft.fragment.com/gift/${letters}-${num}.medium.jpg`;
 }
 
 
