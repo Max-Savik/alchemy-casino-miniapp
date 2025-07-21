@@ -39,15 +39,25 @@ async function refreshBalance() {
 
 /* === DATA === */
 function buildImgLink(g) {
-  /* core → «letters‑only» версия имени NFT */
-  const core = (g.name || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "");      // «Top Hat #5970» → «tophat5970»
+  /* ① берём slug из ownedId без префиксов gift:/collection: */
+  const raw = (g.ownedId || "")
+    .split(":")
+    .pop()
+    .toLowerCase();                      // «deskcalendar190442-243»
 
-  /* num  → первый числовой фрагмент из ownedId / gid */
-  const num = (g.ownedId.match(/\d+/) || [g.gid || "0"])[0];
+  /* ② находим:   ^(letters)(digits)   */
+  const m = raw.match(/^([a-z]+?)(\d+)/);
 
-  return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
+  /* если всё ок — формируем «letters‑digits»  */
+  if (m) {
+    const [, letters, digits] = m;       // → deskcalendar / 190442
+    return `https://nft.fragment.com/gift/${letters}-${digits}.medium.jpg`;
+  }
+
+  /* ③ fallback: чистим name и первое число */
+  const letters = (g.name || "").toLowerCase().replace(/[^a-z]+/g, "") || "unknown";
+  const digits  = (g.ownedId.match(/\d+/) || [g.gid || "0"])[0];
+  return `https://nft.fragment.com/gift/${letters}-${digits}.medium.jpg`;
 }
 
 
