@@ -46,8 +46,8 @@ function buildImgLink(g) {
   const raw   = g.ownedId.split(":").pop().replace(/[\u2010-\u2015]/g, "-");
   const lower = raw.toLowerCase();
 
-  /* ③ готовый slug вида «word-123» → сразу отдаём */
-  if (/^[a-z0-9]+-\d+$/i.test(lower)) {
+  /* ③ готовый slug вида «word-123» (только буквы до дефиса) → сразу отдаём */
+  if (/^[a-z]+-\d+$/i.test(lower)) {
     return `https://nft.fragment.com/gift/${lower}.medium.jpg`;
   }
 
