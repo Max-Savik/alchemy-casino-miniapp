@@ -26,6 +26,8 @@ async function ensureJwt() {
   localStorage.setItem("jwt", jwtToken);
 }
 
+
+
 async function refreshBalance() {
   const r = await fetch(`${API_ORIGIN}/wallet/balance`, {
     credentials: "include",
