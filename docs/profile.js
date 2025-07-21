@@ -16,7 +16,7 @@ async function ensureJwt() {
   if (jwtToken) return;
   const userId = window?.Telegram?.WebApp?.initDataUnsafe?.user?.id
               || "guest-" + Math.random().toString(36).slice(2);
-  const r = await fetch(${API_ORIGIN}/auth/login, {
+  const r = await fetch(`${API_ORIGIN}/auth/login`, {
     method : "POST",
     credentials: "include",
     headers: { "Content-Type":"application/json" },
@@ -27,7 +27,7 @@ async function ensureJwt() {
 }
 
 async function refreshBalance() {
-  const r = await fetch(${API_ORIGIN}/wallet/balance, {
+  const r = await fetch(`${API_ORIGIN}/wallet/balance`, {
     credentials: "include",
     headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
   });
@@ -39,37 +39,36 @@ async function refreshBalance() {
 
 /* === DATA === */
 function buildImgLink(g) {
-  /* полностью валидный URL из API — берём как есть */
+  /* ① API уже отдал полный URL */
   if (g.img && g.img.trim().startsWith("http")) return g.img.trim();
 
-  /* убираем префиксы + нормализуем «кривые» длинные тире */
-  const idClean = g.ownedId
-        .split(":").pop()
-        .replace(/[\u2010-\u2015]/g,'-')   // всякие ‑–—→ -
-        .toLowerCase();
+  /* ② снимаем префиксы gift:/collection: и нормализуем тире */
+  const raw   = g.ownedId.split(":").pop().replace(/[\u2010-\u2015]/g, "-");
+  const lower = raw.toLowerCase();
 
-  /* 3) slug уже правильный, **если** в первой части нет встроенных цифр
-     ( deskcalendar‑190442 ✅,  deskcalendar190442‑243 ✗ )                  */
-  if (/^[a-z]+-\d+$/i.test(idClean))
+  /* ③ готовый slug вида «word-123» → сразу отдаём */
+  if (/^[a-z]+-\d+$/i.test(lower)) {
+    return `https://nft.fragment.com/gift/${lower}.medium.jpg`;
+  }
 
-  /* 4) fallback: формируем <letters>‑<digits>.medium.jpg */
-  const num = (g.ownedId.match(/\d+/) || [g.gid || '0'])[0];      // «190442»
+  /* ④ варианты «deskcalendar190442» или «deskcalendar190442-243» */
+  const m = raw.match(/^([a-z]+?)(\d+)(?:-.+)?$/i);
+  if (m) {
+    const [, letters, digits] = m;
+    return `https://nft.fragment.com/gift/${letters.toLowerCase()}-${digits}.medium.jpg`;
+  }
 
-  /* берём «словесную» часть без хвоста‑цифр */
-  const core = (
-      g.ownedId
-        .split(':').pop()          // убираем gift:/collection:
-        .replace(/-\d+$/,'')       // deskcalendar‑190442 → deskcalendar
-        .replace(/\d+$/,'')        // deskcalendar190442  → deskcalendar
-        .replace(/[^a-z0-9]+/gi,'')   // чистим мусор
-    ) ||
-    (g.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'');         // резерв
+  /* ⑤ самый крайний случай — имя + первая цифра */
+  const numFallback  = (g.ownedId.match(/\d+/) || [g.gid || "0"])[0];
+  const coreFallback = (g.name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "")
+      .slice(0, 40);
+  return `https://nft.fragment.com/gift/${coreFallback}-${numFallback}.medium.jpg`;
 
-  return https://nft.fragment.com/gift/${core}-${num}.medium.jpg;
-}
 
 async function loadGifts() {
-  const r = await fetch(${API_ORIGIN}/wallet/gifts, {
+  const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
     credentials: "include",
     headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
   });
