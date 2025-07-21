@@ -115,7 +115,16 @@ function giftCardHTML(g) {
                  </svg>
                  вывод
              </div>`
-          : '<button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500 text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>'
+          : `<button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
+                            text-gray-900 px-1.5 py-0.5 rounded shadow flex items-center justify-center"
+                      title="Вывести">
+               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                 <rect x="5" y="13" width="14" height="6" rx="2" />
+                 <path d="M12 3v10" />
+                 <path d="M8.5 7.5 12 4l3.5 3.5" />
+               </svg>
+             </button>`
       }
       <input type="checkbox"
              class="selBox absolute top-2 left-2 w-4 h-4 accent-amber-500"
