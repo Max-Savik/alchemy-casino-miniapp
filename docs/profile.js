@@ -39,8 +39,10 @@ async function refreshBalance() {
 
 /* === DATA === */
 function buildImgLink(g) {
-  /* ① API уже отдал полный URL */
-  if (g.img && g.img.trim().startsWith("http")) return g.img.trim();
+  /* ① API уже отдал URL — оставляем, **только если** он уже корректный */
+  if (g.img && /\/gift\/[a-z]+-\d+\.medium\.(jpg|webp)$/i.test(g.img.trim())) {
+    return g.img.trim();
+  }
 
   /* ② снимаем префиксы gift:/collection: и нормализуем тире */
   const raw   = g.ownedId.split(":").pop().replace(/[\u2010-\u2015]/g, "-");
