@@ -18,9 +18,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- кириллица‑френдли -->
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap&subset=cyrillic"
+        rel="stylesheet">
   <style>
 /* ——— базовая типографика ——— */
-body{ font-family:'Inter','Segoe UI',sans-serif; line-height:1.45; font-size:15px }
+body{ font-family:'Manrope','Inter','Segoe UI',sans-serif; line-height:1.45; font-size:15px }
 h1,h2,h3,header a{ letter-spacing:-.02em }
 
 /* ——— NFT grid ——— */
@@ -28,11 +31,29 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
 .nft-card:hover{ transform:translateY(-4px) scale(1.02);
                  box-shadow:0 6px 20px rgba(0,0,0,.45); }
 
-/* ——— nice checkbox ——— */
+
+/* кастомный checkbox */
 input.selBox{
-  accent-color:#fbbf24;      /* amber‑500 */
-  filter:drop-shadow(0 0 2px rgba(255,193,7,.55));
+  appearance:none;
+  width:16px;height:16px;
+  border:2px solid #fcd34d;          /* amber‑300 */
+  border-radius:4px;
+  background:rgba(0,0,0,.35);
+  cursor:pointer;
+  transition:background .15s,border-color .15s;
 }
+input.selBox:checked{
+  background:#fbbf24;                /* amber‑500 */
+  border-color:#fbbf24;
+}
+input.selBox:checked:after{
+  content:'';
+  position:absolute;inset:2px;
+  background:#000;                   /* «галка» */
+  clip-path:polygon(14% 44%,0 65%,50% 100%,100% 0,80% 0,43% 62%);
+}
+
+label:hover{ color:#fcd34d }
 
 /* ——— «выбрать все» — подсветка при hover ——— */
 label:hover{ color:#f1c40f }
