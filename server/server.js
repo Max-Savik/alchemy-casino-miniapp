@@ -513,6 +513,9 @@ const io = new Server(httpServer, {
   },
 });
 
+/* стартуем периодическую очистку pending‑withdraw */
+setInterval(cleanupPendingGifts, 60_000);
+
 // ───────────────────── Game state (1 round) ────────────────────
 let game = {
   players: [],
