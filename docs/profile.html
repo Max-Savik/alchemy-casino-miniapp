@@ -109,9 +109,9 @@ label:hover{ color:#f1c40f }
 
           <!-- custom Select-All -->
           <label for="checkAll"
-                 class="select-all flex items-center gap-1.5 cursor-pointer text-sm font-medium">
+                 class="select-all relative flex items-center gap-1.5 cursor-pointer text-sm font-medium">
             <input id="checkAll" type="checkbox"
-       class="peer absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                   class="peer absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 opacity-0 cursor-pointer">
             <span class="box relative w-4 h-4 rounded border-2 border-amber-400/80
                          peer-checked:bg-amber-400 peer-checked:border-amber-400
                          transition"></span>
@@ -129,7 +129,7 @@ label:hover{ color:#f1c40f }
               <path d="M16 3h5v5"/><path d="M8 21H3v-5"/>
               <path d="M21 3l-7 7"/><path d="M3 21l7-7"/>
             </svg>
-            <span data-caption>Вывести 0</span>
+            <span data-caption>Вывести</span>
           </button>
         </div>
       </div>
