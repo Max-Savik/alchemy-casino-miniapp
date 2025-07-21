@@ -94,8 +94,7 @@ function giftCardHTML(g) {
 
   return `
     <div data-id="${g.id}" class="${cls.join(" ")}">
-      <img src="${g.img.replace('.jpg','.webp')}"
-           srcset="${g.img.replace('.jpg','.webp')} 1x, ${g.img} 2x"
+      <img src="${g.img}"
            alt="${g.name}"
            class="w-full aspect-square object-cover rounded-t-xl"
            onerror="this.onerror=null;this.src='${g.img}';">
@@ -155,11 +154,11 @@ function updateCounter() {
   const all = viewGifts.length;
   const sel = selected.size;
   const val = totalValue(viewGifts).toFixed(0);
-  $("#counter").textContent = `${sel} / ${all} ($${val})`;
+  $("#counter").textContent = `${sel} / ${all} ($${val})`;
 
   const btn = $("#withdrawSelected");
-  btn.querySelector("span").textContent =
-      sel ? `Вывести ${sel}` : "Вывести 0";
+  btn.querySelector("[data-caption]").textContent =
+      sel ? `Вывести ${sel}` : "Вывести
   btn.disabled = sel === 0;
 }
 
