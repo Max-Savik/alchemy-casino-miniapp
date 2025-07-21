@@ -15,9 +15,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Forum&family=Cinzel:wght@600;800&family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <style>
-    .glass{backdrop-filter:blur(12px) saturate(140%) brightness(1.05);}
-    .nft-card img{transition:transform .25s}
-    .nft-card:hover img{transform:scale(1.06)}
+/* ——— базовая типографика ——— */
+body{ font-family: 'Inter','Segoe UI',sans-serif; line-height:1.4 }
+h1,h2,h3,header a{ letter-spacing:-.02em }
+
+/* ——— NFT grid ——— */
+.nft-card{ transition:transform .25s, box-shadow .25s }
+.nft-card:hover{ transform:translateY(-4px) scale(1.02);
+                 box-shadow:0 6px 20px rgba(0,0,0,.45); }
+
+/* ——— nice checkbox ——— */
+input.selBox{
+  accent-color:#fbbf24;      /* amber‑500 */
+  filter:drop-shadow(0 0 2px rgba(255,193,7,.55));
+}
+
+/* ——— «выбрать все» — подсветка при hover ——— */
+label:hover{ color:#f1c40f }
   </style>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
