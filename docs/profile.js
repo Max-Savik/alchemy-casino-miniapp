@@ -257,4 +257,13 @@ function postJSON(path, data) {
 (async ()=> {
   await ensureJwt();
   await Promise.all([refreshBalance(), loadGifts()]);
+  const socket = io(API_ORIGIN, { auth: { token: jwtToken } });
+
+socket.on("giftUpdate", ({ ownedId, status }) => {
+  const g = gifts.find(x => x.id === ownedId);
+  if (g) {
+    g.status = status;
+    applyFilters();           // перерисовать сетку
+  }
+});
 })();
