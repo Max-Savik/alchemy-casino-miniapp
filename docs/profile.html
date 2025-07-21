@@ -98,18 +98,30 @@ label:hover{ color:#f1c40f }
           </select>
         </div>
 
-        <!-- right: счётчик + кнопка -->
-        <div class="flex items-center gap-3">
-          <label class="flex items-center gap-1 text-sm text-gray-400 select-none">
-            <input id="checkAll" type="checkbox" class="accent-amber-500">
-            все
-          </label>
-          <span id="counter"
-                class="text-sm text-gray-400 select-none">0 / 0 ($0)</span>
+        <!-- right: counter · select-all · withdraw -->
+        <div class="flex items-center gap-5 w-full sm:w-auto">
 
+          <!-- счётчик -->
+          <span id="counter"
+                class="text-[13px] font-medium text-gray-400 select-none min-w-[88px] text-right">0 / 0&nbsp;($0)</span>
+
+          <!-- custom Select-All -->
+          <label for="checkAll"
+                 class="select-all flex items-center gap-2 cursor-pointer group">
+            <input id="checkAll" type="checkbox" class="peer hidden">
+            <span class="checkmark transition"></span>
+            <span class="text-[13px] uppercase tracking-wide font-semibold text-gray-300
+                         group-hover:text-amber-400 select-none">Выбрать&nbsp;все</span>
+          </label>
+
+          <!-- Withdraw -->
           <button id="withdrawSelected"
-                  class="alch-btn px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled>Вывести 0</button>
+                  class="ml-auto alch-btn flex items-center gap-2 bg-amber-500/90 hover:bg-amber-500
+                         text-gray-900 font-bold px-4 py-2 rounded-lg
+                         disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled>
+            ⇄ <span>Вывести&nbsp;0</span>
+          </button>
         </div>
       </div>
 
