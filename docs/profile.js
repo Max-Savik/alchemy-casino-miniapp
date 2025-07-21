@@ -53,28 +53,6 @@ function buildImgLink(g) {
   return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
 }
 
-/* === FETCH NFT === */
-async function loadGifts(){
-  try{
-    const r = await fetch(`${API_ORIGIN}/wallet/gifts`,{
-      credentials:"include",
-      headers: jwtToken ? { Authorization:"Bearer "+jwtToken } : {}
-    });
-    const arr = await r.json();
-
-    gifts = arr.map(g=>({
-      ...g,
-      id  : g.ownedId,
-      img : buildImgLink(g)      // формируем ссылку гарантированно
-    }));
-  }catch(e){
-    console.warn('gifts:',e);
-    gifts.length = 0;
-  }finally{
-    applyFilters();              // перерисовываем даже при ошибке
-  }
-}
-
 /* === SELECT‑ALL === */
 $("#checkAll").addEventListener("change", e=>{
   if (e.target.checked){
@@ -253,4 +231,3 @@ function postJSON(path, data) {
   await ensureJwt();
   await Promise.all([refreshBalance(), loadGifts()]);
 })();
-
