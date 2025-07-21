@@ -48,9 +48,9 @@ function buildImgLink(g) {
         .replace(/[\u2010-\u2015]/g,'-')   // всякие ‑–—→ -
         .toLowerCase();
 
-  /* 3) slug формата «word‑12345» — готовый вариант */
-  if (/^[a-z0-9]+-\d+$/i.test(idClean))
-    return `https://nft.fragment.com/gift/${idClean}.medium.jpg`;
+  /* 3) slug уже правильный, **если** в первой части нет встроенных цифр
+     ( deskcalendar‑190442 ✅,  deskcalendar190442‑243 ✗ )                  */
+  if (/^[a-z]+-\d+$/i.test(idClean))
 
   /* 4) fallback: формируем <letters>‑<digits>.medium.jpg */
   const num = (g.ownedId.match(/\d+/) || [g.gid || '0'])[0];      // «190442»
