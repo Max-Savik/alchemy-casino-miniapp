@@ -355,6 +355,29 @@ async function createStarsInvoice(userId, ownedId) {
   if (!r.ok) throw new Error(r.description || "invoice error");
   return r.result;
 }
+/* ─── AUTO‑RESET for stale pending_withdraw ─────────────────── */
+function cleanupPendingGifts() {
+  const now   = Date.now();
+  const limit = 10 * 60_000;                // 10 минут
+  let changed = false;
+
+  gifts.forEach(g => {
+    if (g.status === "pending_withdraw" && now - (g.ts || 0) > limit) {
+      g.status = "idle";
+      delete g.invoiceLink;
+      changed = true;
+      /* уведомляем владельца в реальном времени */
+      io.to("u:" + g.ownerId).emit("giftUpdate", {
+        ownedId: g.ownedId,
+        status : "idle"
+      });
+    }
+  });
+
+  if (changed) saveGifts().catch(console.error);
+}
+setInterval(cleanupPendingGifts, 60_000);    // проверяем раз в минуту
+
 
 /* POST /wallet/link { userId, address }  */
 wallet.post('/link', async (req,res)=>{
