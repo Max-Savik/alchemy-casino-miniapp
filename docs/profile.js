@@ -118,10 +118,9 @@ function giftCardHTML(g) {
  <span class="font-semibold text-amber-300 drop-shadow-sm">$${g.price}</span>
       </div>
 
-      \${pend
-        ? \`<div class="absolute inset-0 bg-black/50 flex items-center justify-center text-amber-300 text-xs">⏳ вывод…</div>\`
-        : \`<button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
-                          text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>\`
+      ${pend
+        ? '<div class="absolute inset-0 bg-black/50 flex items-center justify-center text-amber-300 text-xs">⏳ вывод…</div>'
+        : '<button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500 text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>'
       }
       <input type="checkbox"
              class="selBox absolute bottom-2 right-2 w-4 h-4 accent-amber-500"
