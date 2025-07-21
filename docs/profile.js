@@ -50,7 +50,9 @@ function buildImgLink(g) {
 
   /* 3) slug уже правильный, **если** в первой части нет встроенных цифр
      ( deskcalendar‑190442 ✅,  deskcalendar190442‑243 ✗ )                  */
-  if (/^[a-z]+-\d+$/i.test(idClean))
+  if (/^[a-z]+-\d+$/i.test(idClean)) {
+    return `https://nft.fragment.com/gift/${idClean}.medium.jpg`;
+  }
 
   /* 4) fallback: формируем <letters>‑<digits>.medium.jpg */
   const num = (g.ownedId.match(/\d+/) || [g.gid || '0'])[0];      // «190442»
