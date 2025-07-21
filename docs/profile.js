@@ -38,11 +38,16 @@ async function refreshBalance() {
 }
 
 /* === DATA === */
-function buildImgLink(idOrUrl) {
-  /* API иногда шлёт url, иногда только slug */
-  if (idOrUrl?.startsWith("http")) return idOrUrl;
-  /* убираем всё до «:» (если ownedId имеет вид collection:id) */
-  const slug = idOrUrl.split(":").pop();
+function buildImgLink(g) {
+  /* ①  API уже дал полный URL  */
+  if (g.img?.startsWith("http")) return g.img;
+
+  /* ②  slug = {name‑без‑символов}-{число‑из ownedId или gid}   */
+  const core = (g.name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");             // «Vintage Cigar» → vintagecigar
+  const num  = (g.ownedId.match(/\d+/) || [g.gid || "0"])[0];
+  const slug = `${core}-${num}`;
   return `https://nft.fragment.com/gift/${slug}.medium.jpg`;
 }
 
@@ -53,14 +58,22 @@ async function loadGifts() {
   });
   const arr = await r.json();
   gifts = arr.map(g => ({
-    id     : g.ownedId,
-    name   : g.name,
-    price  : g.price,
-    img    : buildImgLink(g.img || g.ownedId),
-    status : g.status || "idle"
+    ...g,
+    id    : g.ownedId,
+    img   : buildImgLink(g)
   }));
   applyFilters();
 }
+
+/* === SELECT‑ALL === */
+$("#checkAll").addEventListener("change", e=>{
+  if (e.target.checked){
+    viewGifts.forEach(g=>selected.add(g.id));
+  }else{
+    selected.clear();
+  }
+  renderGrid();
+});
 
 /* === UI RENDER === */
 function giftCardHTML(g) {
