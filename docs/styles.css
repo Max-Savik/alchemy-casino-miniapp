@@ -787,3 +787,5 @@ input[type=range]::-moz-range-thumb {
 /* плавное затемнение при disabled */
 .alch-btn:disabled{ filter:grayscale(.4) opacity:.6 }
 
+/* не даём абсолютному input захватывать весь экран */
+.select-all{ position:relative }
