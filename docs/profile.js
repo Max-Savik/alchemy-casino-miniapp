@@ -16,7 +16,7 @@ async function ensureJwt() {
   if (jwtToken) return;
   const userId = window?.Telegram?.WebApp?.initDataUnsafe?.user?.id
               || "guest-" + Math.random().toString(36).slice(2);
-  const r = await fetch(`${API_ORIGIN}/auth/login`, {
+  const r = await fetch(${API_ORIGIN}/auth/login, {
     method : "POST",
     credentials: "include",
     headers: { "Content-Type":"application/json" },
@@ -26,10 +26,8 @@ async function ensureJwt() {
   localStorage.setItem("jwt", jwtToken);
 }
 
-
-
 async function refreshBalance() {
-  const r = await fetch(`${API_ORIGIN}/wallet/balance`, {
+  const r = await fetch(${API_ORIGIN}/wallet/balance, {
     credentials: "include",
     headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
   });
@@ -52,9 +50,7 @@ function buildImgLink(g) {
 
   /* 3) slug уже правильный, **если** в первой части нет встроенных цифр
      ( deskcalendar‑190442 ✅,  deskcalendar190442‑243 ✗ )                  */
-  if (/^[a-z]+-\d+$/i.test(idClean)) {
-    return `https://nft.fragment.com/gift/${idClean}.medium.jpg`;
-  }
+  if (/^[a-z]+-\d+$/i.test(idClean))
 
   /* 4) fallback: формируем <letters>‑<digits>.medium.jpg */
   const num = (g.ownedId.match(/\d+/) || [g.gid || '0'])[0];      // «190442»
@@ -69,11 +65,11 @@ function buildImgLink(g) {
     ) ||
     (g.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'');         // резерв
 
-  return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
+  return https://nft.fragment.com/gift/${core}-${num}.medium.jpg;
 }
 
 async function loadGifts() {
-  const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
+  const r = await fetch(${API_ORIGIN}/wallet/gifts, {
     credentials: "include",
     headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
   });
@@ -110,7 +106,7 @@ function giftCardHTML(g) {
   if (sel) cls.push("ring-2 ring-amber-400");
   if (pend) cls.push("opacity-60 pointer-events-none");
 
-  return `
+  return 
     <div data-id="${g.id}" class="${cls.join(" ")}">
       <img src="${g.img.replace('.jpg','.webp')}"
            srcset="${g.img.replace('.jpg','.webp')} 1x, ${g.img} 2x"
@@ -123,15 +119,15 @@ function giftCardHTML(g) {
       </div>
 
       ${pend
-        ? `<div class="absolute inset-0 bg-black/50 flex items-center justify-center text-amber-300 text-xs">⏳ вывод…</div>`
-        : `<button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
-                          text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>`
+        ? <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-amber-300 text-xs">⏳ вывод…</div>
+        : <button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
+                          text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>
       }
       <input type="checkbox"
              class="selBox absolute bottom-2 right-2 w-4 h-4 accent-amber-500"
              ${sel ? "checked" : ""}
              ${pend ? "disabled" : ""}/>
-    </div>`;
+    </div>;
 }
 
 /* === Toast helper === */
@@ -164,10 +160,10 @@ function updateCounter() {
   const all = viewGifts.length;
   const sel = selected.size;
   const val = totalValue(viewGifts).toFixed(0);
-  $("#counter").textContent = `${sel} / ${all} ($${val})`;
+  $("#counter").textContent = ${sel} / ${all} ($${val});
 
   const btn = $("#withdrawSelected");
-  btn.textContent = sel ? `Вывести ${sel}` : "Вывести 0";
+  btn.textContent = sel ? Вывести ${sel} : "Вывести 0";
   btn.disabled = sel === 0;
 }
 
@@ -208,7 +204,7 @@ async function withdrawSelected() {
   const ids = Array.from(selected);
   if (!ids.length) return;
 
-  toast(`Операции идут по очереди, комиссия 25 ⭐ за каждый NFT`);
+  toast(Операции идут по очереди, комиссия 25 ⭐ за каждый NFT);
 
   for (const id of ids) {
     await doWithdraw(id);            // создаём и открываем счёт
