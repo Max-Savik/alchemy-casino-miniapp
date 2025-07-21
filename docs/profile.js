@@ -53,9 +53,19 @@ function buildImgLink(g) {
   if (/^[a-z0-9]+-\d+$/i.test(idClean))
     return `https://nft.fragment.com/gift/${idClean}.medium.jpg`;
 
-  /* 4) fallback: имя‑без‑символов + первое число из ID / gid */
-  const core = (g.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
-  const num  = (g.ownedId.match(/\d+/) || [g.gid || '0'])[0];
+  /* 4) fallback: формируем <letters>‑<digits>.medium.jpg */
+  const num = (g.ownedId.match(/\d+/) || [g.gid || '0'])[0];      // «190442»
+
+  /* берём «словесную» часть без хвоста‑цифр */
+  const core = (
+      g.ownedId
+        .split(':').pop()          // убираем gift:/collection:
+        .replace(/-\d+$/,'')       // deskcalendar‑190442 → deskcalendar
+        .replace(/\d+$/,'')        // deskcalendar190442  → deskcalendar
+        .replace(/[^a-z0-9]+/gi,'')   // чистим мусор
+    ) ||
+    (g.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'');         // резерв
+
   return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
 }
 
