@@ -158,7 +158,8 @@ function updateCounter() {
   $("#counter").textContent = `${sel} / ${all} ($${val})`;
 
   const btn = $("#withdrawSelected");
-  btn.textContent = sel ? `Вывести ${sel}` : "Вывести 0";
+  btn.querySelector("span").textContent =
+      sel ? `Вывести ${sel}` : "Вывести 0";
   btn.disabled = sel === 0;
 }
 
