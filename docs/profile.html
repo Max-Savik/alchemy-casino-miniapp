@@ -91,13 +91,39 @@ label:hover{ color:#f1c40f }
                  class="flex-grow px-3 py-2 rounded-lg bg-gray-800 text-gray-100 placeholder-gray-500
                         focus:outline-none focus:ring-2 focus:ring-amber-500" />
 
-          <select id="sortSelect"
-                  class="px-3 py-2 rounded-lg bg-gray-800 text-gray-100 focus:outline-none
-                         focus:ring-2 focus:ring-amber-500 w-48 shrink-0">
-            <option value="priceDesc">Цена ↓</option>
-            <option value="priceAsc">Цена ↑</option>
-            <option value="name">Название A‑Z</option>
-          </select>
+          <!-- custom sort dropdown -->
+          <div id="sortDropdown" class="relative w-56 shrink-0">
+            <button id="sortBtn"
+                    class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg
+                           bg-gradient-to-br from-gray-800 to-gray-700 border border-amber-500/30
+                           text-gray-200 text-sm font-medium hover:border-amber-400
+                           focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+              <span data-current-sort>Сортировка: Цена ↓</span>
+              <svg class="w-4 h-4 transition-transform" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+            <div id="sortMenu"
+                 class="hidden absolute right-0 mt-1 w-full rounded-lg border border-amber-500/30
+                        bg-gray-900/95 backdrop-blur-sm shadow-xl z-10 overflow-hidden">
+              <button data-sort="priceDesc"
+                      class="sort-item flex w-full items-center gap-2 px-3 py-2 text-left text-sm
+                             hover:bg-amber-500/10">
+                <span class="icon opacity-0">✔</span><span>Цена ↓ (дороже сначала)</span>
+              </button>
+              <button data-sort="priceAsc"
+                      class="sort-item flex w-full items-center gap-2 px-3 py-2 text-left text-sm
+                             hover:bg-amber-500/10">
+                <span class="icon opacity-0">✔</span><span>Цена ↑ (дешевле сначала)</span>
+              </button>
+              <button data-sort="name"
+                      class="sort-item flex w-full items-center gap-2 px-3 py-2 text-left text-sm
+                             hover:bg-amber-500/10">
+                <span class="icon opacity-0">✔</span><span>Название A‑Z</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- right‑panel -->
