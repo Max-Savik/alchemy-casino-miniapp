@@ -401,26 +401,25 @@ async function saveTx(){
 }
 // ─────────────────── Express / Socket.IO ───────────────────────
 const app = express();
+// ---------- CORS (должен быть ПЕРВЫМ) ----------
+const allowed = (process.env.ALLOWED_ORIGINS || "")
+  .split(",").map(s=>s.trim()).filter(Boolean);
+
+const corsOptions = {
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);              // curl / Postman
+    if (allowed.includes(origin)) return cb(null, true);
+    cb(new Error("CORS: origin blocked"));
+  },
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));           // ①
+app.options("*", cors(corsOptions));  // ②  отвечаем на pre‑flight БЕЗ auth
+
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cookieParser());
-// ---------- безопасный CORS ----------
-const allowed = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
-
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      // запросы без Origin (curl, Postman) можно пускать
-      if (!origin) return cb(null, true);
-      if (allowed.includes(origin)) return cb(null, true);
-      cb(new Error("CORS: origin blocked"));
-    },
-    credentials: true,
-    optionsSuccessStatus: 200,
-  })
-);
 app.use(express.json());
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
