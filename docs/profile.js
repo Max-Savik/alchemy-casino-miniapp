@@ -40,19 +40,19 @@ async function refreshBalance() {
 
 /* === DATA === */
 function buildImgLink(g) {
-  // 1) API уже дал полный URL → берём как есть
+  /* 1) API уже дал полный URL */
   if (g.img?.startsWith("http")) return g.img;
 
-  // 2) убираем префиксы вида  «gift:»  /  «collection:»
-  const idClean = g.ownedId.split(":").pop();     //    gift:vintagecigar-6050 → vintagecigar‑6050
+  /* 2) префикс «gift:» / «collection:» → убираем, slug приводим к lowercase */
+  const idClean = g.ownedId.split(":").pop().toLowerCase();   // gift:VintageCigar‑6050 → vintagecigar‑6050
 
-  // 3) если уже «буквы‑цифры», то это и есть slug
+  /* 3) slug формата «word‑12345» — готовый вариант */
   if (/^[a-z0-9]+-\d+$/i.test(idClean))
     return `https://nft.fragment.com/gift/${idClean}.medium.jpg`;
 
-  // 4) fallback: из имени + первого числа в ID
+  /* 4) fallback: имя‑без‑символов + первое число из ID / gid */
   const core = (g.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
-  const num  = (g.ownedId.match(/\d+/)||[g.gid||'0'])[0];
+  const num  = (g.ownedId.match(/\d+/) || [g.gid || '0'])[0];
   return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
 }
 
