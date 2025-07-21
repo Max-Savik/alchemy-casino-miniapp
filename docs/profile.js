@@ -39,36 +39,26 @@ async function refreshBalance() {
 
 /* === DATA === */
 function buildImgLink(g) {
-  /* ①  API уже дал полный URL  */
+  /* 1) API уже дал полный URL → берём как есть */
   if (g.img?.startsWith("http")) return g.img;
 
-  /* ②  slug = {name‑без‑символов}-{число‑из ownedId или gid}   */
-  const core = (g.name || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "");             // «Vintage Cigar» → vintagecigar
-  const num  = (g.ownedId.match(/\d+/) || [g.gid || "0"])[0];
-  const slug = `${core}-${num}`;
-  return `https://nft.fragment.com/gift/${slug}.medium.jpg`;
-}
+  /* 2) ownedId УЖЕ содержит slug: «vintagecigar-6050» и т.д. */
+  if (/^[a-z]+-\d+$/i.test(g.ownedId)) {
+    return `https://nft.fragment.com/gift/${g.ownedId}.medium.jpg`;
+  }
 
-async function loadGifts() {
-  const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
-    credentials: "include",
-    headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
-  });
-  const arr = await r.json();
-  gifts = arr.map(g => ({
-    ...g,
-    id    : g.ownedId,
-    img   : buildImgLink(g)
-  }));
-  applyFilters();
+  /* 3) fallback: из имени + первого числа в ID */
+  const core = (g.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const num  = (g.ownedId.match(/\d+/)||[g.gid||'0'])[0];
+  return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
 }
 
 /* === SELECT‑ALL === */
 $("#checkAll").addEventListener("change", e=>{
   if (e.target.checked){
-    viewGifts.forEach(g=>selected.add(g.id));
+    viewGifts
+      .filter(g=>g.status==='idle')  // ← только свободные
+      .forEach(g=>selected.add(g.id));
   }else{
     selected.clear();
   }
@@ -101,8 +91,10 @@ function giftCardHTML(g) {
         : `<button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
                           text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>`
       }
-      <input type="checkbox" class="selBox absolute bottom-2 right-2 w-4 h-4
-             accent-amber-500" ${sel ? "checked" : ""} />
+      <input type="checkbox"
+             class="selBox absolute bottom-2 right-2 w-4 h-4 accent-amber-500"
+             ${sel ? "checked" : ""}
+             ${pend ? "disabled" : ""}/>
     </div>`;
 }
 
@@ -122,6 +114,8 @@ function renderGrid() {
   grid.innerHTML = viewGifts.map(giftCardHTML).join("");
 
   $("#emptyState").classList.toggle("hidden", viewGifts.length !== 0);
+  $("#checkAll").checked = selected.size &&
+                           selected.size === viewGifts.filter(g=>g.status==='idle').length;
   updateCounter();
 }
 
