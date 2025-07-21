@@ -39,35 +39,16 @@ async function refreshBalance() {
 
 /* === DATA === */
 function buildImgLink(g) {
-  /* ① API уже отдал URL — оставляем, **только если** он уже корректный */
-  if (g.img && /\/gift\/[a-z]+-\d+\.medium\.(jpg|webp)$/i.test(g.img.trim())) {
-    return g.img.trim();
-  }
+  /* core → «letters‑only» версия имени NFT */
+  const core = (g.name || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");      // «Top Hat #5970» → «tophat5970»
 
-  /* ② снимаем префиксы gift:/collection: и нормализуем тире */
-  const raw   = g.ownedId.split(":").pop().replace(/[\u2010-\u2015]/g, "-");
-  const lower = raw.toLowerCase();
+  /* num  → первый числовой фрагмент из ownedId / gid */
+  const num = (g.ownedId.match(/\d+/) || [g.gid || "0"])[0];
 
-  /* ③ готовый slug вида «word-123» (только буквы до дефиса) → сразу отдаём */
-  if (/^[a-z]+-\d+$/i.test(lower)) {
-    return `https://nft.fragment.com/gift/${lower}.medium.jpg`;
-  }
-
-  /* ④ варианты «deskcalendar190442» или «deskcalendar190442-243» */
-  const m = raw.match(/^([a-z]+?)(\d+)(?:-.+)?$/i);
-  if (m) {
-    const [, letters, digits] = m;
-    return `https://nft.fragment.com/gift/${letters.toLowerCase()}-${digits}.medium.jpg`;
-  }
-
-  /* ⑤ самый крайний случай — имя + первая цифра */
-  const numFallback  = (g.ownedId.match(/\d+/) || [g.gid || "0"])[0];
-  const coreFallback = (g.name || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "")
-      .slice(0, 40);
-  return `https://nft.fragment.com/gift/${coreFallback}-${numFallback}.medium.jpg`;
-} 
+  return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
+}
 
 
 async function loadGifts() {
