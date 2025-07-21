@@ -47,7 +47,7 @@ function buildImgLink(g) {
   const lower = raw.toLowerCase();
 
   /* ③ готовый slug вида «word-123» → сразу отдаём */
-  if (/^[a-z]+-\d+$/i.test(lower)) {
+  if (/^[a-z0-9]+-\d+$/i.test(lower)) {
     return `https://nft.fragment.com/gift/${lower}.medium.jpg`;
   }
 
@@ -65,6 +65,7 @@ function buildImgLink(g) {
       .replace(/[^a-z0-9]+/g, "")
       .slice(0, 40);
   return `https://nft.fragment.com/gift/${coreFallback}-${numFallback}.medium.jpg`;
+} 
 
 
 async function loadGifts() {
@@ -105,7 +106,7 @@ function giftCardHTML(g) {
   if (sel) cls.push("ring-2 ring-amber-400");
   if (pend) cls.push("opacity-60 pointer-events-none");
 
-  return 
+  return `
     <div data-id="${g.id}" class="${cls.join(" ")}">
       <img src="${g.img.replace('.jpg','.webp')}"
            srcset="${g.img.replace('.jpg','.webp')} 1x, ${g.img} 2x"
@@ -117,10 +118,10 @@ function giftCardHTML(g) {
  <span class="font-semibold text-amber-300 drop-shadow-sm">$${g.price}</span>
       </div>
 
-      ${pend
-        ? <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-amber-300 text-xs">⏳ вывод…</div>
-        : <button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
-                          text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>
+      \${pend
+        ? \`<div class="absolute inset-0 bg-black/50 flex items-center justify-center text-amber-300 text-xs">⏳ вывод…</div>\`
+        : \`<button class="quickWithdraw absolute top-2 right-2 bg-amber-500/90 hover:bg-amber-500
+                          text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded shadow">⇄</button>\`
       }
       <input type="checkbox"
              class="selBox absolute bottom-2 right-2 w-4 h-4 accent-amber-500"
@@ -159,10 +160,10 @@ function updateCounter() {
   const all = viewGifts.length;
   const sel = selected.size;
   const val = totalValue(viewGifts).toFixed(0);
-  $("#counter").textContent = ${sel} / ${all} ($${val});
+  $("#counter").textContent = `${sel} / ${all} ($${val})`;
 
   const btn = $("#withdrawSelected");
-  btn.textContent = sel ? Вывести ${sel} : "Вывести 0";
+  btn.textContent = sel ? `Вывести ${sel}` : "Вывести 0";
   btn.disabled = sel === 0;
 }
 
@@ -203,7 +204,7 @@ async function withdrawSelected() {
   const ids = Array.from(selected);
   if (!ids.length) return;
 
-  toast(Операции идут по очереди, комиссия 25 ⭐ за каждый NFT);
+  toast("Операции идут по очереди, комиссия 25 ⭐ за каждый NFT");
 
   for (const id of ids) {
     await doWithdraw(id);            // создаём и открываем счёт
