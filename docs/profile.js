@@ -158,7 +158,7 @@ function updateCounter() {
 
   const btn = $("#withdrawSelected");
   btn.querySelector("[data-caption]").textContent =
-      sel ? `Вывести ${sel}` : "Вывести
+      sel ? `Вывести ${sel}` : "Вывести 0";
   btn.disabled = sel === 0;
 }
 
