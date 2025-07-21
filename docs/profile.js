@@ -40,11 +40,14 @@ async function refreshBalance() {
 
 /* === DATA === */
 function buildImgLink(g) {
-  /* 1) API уже дал полный URL */
-  if (g.img?.startsWith("http")) return g.img;
+  /* полностью валидный URL из API — берём как есть */
+  if (g.img && g.img.trim().startsWith("http")) return g.img.trim();
 
-  /* 2) префикс «gift:» / «collection:» → убираем, slug приводим к lowercase */
-  const idClean = g.ownedId.split(":").pop().toLowerCase();   // gift:VintageCigar‑6050 → vintagecigar‑6050
+  /* убираем префиксы + нормализуем «кривые» длинные тире */
+  const idClean = g.ownedId
+        .split(":").pop()
+        .replace(/[\u2010-\u2015]/g,'-')   // всякие ‑–—→ -
+        .toLowerCase();
 
   /* 3) slug формата «word‑12345» — готовый вариант */
   if (/^[a-z0-9]+-\d+$/i.test(idClean))
@@ -96,9 +99,11 @@ function giftCardHTML(g) {
 
   return `
     <div data-id="${g.id}" class="${cls.join(" ")}">
-      <img src="${g.img}" alt="${g.name}"
+      <img src="${g.img.replace('.jpg','.webp')}"
+           srcset="${g.img.replace('.jpg','.webp')} 1x, ${g.img} 2x"
+           alt="${g.name}"
            class="w-full aspect-square object-cover rounded-t-xl"
-           onerror="this.src='https://placehold.co/300x300?text=NFT'">
+           onerror="this.onerror=null;this.src='${g.img}';">
       <div class="px-2 py-1 flex justify-between items-center text-xs sm:text-sm">
  <span class="truncate drop-shadow-sm">${g.name}</span>
  <span class="font-semibold text-amber-300 drop-shadow-sm">$${g.price}</span>
