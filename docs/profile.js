@@ -127,7 +127,7 @@ function giftCardHTML(g) {
              class="selBox absolute bottom-2 right-2 w-4 h-4 accent-amber-500"
              ${sel ? "checked" : ""}
              ${pend ? "disabled" : ""}/>
-    </div>;
+    </div>`;
 }
 
 /* === Toast helper === */
