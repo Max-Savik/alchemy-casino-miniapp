@@ -67,6 +67,7 @@ async function loadGifts() {
     id    : g.ownedId,
     img   : buildImgLink(g)
   }));
+  selected.clear(); 
   applyFilters();
 }
 
@@ -99,8 +100,8 @@ function giftCardHTML(g) {
            class="w-full aspect-square object-cover rounded-t-xl"
            onerror="this.src='https://placehold.co/300x300?text=NFT'">
       <div class="px-2 py-1 flex justify-between items-center text-xs sm:text-sm">
-        <span class="truncate">${g.name}</span>
-        <span class="font-semibold text-amber-300">$${g.price}</span>
+ <span class="truncate drop-shadow-sm">${g.name}</span>
+ <span class="font-semibold text-amber-300 drop-shadow-sm">$${g.price}</span>
       </div>
 
       ${pend
