@@ -270,6 +270,7 @@ wallet.post("/withdrawGift", async (req, res) => {
   try {
     const link = await createStarsInvoice(req.userId, ownedId);
     gift.status      = "pending_withdraw";
+    gift.ts          = Date.now(); 
     gift.invoiceLink = link;
     await saveGifts();
     // немедленно сообщаем клиенту – чтобы задизэйблить карту
@@ -450,7 +451,14 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
   const { gid, ownedId, name, price, img, ownerId } = req.body || {};
   if (!gid || !ownedId || !ownerId) return res.status(400).json({ error: "bad gift" });
   if (gifts.some(g => g.ownedId === ownedId)) return res.json({ ok: true }); // дубль
-  gifts.push({ gid, ownedId, name, price, img, ownerId, staked: false, status: "idle" });
+  const autoImg = img || (()=>{
+      const core = name.toLowerCase().replace(/[^a-z0-9]+/g,"");
+      const num  = (ownedId.match(/\d+/)||[gid])[0];
+      return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
+  })();
+
+  gifts.push({ gid, ownedId, name, price, img:autoImg, ownerId,
+               staked:false, status:"idle" });
   await saveGifts();
   res.json({ ok: true });
 });
