@@ -760,3 +760,18 @@ input[type=range]::-moz-range-thumb {
 .withdraw-btn:disabled {
   opacity:.55; cursor:not-allowed;
 }
+
+/* ——— pretty “Select-All” checkbox ——— */
+.select-all .checkmark{
+  width:16px;height:16px;border:2px solid #fbbf24;border-radius:4px;
+  background:rgba(0,0,0,.35);position:relative;
+}
+.select-all input.peer:checked + .checkmark{
+  background:#fbbf24;border-color:#fbbf24;
+}
+.select-all input.peer:checked + .checkmark:after{
+  content:'';position:absolute;inset:2px;background:#000;
+  clip-path:polygon(14% 44%,0 65%,50% 100%,100% 0,80% 0,43% 62%);
+}
+.select-all:hover .checkmark{ border-color:#fcd34d }
+
