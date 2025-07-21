@@ -5,6 +5,7 @@ let gifts      = [];             // оригинальный список
 let viewGifts  = [];             // после фильтра / сортировки
 let selected   = new Set();      // ownedId
 let tonBalance = 0;
+let currentSort = "priceDesc";
 
 /* === Shortcuts === */
 const $  = s => document.querySelector(s);
@@ -181,8 +182,8 @@ function applyFilters() {
 
   const sort = $("#sortSelect").value;
   viewGifts.sort((a,b)=>{
-    if (sort==="priceAsc")  return a.price - b.price;
-    if (sort==="priceDesc") return b.price - a.price;
+    if (currentSort==="priceAsc")  return a.price - b.price;
+    if (currentSort==="priceDesc") return b.price - a.price;
     return a.name.localeCompare(b.name,"ru");
   });
 
@@ -274,6 +275,51 @@ socket.on("giftUpdate", ({ ownedId, status }) => {
   if (g) {
     g.status = status;
     applyFilters();           // перерисовать сетку
+  }
+});
+
+/* === SORT DROPDOWN === */
+const sortBtn  = $("#sortBtn");
+const sortMenu = $("#sortMenu");
+const dropdown = $("#sortDropdown");
+
+function updateSortUI() {
+  const labelMap = {
+    priceDesc: "Сортировка: Цена ↓",
+    priceAsc : "Сортировка: Цена ↑",
+    name     : "Сортировка: Название A‑Z"
+  };
+  $("[data-current-sort]").textContent = labelMap[currentSort];
+  // подсветка активного
+  sortMenu.querySelectorAll("[data-sort]").forEach(btn=>{
+    const active = btn.dataset.sort === currentSort;
+    btn.classList.toggle("bg-amber-500/15", active);
+    btn.classList.toggle("text-amber-300", active);
+    btn.querySelector(".icon").classList.toggle("opacity-0", !active);
+  });
+}
+updateSortUI();
+
+sortBtn.addEventListener("click", e=>{
+  e.stopPropagation();
+  sortMenu.classList.toggle("hidden");
+  sortBtn.querySelector("svg").classList.toggle("rotate-180");
+});
+
+sortMenu.addEventListener("click", e=>{
+  const item = e.target.closest("[data-sort]");
+  if (!item) return;
+  currentSort = item.dataset.sort;
+  updateSortUI();
+  sortMenu.classList.add("hidden");
+  sortBtn.querySelector("svg").classList.remove("rotate-180");
+  applyFilters();
+});
+
+document.addEventListener("click", e=>{
+  if (!e.target.closest("#sortDropdown")) {
+    sortMenu.classList.add("hidden");
+    sortBtn.querySelector("svg").classList.remove("rotate-180");
   }
 });
 })();
