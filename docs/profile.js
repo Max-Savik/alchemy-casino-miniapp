@@ -98,7 +98,7 @@ function giftCardHTML(g) {
       <img src="${g.img}" alt="${g.name}" class="nft-img"
            onerror="this.onerror=null;this.src='${g.img}';">
 
-      <span class="price-badge absolute top-1.5 left-1.5 rounded-md font-semibold text-amber-300 z-40">
+      <span class="price-badge absolute top-1.5 right-1.5 rounded-md font-semibold text-amber-300">
         ${priceStr}&nbsp;${TON_LABEL}
       </span>
 
@@ -107,7 +107,7 @@ function giftCardHTML(g) {
       </div>
 
       <input type="checkbox"
-             class="selBox absolute top-1.5 right-1.5 z-50 w-4 h-4 accent-amber-500"
+             class="selBox absolute top-1.5 left-1.5 z-30 w-4 h-4 accent-amber-500"
              ${sel ? "checked" : ""} ${pend ? "disabled" : ""}/>
     </div>`;
 }
