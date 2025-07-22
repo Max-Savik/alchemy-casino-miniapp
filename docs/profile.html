@@ -54,15 +54,18 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
 }
 .price-badge{
   background:rgba(17,17,17,.82);
-  backdrop-filter:blur(8px);
+  backdrop-filter:blur(10px);
   box-shadow:0 0 8px rgba(0,0,0,.55);
+  border:1px solid rgba(252,211,77,.35);
+  border-radius:10px;
   pointer-events:none;
-  display:flex; align-items:center; justify-content:center;
-  padding:2px 6px;
+  display:inline-flex; align-items:center; justify-content:center;
+  white-space:nowrap;
+  padding:3px 8px;
   font-size:12px; line-height:1;
   color:#fcd34d;
-  z-index:60;
-  opacity:1 !important;
+  z-index:70;
+  opacity:1!important;
 }
 .title-badge{
   background:linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,0) 100%);
@@ -85,6 +88,7 @@ input.selBox{
   background:rgba(0,0,0,.35);
   cursor:pointer;
   transition:background .15s,border-color .15s;
+  z-index:90!important;               /* поверх бейджа цены */
 }
 input.selBox:checked{
   background:#fbbf24;                /* amber‑500 */
