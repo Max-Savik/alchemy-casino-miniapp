@@ -53,13 +53,14 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
 }
 .price-badge{
   background:rgba(17,17,17,.82);
-  backdrop-filter:blur(6px);
-  box-shadow:0 0 6px rgba(0,0,0,.45);
+  backdrop-filter:blur(8px);
+  box-shadow:0 0 8px rgba(0,0,0,.55);
   pointer-events:none;
   display:flex; align-items:center; justify-content:center;
   padding:2px 6px;
   font-size:12px; line-height:1;
-  z-index:30;
+  color:#fcd34d;                 /* amber‑300, чтобы точно было видно */
+  z-index:80;                    /* выше img/checkbox */
 }
 .title-badge{
   background:linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,0) 100%);
