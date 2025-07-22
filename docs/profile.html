@@ -40,7 +40,7 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
 }
 
 /* ===== CARD ===== */
-.nft-card{ position:relative; overflow:hidden; }
+.nft-card{ position:relative; overflow:hidden; border-radius:12px; }
 .nft-img{ width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
 .price-badge{
   background:rgba(17,17,17,.82);
@@ -54,7 +54,7 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
 }
     
 /* ——— NFT grid ——— */
-.nft-card{ transition:transform .18s, box-shadow .18s }
+.nft-card{ transition:transform .18s, box-shadow .18s; background:transparent; }
 .nft-card:hover{ transform:translateY(-3px) scale(1.015);
                  box-shadow:0 5px 18px rgba(0,0,0,.38); }
 
