@@ -97,18 +97,18 @@ function giftCardHTML(g) {
 
   return `
     <div data-id="${g.id}" class="${cls.join(" ")}">
-      <img src="${g.img}"
-           alt="${g.name}"
-           class="w-full aspect-square object-cover rounded-t-xl"
+      <img src="${g.img}" alt="${g.name}"
+           class="nft-img"
            onerror="this.onerror=null;this.src='${g.img}';">
-      <span class="price-badge absolute top-2 right-2 z-10
-                   bg-gray-900/80 backdrop-blur px-1.5 py-0.5 rounded-md
-                   text-[11px] font-semibold text-amber-300">
+
+      <span class="price-badge absolute top-1.5 right-1.5 z-10
+                   px-1.5 py-0.5 rounded-md
+                   text-[11px] font-semibold text-amber-300 leading-none">
         ${g.price} ${TON_LABEL}
       </span>
 
-      <div class="px-2 py-1 flex justify-start items-center text-xs sm:text-sm">
-        <span class="truncate drop-shadow-sm">${g.name}</span>
+      <div class="px-2 py-1 truncate text-xs sm:text-sm">
+        <span class="drop-shadow-sm">${g.name}</span>
       </div>
 
       <input type="checkbox"
