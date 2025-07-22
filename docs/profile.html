@@ -26,15 +26,36 @@
   <style>
 /* ——— базовая типографика ——— */
 body{ font-family:'Manrope','Inter','Segoe UI',sans-serif; line-height:1.45; font-size:15px }
-.nft-card img{
-  min-height:110px;
-}
 h1,h2,h3,header a{ letter-spacing:-.02em }
 
+/* ===== GRID ===== */
+/* 3 колонки на мобиле, дальше авто-фит */
+#profileGrid{
+  grid-template-columns:repeat(3,1fr);
+}
+@media (min-width:640px){
+  #profileGrid{
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  }
+}
+
+/* ===== CARD ===== */
+.nft-card{
+  overflow:hidden;
+}
+.nft-img{
+  width:100%; height:auto; aspect-ratio:1/1; object-fit:cover; display:block;
+}
+.price-badge{
+  background:rgba(17,17,17,.82);
+  backdrop-filter:blur(6px);
+  box-shadow:0 0 6px rgba(0,0,0,.45);
+}
+    
 /* ——— NFT grid ——— */
-.nft-card{ transition:transform .25s, box-shadow .25s }
-.nft-card:hover{ transform:translateY(-4px) scale(1.02);
-                 box-shadow:0 6px 20px rgba(0,0,0,.45); }
+.nft-card{ transition:transform .18s, box-shadow .18s }
+.nft-card:hover{ transform:translateY(-3px) scale(1.015);
+                 box-shadow:0 5px 18px rgba(0,0,0,.38); }
 
 
 /* кастомный checkbox */
@@ -128,7 +149,7 @@ input.selBox:checked:after{
 
       <!-- ─── Grid ─── -->
       <div id="profileGrid"
-           class="grid gap-3 grid-cols-3 sm:grid-cols-[repeat(auto-fit,minmax(120px,1fr))]"></div>
+           class="grid gap-3"></div>
 
       <!-- empty -->
       <div id="emptyState" class="hidden py-20 text-center text-gray-400">
