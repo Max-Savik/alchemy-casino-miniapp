@@ -87,7 +87,7 @@ label:hover{ color:#f1c40f }
     <section class="w-full max-w-7xl flex flex-col gap-6 px-4">
 
       <!-- ─── Toolbar ─── -->
-      <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+      <div id="toolbarOrigin" class="flex flex-col sm:flex-row sm:items-end gap-4">
         <!-- left: поиск + сортировка -->
         <div class="flex flex-col sm:flex-row gap-3 flex-grow">
           <input id="searchInput" type="search" placeholder="Поиск по названию / id…"
@@ -128,40 +128,6 @@ label:hover{ color:#f1c40f }
             </div>
           </div>
         </div>
-
-        <!-- right‑panel -->
-        <div class="flex flex-wrap justify-end items-center gap-4 w-full sm:w-auto">
-
-          <!-- счётчик -->
-          <span id="counter"
-                class="text-sm font-medium text-gray-400 select-none min-w-[90px] text-right">0 / 0 ($0)</span>
-
-          <!-- custom Select-All -->
-          <label for="checkAll"
-                 class="select-all flex items-center gap-1.5 cursor-pointer text-sm font-medium">
-            <input id="checkAll" type="checkbox" class="peer sr-only">
-            <span class="box relative w-4 h-4 rounded border-2 border-amber-400/80
-                         peer-checked:bg-amber-400 peer-checked:border-amber-400
-                         transition"></span>
-            <span class="pl-1 text-gray-300 peer-hover:text-amber-400 select-none">Выбрать все</span>
-          </label>
-
-          <!-- Withdraw -->
-          <button id="withdrawSelected"
-                  class="alch-btn flex items-center gap-2 bg-gradient-to-br from-amber-400 to-amber-500
-                         hover:brightness-110 text-gray-900 font-extrabold text-sm
-                         px-5 py-2 rounded-xl shadow-md
-                         disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled>
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="4" y="14" width="16" height="6" rx="2" />
-              <path d="M12 3v11" />
-              <path d="M8 7l4-4 4 4" />
-            </svg>
-            <span data-caption>Вывести</span>
-          </button>
-        </div>
       </div>
 
       <!-- ─── Grid ─── -->
@@ -176,6 +142,37 @@ label:hover{ color:#f1c40f }
 
   </main>
 
+  <!-- === FLOAT BULK BAR === -->
+  <div id="bulkBar"
+       class="fixed left-0 right-0 bottom-16 z-40 px-4">
+    <div class="mx-auto max-w-7xl
+                bg-gray-900/85 backdrop-blur-md border border-amber-500/20
+                rounded-2xl shadow-lg
+                flex items-center justify-between gap-3 py-2 px-3 text-sm">
+
+      <label for="checkAll"
+             class="select-all flex items-center gap-1.5 cursor-pointer font-medium">
+        <input id="checkAll" type="checkbox" class="peer sr-only">
+        <span class="box relative w-4 h-4 rounded border-2 border-amber-400/80
+                     peer-checked:bg-amber-400 peer-checked:border-amber-400 transition"></span>
+        <span class="pl-1 text-gray-300 peer-hover:text-amber-400 select-none">Выбрать все</span>
+      </label>
+
+      <span id="counter"
+            class="text-gray-400 select-none min-w-[90px] text-right">0 / 0 (0 TON)</span>
+
+      <button id="withdrawSelected"
+              class="alch-btn flex items-center gap-2 bg-gradient-to-br from-amber-400 to-amber-500
+                     hover:brightness-110 text-gray-900 font-extrabold
+                     px-5 py-2 rounded-xl shadow-md
+                     disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled>
+        <span data-caption>Вывести</span>
+      </button>
+    </div>
+  </div>
+
+  
   <!-- ===== NAV ===== -->
   <nav class="bottom-nav flex justify-around">
     <button onclick="location.href='index.html'" class="nav-link flex flex-col items-center">
