@@ -88,8 +88,9 @@ $("#checkAll").addEventListener("change", e=>{
 function giftCardHTML(g) {
   const sel = selected.has(g.id);
   const pend = g.status === "pending_withdraw";
+  const priceStr = (Number(g.price) || 0).toFixed(2);
   const cls = [
-    "relative rounded-xl bg-gray-800/80 border border-gray-700 shadow-lg nft-card",
+    "relative nft-card shadow-lg",
     "transition-transform hover:-translate-y-1"
   ];
   if (sel) cls.push("ring-2 ring-amber-400");
@@ -103,7 +104,7 @@ function giftCardHTML(g) {
       <!-- PRICE -->
       <span class="price-badge absolute top-1.5 right-1.5 z-20
                    px-1.5 py-0.5 rounded-md text-[11px] font-semibold text-amber-300 leading-none">
-        ${g.price}&nbsp;${TON_LABEL}
+        ${priceStr}&nbsp;${TON_LABEL}
       </span>
 
       <!-- TITLE overlay -->
