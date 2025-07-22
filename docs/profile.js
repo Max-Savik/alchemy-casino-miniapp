@@ -180,7 +180,6 @@ function applyFilters() {
   viewGifts = gifts.filter(g =>
        g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q));
 
-  const sort = $("#sortSelect").value;
   viewGifts.sort((a,b)=>{
     if (currentSort==="priceAsc")  return a.price - b.price;
     if (currentSort==="priceDesc") return b.price - a.price;
