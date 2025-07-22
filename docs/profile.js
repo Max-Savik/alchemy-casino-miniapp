@@ -227,7 +227,6 @@ gifts.forEach(g=>{
 
 /* === EVENTS === */
 $("#searchInput").addEventListener("input", applyFilters);
-$("#sortSelect").addEventListener("change", applyFilters);
 
 $("#withdrawSelected").addEventListener("click", withdrawSelected);
 
