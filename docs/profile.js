@@ -89,11 +89,8 @@ function giftCardHTML(g) {
   const sel = selected.has(g.id);
   const pend = g.status === "pending_withdraw";
   const priceStr = (parseFloat(g.price) || 0).toFixed(2);
-  const cls = [
-    "nft-card shadow-lg",
-    "transition-transform hover:-translate-y-1"
-  ];
-  if (sel) cls.push("ring-2 ring-amber-400");
+  const cls = ["nft-card shadow-lg"];
+  if (sel) cls.push("selected");
   if (pend) cls.push("opacity-60 pointer-events-none");
 
   return `
@@ -222,8 +219,7 @@ $("#profileGrid").addEventListener("click", e => {
   /* чек‑бокс или клик по карте → toggle select */
   if (selected.has(id)) selected.delete(id); else selected.add(id);
   // instant UI feedback
-  card.classList.toggle("ring-amber-400");
-  card.classList.toggle("ring-2");
+  card.classList.toggle("selected", selected.has(id));
   card.querySelector(".selBox").checked = selected.has(id);
   updateCounter();
 });
