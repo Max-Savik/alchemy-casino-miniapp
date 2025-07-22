@@ -53,19 +53,21 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   z-index:0;
 }
 .price-badge{
-  background:rgba(17,17,17,.82);
+  position:absolute;            /* фиксируем независимо от tailwind */
+  top:6px; right:6px; left:auto;
+  background:linear-gradient(135deg, rgba(17,17,17,.9) 0%, rgba(32,32,32,.7) 100%);
   backdrop-filter:blur(10px);
-  box-shadow:0 0 8px rgba(0,0,0,.55);
   border:1px solid rgba(252,211,77,.35);
-  border-radius:10px;
-  pointer-events:none;
-  display:inline-flex; align-items:center; justify-content:center;
-  white-space:nowrap;
-  padding:3px 8px;
+  border-radius:12px 12px 12px 4px;       /* мягкий уголок слева снизу */
+  box-shadow:0 0 10px rgba(0,0,0,.55);
+  padding:3px 10px 4px;
   font-size:12px; line-height:1;
+  font-weight:600;
   color:#fcd34d;
+  display:flex; align-items:center; justify-content:center;
+  white-space:nowrap;
+  pointer-events:none;
   z-index:70;
-  opacity:1!important;
 }
 .title-badge{
   background:linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,0) 100%);
