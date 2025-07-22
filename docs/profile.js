@@ -298,4 +298,3 @@ document.addEventListener("click", e=>{
   }
 });
 })();
-ensureTonIcon();
