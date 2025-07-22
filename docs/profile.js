@@ -89,7 +89,7 @@ function giftCardHTML(g) {
   const sel = selected.has(g.id);
   const pend = g.status === "pending_withdraw";
   const cls = [
-    "relative rounded-xl bg-gray-800/80 border border-gray-700 shadow-lg",
+    "relative rounded-xl bg-gray-800/80 border border-gray-700 shadow-lg nft-card",
     "transition-transform hover:-translate-y-1"
   ];
   if (sel) cls.push("ring-2 ring-amber-400");
@@ -101,9 +101,14 @@ function giftCardHTML(g) {
            alt="${g.name}"
            class="w-full aspect-square object-cover rounded-t-xl"
            onerror="this.onerror=null;this.src='${g.img}';">
-      <div class="px-2 py-1 flex justify-between items-center text-xs sm:text-sm">
- <span class="truncate drop-shadow-sm">${g.name}</span>
- <span class="font-semibold text-amber-300 drop-shadow-sm">${g.price} ${TON_LABEL}</span>
+      <span class="price-badge absolute top-2 right-2 z-10
+                   bg-gray-900/80 backdrop-blur px-1.5 py-0.5 rounded-md
+                   text-[11px] font-semibold text-amber-300">
+        ${g.price} ${TON_LABEL}
+      </span>
+
+      <div class="px-2 py-1 flex justify-start items-center text-xs sm:text-sm">
+        <span class="truncate drop-shadow-sm">${g.name}</span>
       </div>
 
       <input type="checkbox"
