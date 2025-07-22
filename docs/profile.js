@@ -98,7 +98,7 @@ function giftCardHTML(g) {
       <img src="${g.img}" alt="${g.name}" class="nft-img"
            onerror="this.onerror=null;this.src='${g.img}';">
 
-      <span class="price-badge absolute top-1.5 right-1.5 rounded-md font-semibold text-amber-300 z-50">
+      <span class="price-badge absolute top-1.5 right-1.5 font-semibold text-amber-300">
         ${priceStr}&nbsp;${TON_LABEL}
       </span>
 
