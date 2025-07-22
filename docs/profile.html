@@ -29,12 +29,6 @@ body{ font-family:'Manrope','Inter','Segoe UI',sans-serif; line-height:1.45; fon
 .nft-card img{
   min-height:110px;
 }
-/* 3 карточки в ряд на телефонах */
-@media (max-width:640px){
-  #profileGrid{
-    grid-template-columns:repeat(3,1fr) !important;
-  }
-}    
 h1,h2,h3,header a{ letter-spacing:-.02em }
 
 /* ——— NFT grid ——— */
@@ -63,8 +57,6 @@ input.selBox:checked:after{
   background:#000;                   /* «галка» */
   clip-path:polygon(14% 44%,0 65%,50% 100%,100% 0,80% 0,43% 62%);
 }
-
-label:hover{ color:#fcd34d }
 
   </style>
 </head>
@@ -136,7 +128,7 @@ label:hover{ color:#fcd34d }
 
       <!-- ─── Grid ─── -->
       <div id="profileGrid"
-           class="grid gap-4 sm:grid-cols-[repeat(auto-fit,minmax(120px,1fr))]"></div>
+           class="grid gap-3 grid-cols-3 sm:grid-cols-[repeat(auto-fit,minmax(120px,1fr))]"></div>
 
       <!-- empty -->
       <div id="emptyState" class="hidden py-20 text-center text-gray-400">
