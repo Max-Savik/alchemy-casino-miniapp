@@ -70,7 +70,34 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   pointer-events:none;
   z-index:120;
 }
+/* ================== CARD IMG ================== */
+.nft-img{
+  position:absolute;
+  inset:0;                 /* растягиваем на всю карточку */
+  width:100%;
+  height:100%;
+  object-fit:cover;        /* без искажений */
+  object-position:center;
+  pointer-events:none;
+}
 
+/* ================= PRICE BADGE ================ */
+.price-badge{
+  position:absolute;
+  top:8px; right:8px;      /* внутрь на 8 px — не обрезается радиусом */
+  background:linear-gradient(135deg,#111 0%,#262626 100%);
+  border:1px solid rgba(252,211,77,.38);
+  border-radius:10px 10px 10px 4px;
+  padding:3px 10px 4px;
+  font:600 12px/1 'Manrope',sans-serif;
+  color:#fcd34d;
+  white-space:nowrap;
+  box-shadow:0 0 8px rgba(0,0,0,.55);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  z-index:120;             /* ниже чекбокса, выше картинки */
+  pointer-events:none;
+}
 /* чекбокс поверх всего */
 input.selBox{ z-index:130 !important; }
     
