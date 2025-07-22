@@ -50,6 +50,7 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   object-fit:cover;
   object-position:center;
   display:block; pointer-events:none;
+  z-index:0;
 }
 .price-badge{
   background:rgba(17,17,17,.82);
@@ -59,8 +60,9 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   display:flex; align-items:center; justify-content:center;
   padding:2px 6px;
   font-size:12px; line-height:1;
-  color:#fcd34d;                 /* amber‑300, чтобы точно было видно */
-  z-index:80;                    /* выше img/checkbox */
+  color:#fcd34d;
+  z-index:60;
+  opacity:1 !important;
 }
 .title-badge{
   background:linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,0) 100%);
