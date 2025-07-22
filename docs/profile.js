@@ -88,7 +88,7 @@ $("#checkAll").addEventListener("change", e=>{
 function giftCardHTML(g) {
   const sel = selected.has(g.id);
   const pend = g.status === "pending_withdraw";
-  const priceStr = (parseFloat(g.price ?? 0)).toFixed(2);
+  const priceStr = (parseFloat(g.price) || 0).toFixed(2);
   const cls = [
     "nft-card shadow-lg",
     "transition-transform hover:-translate-y-1"
@@ -101,18 +101,18 @@ function giftCardHTML(g) {
       <img src="${g.img}" alt="${g.name}" class="nft-img"
            onerror="this.onerror=null;this.src='${g.img}';">
 
-      <span class="price-badge absolute top-1.5 right-1.5 z-30
-                   px-2 py-0.5 rounded-md text-[11px] font-semibold text-amber-300 leading-none">
+      <span class="price-badge absolute top-1.5 right-1.5 z-20
+                   px-1.5 py-0.5 rounded-md text-[11px] font-semibold text-amber-300 leading-none">
         ${priceStr}&nbsp;${TON_LABEL}
       </span>
 
-      <div class="title-badge absolute left-0 right-0 bottom-0 z-20
+      <div class="title-badge absolute left-0 right-0 bottom-0 z-10
                   px-2 py-1 text-[11px] sm:text-xs truncate text-gray-100">
         ${g.name}
       </div>
 
       <input type="checkbox"
-             class="selBox absolute top-1.5 left-1.5 z-40 w-4 h-4 accent-amber-500"
+             class="selBox absolute top-1.5 left-1.5 z-30 w-4 h-4 accent-amber-500"
              ${sel ? "checked" : ""} ${pend ? "disabled" : ""}/>
     </div>`;
 }
