@@ -29,7 +29,7 @@ body{ font-family:'Manrope','Inter','Segoe UI',sans-serif; line-height:1.45; fon
 h1,h2,h3,header a{ letter-spacing:-.02em }
 
 /* ===== GRID ===== */
-#profileGrid{ grid-template-columns:repeat(3,1fr); gap:4px; }
+#profileGrid{ grid-template-columns:repeat(3,1fr); gap:4px; position:relative; z-index:1; }
 @media (min-width:640px){
   #profileGrid{ grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); }
 }
@@ -37,6 +37,10 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
 .nft-card{
   position:relative; overflow:hidden; border-radius:12px; aspect-ratio:1/1;
   background:transparent;
+  transition:box-shadow .16s;
+}
+.nft-card.selected{
+  box-shadow:0 0 0 2px #fbbf24;
 }
 .nft-img{
   position:absolute; top:50%; left:50%;
@@ -64,11 +68,9 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   display:flex; align-items:flex-end; justify-content:center;
   z-index:25;
 }
-    
+#sortMenu{ z-index:1000!important; }    
 /* ——— NFT grid ——— */
-.nft-card{ transition:transform .18s, box-shadow .18s; }
-.nft-card:hover{ transform:translateY(-3px) scale(1.015);
-                 box-shadow:0 5px 18px rgba(0,0,0,.38); }
+.nft-card:hover{ transform:none; box-shadow:none; }
 
 
 /* кастомный checkbox */
