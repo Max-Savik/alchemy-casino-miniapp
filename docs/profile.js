@@ -336,7 +336,9 @@ function updateSortUI() {
     btn.querySelector(".icon").classList.toggle("opacity-0", !active);
   });
   // показываем/прячем правый дропдаун
-  $("#modelDropdown").classList.toggle("hidden", currentSort!=="model");
+  const md = $("#modelDropdown");
+  if(md) md.classList.add("aside");
+  md.classList.toggle("hidden", currentSort!=="model");
   if(currentSort==="model") updateModelUI();
 }
 updateSortUI();
