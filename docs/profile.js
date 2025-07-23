@@ -94,6 +94,49 @@ function rebuildModelsMap(){
   });
 }
 
+/* === MODEL MENU (global) === */
+function buildModelMenu(){
+  const modelMenu = $("#modelMenu");
+  if(!modelMenu) return;
+
+  const items = [];
+  // «Все модели»
+  items.push(`
+    <button class="model-item ${modelFilter? "":"active"}" data-model="">
+      <img src="https://nft.fragment.com/gift/deskcalendar-190442.medium.jpg" alt="">
+      <span>Все модели</span>
+      <span class="count">${gifts.length}</span>
+    </button>
+  `);
+
+  modelsMap.forEach((info,name)=>{
+    const rndImg = info.imgs[Math.floor(Math.random()*info.imgs.length)];
+    items.push(`
+      <button class="model-item ${modelFilter===name?"active":""}" data-model="${name}">
+        <img src="${rndImg}" alt="${name}">
+        <span>${name}</span>
+        <span class="count">${info.count}</span>
+      </button>
+    `);
+  });
+  modelMenu.innerHTML = items.join("");
+}
+
+function updateModelUI(){
+  const labelEl = $("[data-current-model]");
+  if (labelEl) {
+    labelEl.textContent = modelFilter ? `Модель: ${modelFilter}` : "Модель: Все";
+  }
+  const modelMenu = $("#modelMenu");
+  if(!modelMenu) return;
+  modelMenu.querySelectorAll(".model-item").forEach(btn=>{
+    btn.classList.toggle(
+      "active",
+      (btn.dataset.model||"") === (modelFilter||"")
+    );
+  });
+}
+
 /* === SELECT‑ALL === */
 $("#checkAll").addEventListener("change", e=>{
   if (e.target.checked){
@@ -325,40 +368,6 @@ const modelBtn   = $("#modelBtn");
 const modelMenu  = $("#modelMenu");
 const modelDrop  = $("#modelDropdown");
 
-function buildModelMenu(){
-  if(!modelMenu) return;
-  const items = [];
-  // пункт «Все модели»
-  items.push(`
-    <button class="model-item ${modelFilter? "":"active"}" data-model="">
-      <img src="https://nft.fragment.com/gift/deskcalendar-190442.medium.jpg" alt="">
-      <span>Все модели</span>
-      <span class="count">${gifts.length}</span>
-    </button>
-  `);
-  modelsMap.forEach((info,name)=>{
-    const rndImg = info.imgs[Math.floor(Math.random()*info.imgs.length)];
-    items.push(`
-      <button class="model-item ${modelFilter===name?"active":""}" data-model="${name}">
-        <img src="${rndImg}" alt="${name}">
-        <span>${name}</span>
-        <span class="count">${info.count}</span>
-      </button>
-    `);
-  });
-  modelMenu.innerHTML = items.join("");
-}
-
-function updateModelUI(){
-  // подпись кнопки
-  const label = modelFilter ? `Модель: ${modelFilter}` : "Модель: Все";
-  $("[data-current-model]").textContent = label;
-
-  // активный пункт выделяем
-  modelMenu.querySelectorAll(".model-item").forEach(btn=>{
-    btn.classList.toggle("active", (btn.dataset.model||"")=== (modelFilter||""));
-  });
-}
 
 modelBtn?.addEventListener("click", e=>{
   e.stopPropagation();
