@@ -97,7 +97,7 @@ function giftCardHTML(g) {
 
       <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
 
-      <div class="title-badge">${g.name}</div>
+      <div class="title-badge" title="${g.name}">${g.name}</div>
 
       <input type="checkbox" class="selBox" ${sel?"checked":""} ${pend?"disabled":""}/>
     </div>`;
