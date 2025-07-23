@@ -134,16 +134,25 @@ input.selBox:checked:after{
   margin-left:auto;font-size:11px;color:#9ca3af;
 }    
 
-/* === place model dropdown to the RIGHT of sort === */
-#sortDropdown{ position:relative; }                 /* якорь для абсолютного позиционирования */
+/* === place model dropdown RIGHT & make it smaller === */
+#sortDropdown{ position:relative; overflow:visible; }
 #modelDropdown.aside{
   position:absolute;
   top:0;
-  left:calc(100% + 8px);   /* 8px = небольшой отступ справа от первого меню */
-  width:14rem;             /* фиксированная ширина как у сортировки */
+  left:calc(100% + 6px);
+  width:11rem;                  /* меньше ширина */
+  font-size:12px;
 }
-@media (max-width:639px){  /* на мобилках всё равно вниз */
-  #modelDropdown.aside{ position:static; left:auto; top:auto; margin-left:0; }
+#modelDropdown.aside #modelBtn{ padding:6px 8px; font-size:12px; }
+#modelDropdown.aside .model-item{
+  padding:4px 6px;
+  font-size:11.5px;
+}
+@media (max-width:480px){
+  /* на очень узких экранах всё же вниз */
+  #modelDropdown.aside{
+    position:static; left:auto; top:auto; width:100%; margin-left:0;
+  }
 }
     
 /* === TITLE (one-line ellipsis) === */
@@ -278,7 +287,7 @@ input.selBox{ z-index:40; }
               </button>
             </div>
             <!-- RIGHT: Model filter dropdown (hidden by default) -->
-            <div id="modelDropdown" class="aside hidden">
+            <div id="modelDropdown" class="aside hidden text-xs">
               <button id="modelBtn"
                       class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg
                              bg-gradient-to-br from-gray-800 to-gray-700 border border-amber-500/30
