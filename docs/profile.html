@@ -69,14 +69,13 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   z-index:0;
 }
 
-/* ===== PRICE BADGE ===== */
-.price-badge{
+/* ===== PRICE CHIP (новый класс) ===== */
+.price-chip{
   position:absolute;
-  top:6px; right:6px;           /* никаких left */
-  display:inline-block;         /* не растягиваемся */
-  max-width:calc(100% - 24px);  /* подстраховка */
+  top:6px; right:6px;
+  display:inline-block;
   padding:2px 8px 3px;
-  font:600 13px/1 'Manrope',sans-serif;
+  font:600 13px/1 'Manrope', sans-serif;
   color:#fcd34d;
   white-space:nowrap;
 
@@ -88,7 +87,7 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   text-shadow:0 0 2px #000,0 0 6px #000;
   box-shadow:0 0 8px rgba(0,0,0,.6);
 
-  z-index:25;                  /* ниже чекбокса */
+  z-index:25;
   pointer-events:none;
 }
 
@@ -169,7 +168,11 @@ input.selBox:checked:after{
 /* (optional) remove accidental full-screen overlays by abs inputs */
 input[type="checkbox"]{ pointer-events:auto; }
 
-
+/* Порядок слоёв */
+.nft-img   { z-index:0; }
+.title-badge{ z-index:20; }
+.price-chip { z-index:25; }
+input.selBox{ z-index:40; }
   </style>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
