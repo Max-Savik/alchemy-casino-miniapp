@@ -86,29 +86,20 @@ $("#checkAll").addEventListener("change", e=>{
 
 /* === UI RENDER === */
 function giftCardHTML(g) {
-  const sel = selected.has(g.id);
+  const sel  = selected.has(g.id);
   const pend = g.status === "pending_withdraw";
   const priceStr = (parseFloat(g.price) || 0).toFixed(2);
-  const cls = ["nft-card shadow-lg"];
-  if (sel) cls.push("selected");
-  if (pend) cls.push("opacity-60 pointer-events-none");
 
   return `
-    <div data-id="${g.id}" class="${cls.join(" ")}">
+    <div data-id="${g.id}" class="nft-card ${sel?'selected':''} ${pend?'opacity-60 pointer-events-none':''}">
       <img src="${g.img}" alt="${g.name}" class="nft-img"
            onerror="this.onerror=null;this.src='${g.img}';">
 
-      <span class="price-badge">
-        ${priceStr}&nbsp;${TON_LABEL}
-      </span>
+      <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
 
-      <div class="title-badge absolute left-0 right-0 bottom-0 px-2 py-1 text-[11px] sm:text-xs truncate text-gray-100 text-center w-full">
-        ${g.name}
-      </div>
+      <div class="title-badge">${g.name}</div>
 
-      <input type="checkbox"
-             class="selBox absolute top-1.5 left-1.5 z-30 w-4 h-4 accent-amber-500"
-             ${sel ? "checked" : ""} ${pend ? "disabled" : ""}/>
+      <input type="checkbox" class="selBox" ${sel?"checked":""} ${pend?"disabled":""}/>
     </div>`;
 }
 
