@@ -134,6 +134,18 @@ input.selBox:checked:after{
   margin-left:auto;font-size:11px;color:#9ca3af;
 }    
 
+/* === place model dropdown to the RIGHT of sort === */
+#sortDropdown{ position:relative; }                 /* якорь для абсолютного позиционирования */
+#modelDropdown.aside{
+  position:absolute;
+  top:0;
+  left:calc(100% + 8px);   /* 8px = небольшой отступ справа от первого меню */
+  width:14rem;             /* фиксированная ширина как у сортировки */
+}
+@media (max-width:639px){  /* на мобилках всё равно вниз */
+  #modelDropdown.aside{ position:static; left:auto; top:auto; margin-left:0; }
+}
+    
 /* === TITLE (one-line ellipsis) === */
 .title-badge{
   position:absolute;
@@ -265,24 +277,24 @@ input.selBox{ z-index:40; }
                 <span class="icon opacity-0">✔</span><span>По моделям</span>
               </button>
             </div>
-          </div>
-          <!-- RIGHT: Model filter dropdown (hidden by default) -->
-          <div id="modelDropdown" class="relative w-56 shrink-0 hidden">
-            <button id="modelBtn"
-                    class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg
-                           bg-gradient-to-br from-gray-800 to-gray-700 border border-amber-500/30
-                           text-gray-200 text-sm font-medium hover:border-amber-400
-                           focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
-              <span data-current-model>Модель: Все</span>
-              <svg class="w-4 h-4 transition-transform" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <path d="M6 9l6 6 6-6"/>
-              </svg>
-            </button>
-            <div id="modelMenu"
-                 class="hidden absolute right-0 mt-1 w-full rounded-lg border border-amber-500/30
-                        bg-gray-900/95 backdrop-blur-sm shadow-xl z-10 max-h-72 overflow-auto"></div>
-          </div>
+            <!-- RIGHT: Model filter dropdown (hidden by default) -->
+            <div id="modelDropdown" class="aside hidden">
+              <button id="modelBtn"
+                      class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg
+                             bg-gradient-to-br from-gray-800 to-gray-700 border border-amber-500/30
+                             text-gray-200 text-sm font-medium hover:border-amber-400
+                             focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+                <span data-current-model>Модель: Все</span>
+                <svg class="w-4 h-4 transition-transform" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+              <div id="modelMenu"
+                   class="hidden absolute right-0 mt-1 w-full rounded-lg border border-amber-500/30
+                          bg-gray-900/95 backdrop-blur-sm shadow-xl z-10 max-h-72 overflow-auto"></div>
+            </div>
+          </div> <!-- /#sortDropdown -->
         </div>
       </div>
 
