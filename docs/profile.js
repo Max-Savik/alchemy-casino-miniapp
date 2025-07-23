@@ -335,11 +335,9 @@ function updateSortUI() {
     btn.classList.toggle("text-amber-300", active);
     btn.querySelector(".icon").classList.toggle("opacity-0", !active);
   });
-  // показываем/прячем правый дропдаун
-  const md = $("#modelDropdown");
-  if(md) md.classList.add("aside");
-  md.classList.toggle("hidden", currentSort!=="model");
-  if(currentSort==="model") updateModelUI();
+ const md = $("#modelDropdown");
+ if(md) md.classList.add("aside");
+ updateModelUI();
 }
 updateSortUI();
 
