@@ -69,23 +69,23 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   z-index:0;
 }
 
-/* ===== PRICE BADGE ===== */
 .price-badge{
   position:absolute;
   top:6px; right:6px;
-  z-index:30;
   padding:2px 8px 3px;
   font:600 13px/1 'Manrope',sans-serif;
   color:#fcd34d;
-  white-space:nowrap;
-  background:rgba(0,0,0,.7);
+  background:rgba(0,0,0,.78);
   border:1px solid rgba(252,211,77,.45);
   border-radius:9px 9px 9px 4px;
   backdrop-filter:blur(8px);
   -webkit-backdrop-filter:blur(8px);
-  box-shadow:0 0 8px rgba(0,0,0,.6);
   text-shadow:0 0 2px #000,0 0 6px #000;
-  pointer-events:none;
+  box-shadow:0 0 8px rgba(0,0,0,.6);
+
+  z-index:9999 !important;   /* ← если что-то её душит */
+  opacity:1 !important;
+  visibility:visible !important;
 }
 
 /* ===== CHECKBOX (per-card) ===== */
