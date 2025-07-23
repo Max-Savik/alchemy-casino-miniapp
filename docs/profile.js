@@ -7,6 +7,8 @@ let viewGifts  = [];             // после фильтра / сортиров
 let selected   = new Set();      // ownedId
 let tonBalance = 0;
 let currentSort = "priceDesc";
+let modelFilter = null;          // null = все модели
+let modelsMap   = new Map();     // modelName -> {count, img}
 
 /* === Shortcuts === */
 const $  = s => document.querySelector(s);
@@ -39,6 +41,12 @@ async function refreshBalance() {
   }
 }
 
+/* === MODEL HELPERS === */
+function extractModel(name="") {
+  // Берём всё до первого дефиса. Если нет дефиса, полное имя = модель
+  const m = name.split("-")[0].trim();
+  return m || name;
+}
 
 /* === DATA === */
 function buildImgLink(g) {
@@ -66,10 +74,24 @@ async function loadGifts() {
   gifts = arr.map(g => ({
     ...g,
     id    : g.ownedId,
-    img   : buildImgLink(g)
+    img   : buildImgLink(g),
+    model : extractModel(g.name)
   }));
   selected.clear(); 
+  // сформируем карту моделей
+  rebuildModelsMap();
+  buildModelMenu();
   applyFilters();
+}
+
+function rebuildModelsMap(){
+  modelsMap.clear();
+  gifts.forEach(g=>{
+    if(!modelsMap.has(g.model)) modelsMap.set(g.model,{count:0, imgs:[]});
+    const rec = modelsMap.get(g.model);
+    rec.count++;
+    if(rec.imgs.length<5) rec.imgs.push(g.img); // запас для рандома
+  });
 }
 
 /* === SELECT‑ALL === */
@@ -147,11 +169,19 @@ function applyFilters() {
   const q = $("#searchInput").value.trim().toLowerCase();
 
   viewGifts = gifts.filter(g =>
-       g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q));
+       (g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q)) &&
+       (!modelFilter || g.model === modelFilter)
+  );
 
   viewGifts.sort((a,b)=>{
     if (currentSort==="priceAsc")  return a.price - b.price;
     if (currentSort==="priceDesc") return b.price - a.price;
+    if (currentSort==="model") {
+      // сначала по модели, потом по номеру в названии (если есть)
+      const ma = a.model.localeCompare(b.model,"en");
+      if (ma !== 0) return ma;
+      return (parseInt(a.name.match(/\d+/)?.[0]||0) - parseInt(b.name.match(/\d+/)?.[0]||0));
+    }
     return a.name.localeCompare(b.name,"ru");
   });
 
@@ -284,6 +314,68 @@ document.addEventListener("click", e=>{
   if (!e.target.closest("#sortDropdown")) {
     sortMenu.classList.add("hidden");
     sortBtn.querySelector("svg").classList.remove("rotate-180");
+  }
+});
+/* ========= MODEL DROPDOWN ========= */
+const modelBtn   = $("#modelBtn");
+const modelMenu  = $("#modelMenu");
+const modelDrop  = $("#modelDropdown");
+
+function buildModelMenu(){
+  if(!modelMenu) return;
+  const items = [];
+  // пункт «Все модели»
+  items.push(`
+    <button class="model-item ${modelFilter? "":"active"}" data-model="">
+      <img src="https://nft.fragment.com/gift/deskcalendar-190442.medium.jpg" alt="">
+      <span>Все модели</span>
+      <span class="count">${gifts.length}</span>
+    </button>
+  `);
+  modelsMap.forEach((info,name)=>{
+    const rndImg = info.imgs[Math.floor(Math.random()*info.imgs.length)];
+    items.push(`
+      <button class="model-item ${modelFilter===name?"active":""}" data-model="${name}">
+        <img src="${rndImg}" alt="${name}">
+        <span>${name}</span>
+        <span class="count">${info.count}</span>
+      </button>
+    `);
+  });
+  modelMenu.innerHTML = items.join("");
+}
+
+function updateModelUI(){
+  // подпись кнопки
+  const label = modelFilter ? `Модель: ${modelFilter}` : "Модель: Все";
+  $("[data-current-model]").textContent = label;
+
+  // активный пункт выделяем
+  modelMenu.querySelectorAll(".model-item").forEach(btn=>{
+    btn.classList.toggle("active", (btn.dataset.model||"")=== (modelFilter||""));
+  });
+}
+
+modelBtn?.addEventListener("click", e=>{
+  e.stopPropagation();
+  modelMenu.classList.toggle("hidden");
+  modelBtn.querySelector("svg").classList.toggle("rotate-180");
+});
+
+modelMenu?.addEventListener("click", e=>{
+  const item = e.target.closest(".model-item");
+  if(!item) return;
+  modelFilter = item.dataset.model || null;
+  updateModelUI();
+  modelMenu.classList.add("hidden");
+  modelBtn.querySelector("svg").classList.remove("rotate-180");
+  applyFilters();
+});
+
+document.addEventListener("click", e=>{
+  if (!e.target.closest("#modelDropdown")) {
+    modelMenu.classList.add("hidden");
+    modelBtn?.querySelector("svg")?.classList.remove("rotate-180");
   }
 });
 })();
