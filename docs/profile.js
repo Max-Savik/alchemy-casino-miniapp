@@ -281,7 +281,8 @@ function updateSortUI() {
   const labelMap = {
     priceDesc: "Сортировка: Цена ↓",
     priceAsc : "Сортировка: Цена ↑",
-    name     : "Сортировка: Название A‑Z"
+    name     : "Сортировка: Название A‑Z",
+    model    : "Сортировка: По моделям"
   };
   $("[data-current-sort]").textContent = labelMap[currentSort];
   // подсветка активного
@@ -291,6 +292,9 @@ function updateSortUI() {
     btn.classList.toggle("text-amber-300", active);
     btn.querySelector(".icon").classList.toggle("opacity-0", !active);
   });
+  // показываем/прячем правый дропдаун
+  $("#modelDropdown").classList.toggle("hidden", currentSort!=="model");
+  if(currentSort==="model") updateModelUI();
 }
 updateSortUI();
 
