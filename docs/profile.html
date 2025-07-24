@@ -212,14 +212,19 @@ input.selBox:checked:after{
 /* ===== SORT DROPDOWN ===== */
 #sortMenu{ z-index:1000!important; }
 
-/* ===== HOVERS ===== */
+/* ===== HOVERS OFF COMPLETELY ===== */
+.nft-card{
+  transition:none!important;
+  -webkit-tap-highlight-color:transparent;
+}
 .nft-card:hover,
-.nft-card:active{
+.nft-card:active,
+.nft-card:focus{
   transform:none!important;
   box-shadow:none!important;
   filter:none!important;
+  background:transparent!important;
 }
-.nft-card{ -webkit-tap-highlight-color:transparent; }
  
 /* ===== TOOLBAR “Select All” checkbox ===== */
 .select-all{ position:relative; }
@@ -247,7 +252,7 @@ input.selBox:checked:after{
   white-space:nowrap;
 }
 .select-all .box{
-  pointer-events:none; /* чтобы клик шёл в label и input, не требовал второй тап */
+  pointer-events:auto; /* даём кликать по самому квадрату */
 }
 
 /* ===== BUTTONS ===== */
