@@ -239,6 +239,8 @@ function applyFilters() {
     if (currentSort==="priceDesc") return b.price - a.price;
     return a.name.localeCompare(b.name,"ru");
   });
+
+  renderGrid();
 }
 
 /* === WITHDRAW === */
