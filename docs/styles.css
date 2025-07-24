@@ -753,39 +753,4 @@ input[type=range]::-moz-range-thumb {
   100% { opacity:1;   transform:scale(1);   }
 }
 
-/* новая кнопка */
-.withdraw-btn {
-  box-shadow: 0 1px 3px rgba(0,0,0,.5);
-}
-.withdraw-btn:disabled {
-  opacity:.55; cursor:not-allowed;
-}
 
-/* ——— pretty “Select-All” checkbox ——— */
-.select-all .checkmark{
-  width:16px;height:16px;border:2px solid #fbbf24;border-radius:4px;
-  background:rgba(0,0,0,.35);position:relative;
-}
-.select-all input.peer:checked + .checkmark{
-  background:#fbbf24;border-color:#fbbf24;
-}
-.select-all input.peer:checked + .checkmark:after{
-  content:'';position:absolute;inset:2px;background:#000;
-  clip-path:polygon(14% 44%,0 65%,50% 100%,100% 0,80% 0,43% 62%);
-}
-.select-all:hover .checkmark{ border-color:#fcd34d }
-
-/* Select‑All checkbox (toolbar) */
-.select-all .box::after{
-  content:'';position:absolute;inset:2px;background:#000;
-  clip-path:polygon(14% 44%,0 65%,50% 100%,100% 0,80% 0,43% 62%);
-  opacity:0;transition:.15s;
-}
-.select-all input.peer:checked + .box::after{ opacity:1 }
-.select-all:hover .box{ border-color:#fcd34d }
-
-/* плавное затемнение при disabled */
-.alch-btn:disabled{ filter:grayscale(.4) opacity:.6 }
-
-/* не даём абсолютному input захватывать весь экран */
-.select-all{ position:relative }
