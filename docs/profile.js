@@ -157,24 +157,29 @@ function syncCheckAll(){
   checkAllEl.indeterminate = sel>0 && sel<total;
 }
 
-checkAllEl.addEventListener("click", e => {
-  e.preventDefault(); // управляем сами
-  const visibleIds  = viewGifts.filter(eligibleVisible).map(g=>g.id);
-  const totalVis    = visibleIds.length;
-  const selVis      = visibleIds.filter(id=>selected.has(id)).length;
-  const shouldSelect= selVis !== totalVis; // если выбраны не все – выбрать все
-
-  if (shouldSelect) {
-    visibleIds.forEach(id => selected.add(id));
-  } else {
-    visibleIds.forEach(id => selected.delete(id));
+function toggleSelectAll(checked){
+  const ids = viewGifts.filter(eligibleVisible).map(g=>g.id);
+  if(checked){
+    ids.forEach(id=>selected.add(id));
+  }else{
+    ids.forEach(id=>selected.delete(id));
   }
-  // обновим сам чекбокс, чтобы псевдо‑элемент появился
-  checkAllEl.checked = shouldSelect;
-  checkAllEl.indeterminate = false;
-
   renderGrid();
+}
+
+// одно событие «change» — без preventDefault и без двойных тапов
+checkAllEl.addEventListener("change", e=>{
+  toggleSelectAll(e.target.checked);
 });
+
+// запасной клик по всей зоне label (если вдруг браузер не пробрасывает change)
+document.querySelector(".select-all")?.addEventListener("click", e=>{
+  if(e.target.id==="checkAll") return; // уже обработано
+  // инвертируем вручную и триггерим change
+  checkAllEl.checked = !checkAllEl.checked;
+  toggleSelectAll(checkAllEl.checked);
+});
+
 /* === UI RENDER === */
 function giftCardHTML(g) {
   const sel  = selected.has(g.id);
