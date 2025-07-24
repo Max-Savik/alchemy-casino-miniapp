@@ -133,7 +133,12 @@ input.selBox:checked:after{
 .model-item .count{
   margin-left:auto;font-size:11px;color:#9ca3af;
 }    
-
+/* ===== FONTS for dropdowns ===== */
+#sortBtn,#modelBtn,
+.sort-item,.model-item,
+[data-current-sort],[data-current-model]{
+  font-family:'Inter','Segoe UI',sans-serif!important;
+}
 /* контейнер для двух выпадашек */
 #filtersRow{
   display:flex;
@@ -208,11 +213,13 @@ input.selBox:checked:after{
 #sortMenu{ z-index:1000!important; }
 
 /* ===== HOVERS ===== */
-.nft-card:hover{
-  transform:none !important;
-  box-shadow:none !important;
-  filter:none !important;
+.nft-card:hover,
+.nft-card:active{
+  transform:none!important;
+  box-shadow:none!important;
+  filter:none!important;
 }
+.nft-card{ -webkit-tap-highlight-color:transparent; }
  
 /* ===== TOOLBAR “Select All” checkbox ===== */
 .select-all{ position:relative; }
