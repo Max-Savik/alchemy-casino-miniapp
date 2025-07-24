@@ -134,7 +134,7 @@ input.selBox:checked:after{
   margin-left:auto;font-size:11px;color:#9ca3af;
 }    
 
-#sortDropdown{ position:relative; overflow:visible; width:9.5rem; }
+#sortDropdown{ position:relative; overflow:visible; }
 #modelDropdown.aside{
   position:absolute;
   top:0;
@@ -143,6 +143,26 @@ input.selBox:checked:after{
   font-size:12px;
   pointer-events:auto;
 }
+
+/* две кнопки-меню одинаковой ширины на телефонах */
+@media (max-width:640px){
+  #sortDropdown,
+  #modelDropdown{
+    position:static !important;
+    left:auto !important;
+    top:auto !important;
+    width:100% !important;
+  }
+  #sortBtn,#modelBtn{
+    width:100%;
+  }
+  /* кладём меню друг под другом без налезания */
+  #sortMenu,#modelMenu{
+    right:auto;
+    left:0;
+  }
+}
+ 
 
 /* чтобы надписи не растягивали кнопку */
 .dd-btn-label{
@@ -184,8 +204,12 @@ input.selBox:checked:after{
 #sortMenu{ z-index:1000!important; }
 
 /* ===== HOVERS ===== */
-.nft-card:hover{ transform:none; box-shadow:none; }
-
+.nft-card:hover{
+  transform:none !important;
+  box-shadow:none !important;
+  filter:none !important;
+}
+ 
 /* ===== TOOLBAR “Select All” checkbox ===== */
 .select-all{ position:relative; }
 .select-all .box{
@@ -208,6 +232,12 @@ input.selBox:checked:after{
 }
 .select-all input.peer:checked + .box::after{ opacity:1; }
 .select-all:hover .box{ border-color:#fcd34d; }
+.select-all .label-text{
+  white-space:nowrap;
+}
+.select-all .box{
+  pointer-events:none; /* чтобы клик шёл в label и input, не требовал второй тап */
+}
 
 /* ===== BUTTONS ===== */
 .alch-btn:disabled{
@@ -333,7 +363,7 @@ input.selBox{ z-index:40; }
         <input id="checkAll" type="checkbox" class="peer sr-only">
         <span class="box relative w-4 h-4 rounded border-2 border-amber-400/80
                      peer-checked:bg-amber-400 peer-checked:border-amber-400 transition"></span>
-        <span class="pl-1 text-gray-300 select-none">Выбрать все</span>
+        <span class="pl-1 text-gray-300 select-none label-text">Выбрать все</span>
       </label>
 
       <span id="counter"
