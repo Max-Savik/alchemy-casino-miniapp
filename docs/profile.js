@@ -157,18 +157,22 @@ function syncCheckAll(){
   checkAllEl.indeterminate = sel>0 && sel<total;
 }
 
-checkAllEl.addEventListener("click", e=>{
-  e.preventDefault(); // не даём браузеру самому менять checked
-  const visibleIds = viewGifts.filter(eligibleVisible).map(g=>g.id);
-  const totalVis   = visibleIds.length;
-  const selVis     = visibleIds.filter(id=>selected.has(id)).length;
-  const shouldSelect = selVis !== totalVis; // если не все выбраны – выбрать все
+checkAllEl.addEventListener("click", e => {
+  e.preventDefault(); // управляем сами
+  const visibleIds  = viewGifts.filter(eligibleVisible).map(g=>g.id);
+  const totalVis    = visibleIds.length;
+  const selVis      = visibleIds.filter(id=>selected.has(id)).length;
+  const shouldSelect= selVis !== totalVis; // если выбраны не все – выбрать все
 
-  if (shouldSelect){
-    visibleIds.forEach(id=>selected.add(id));
-  }else{
-    visibleIds.forEach(id=>selected.delete(id));
+  if (shouldSelect) {
+    visibleIds.forEach(id => selected.add(id));
+  } else {
+    visibleIds.forEach(id => selected.delete(id));
   }
+  // обновим сам чекбокс, чтобы псевдо‑элемент появился
+  checkAllEl.checked = shouldSelect;
+  checkAllEl.indeterminate = false;
+
   renderGrid();
 });
 /* === UI RENDER === */
@@ -223,9 +227,7 @@ function updateCounter() {
   $("#counter").textContent = `${sel} / ${all} (${val} ${TON_LABEL})`;
 
   const btn = $("#withdrawSelected");
-  // не показываем «0», просто «Вывести»
-  btn.querySelector("[data-caption]").textContent =
-      sel ? `Вывести ${sel}` : "Вывести";
+  btn.querySelector("[data-caption]").textContent = "Вывести";
   btn.disabled = sel === 0;
 }
 
