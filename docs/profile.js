@@ -157,16 +157,20 @@ function syncCheckAll(){
   checkAllEl.indeterminate = sel>0 && sel<total;
 }
 
-checkAllEl.addEventListener("change", e=>{
-  const idsVisible = viewGifts.filter(eligibleVisible).map(g=>g.id);
-  if (e.target.checked){
-    idsVisible.forEach(id=>selected.add(id));     // выбрать все видимые idle
-  } else {
-    idsVisible.forEach(id=>selected.delete(id));  // снять только видимые
+checkAllEl.addEventListener("click", e=>{
+  e.preventDefault(); // не даём браузеру самому менять checked
+  const visibleIds = viewGifts.filter(eligibleVisible).map(g=>g.id);
+  const totalVis   = visibleIds.length;
+  const selVis     = visibleIds.filter(id=>selected.has(id)).length;
+  const shouldSelect = selVis !== totalVis; // если не все выбраны – выбрать все
+
+  if (shouldSelect){
+    visibleIds.forEach(id=>selected.add(id));
+  }else{
+    visibleIds.forEach(id=>selected.delete(id));
   }
   renderGrid();
 });
-
 /* === UI RENDER === */
 function giftCardHTML(g) {
   const sel  = selected.has(g.id);
