@@ -138,13 +138,31 @@ function updateModelUI(){
 }
 
 /* === SELECT‑ALL === */
-$("#checkAll").addEventListener("change", e=>{
+const checkAllEl = $("#checkAll");
+function eligibleVisible(g){ return g.status === "idle"; }
+
+// убрать из selected всё, чего уже нет/или не idle
+function pruneSelection(){
+  selected.forEach(id=>{
+    const g = gifts.find(x=>x.id===id);
+    if(!g || g.status!=="idle") selected.delete(id);
+  });
+}
+
+// синхронизируем состояние чекбокса «выбрать все»
+function syncCheckAll(){
+  const total = viewGifts.filter(eligibleVisible).length;
+  const sel   = viewGifts.filter(g=>eligibleVisible(g) && selected.has(g.id)).length;
+  checkAllEl.checked       = total>0 && sel===total;
+  checkAllEl.indeterminate = sel>0 && sel<total;
+}
+
+checkAllEl.addEventListener("change", e=>{
+  const idsVisible = viewGifts.filter(eligibleVisible).map(g=>g.id);
   if (e.target.checked){
-    viewGifts
-      .filter(g=>g.status==='idle')  // ← только свободные
-      .forEach(g=>selected.add(g.id));
-  }else{
-    selected.clear();
+    idsVisible.forEach(id=>selected.add(id));     // выбрать все видимые idle
+  } else {
+    idsVisible.forEach(id=>selected.delete(id));  // снять только видимые
   }
   renderGrid();
 });
@@ -184,8 +202,8 @@ function renderGrid() {
   grid.innerHTML = viewGifts.map(giftCardHTML).join("");
 
   $("#emptyState").classList.toggle("hidden", viewGifts.length !== 0);
-  $("#checkAll").checked = selected.size &&
-                           selected.size === viewGifts.filter(g=>g.status==='idle').length;
+  pruneSelection();
+  syncCheckAll();
   updateCounter();
 }
 
@@ -219,16 +237,8 @@ function applyFilters() {
   viewGifts.sort((a,b)=>{
     if (currentSort==="priceAsc")  return a.price - b.price;
     if (currentSort==="priceDesc") return b.price - a.price;
-    if (currentSort==="model") {
-      // сначала по модели, потом по номеру в названии (если есть)
-      const ma = a.model.localeCompare(b.model,"en");
-      if (ma !== 0) return ma;
-      return (parseInt(a.name.match(/\d+/)?.[0]||0) - parseInt(b.name.match(/\d+/)?.[0]||0));
-    }
     return a.name.localeCompare(b.name,"ru");
   });
-
-  renderGrid();
 }
 
 /* === WITHDRAW === */
@@ -324,9 +334,9 @@ function updateSortUI() {
   const labelMap = {
     priceDesc: "Сортировка: Цена ↓",
     priceAsc : "Сортировка: Цена ↑",
-    name     : "Сортировка: Название A‑Z",
-    model    : "Сортировка: По моделям"
+    name     : "Сортировка: Название A‑Z"
   };
+  if (!labelMap[currentSort]) currentSort = "priceDesc";
   $("[data-current-sort]").textContent = labelMap[currentSort];
   // подсветка активного
   sortMenu.querySelectorAll("[data-sort]").forEach(btn=>{
@@ -335,9 +345,7 @@ function updateSortUI() {
     btn.classList.toggle("text-amber-300", active);
     btn.querySelector(".icon").classList.toggle("opacity-0", !active);
   });
- const md = $("#modelDropdown");
- if(md) md.classList.add("aside");
- updateModelUI();
+  updateModelUI();
 }
 updateSortUI();
 
