@@ -134,36 +134,40 @@ input.selBox:checked:after{
   margin-left:auto;font-size:11px;color:#9ca3af;
 }    
 
-#sortDropdown{ position:relative; overflow:visible; }
-#modelDropdown.aside{
-  position:absolute;
-  top:0;
-  left:calc(100% + 6px);
-  width:9.5rem;
-  font-size:12px;
-  pointer-events:auto;
+/* контейнер для двух выпадашек */
+#filtersRow{
+  display:flex;
+  gap:8px;
 }
 
-/* две кнопки-меню одинаковой ширины на телефонах */
-@media (max-width:640px){
-  #sortDropdown,
-  #modelDropdown{
-    position:static !important;
-    left:auto !important;
-    top:auto !important;
-    width:100% !important;
-  }
-  #sortBtn,#modelBtn{
-    width:100%;
-  }
-  /* кладём меню друг под другом без налезания */
-  #sortMenu,#modelMenu{
-    right:auto;
-    left:0;
-  }
+#sortDropdown,#modelDropdown{
+  position:relative;
+  overflow:visible;
+  flex:1 1 0;                /* половина строки */
+  max-width:100%;
+}
+
+/* крупнее кнопки */
+#sortBtn,#modelBtn{
+  padding:10px 14px;
+  font-size:14px;
+  line-height:1.25;
+  border-radius:14px;
 }
  
-
+/* мобильная сетка 1 строка / 2 столбца */
+@media (max-width:640px){
+  #filtersRow{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  #sortDropdown,#modelDropdown{
+    width:100%!important;
+  }
+  #sortMenu,#modelMenu{
+    right:auto; left:0;
+  }
 /* чтобы надписи не растягивали кнопку */
 .dd-btn-label{
   flex:1;
@@ -285,8 +289,10 @@ input.selBox{ z-index:40; }
                  class="flex-grow px-3 py-2 rounded-lg bg-gray-800 text-gray-100 placeholder-gray-500
                         focus:outline-none focus:ring-2 focus:ring-amber-500" />
 
-          <!-- custom sort dropdown -->
-          <div id="sortDropdown" class="relative w-56 shrink-0">
+          <!-- фильтры -->
+          <div id="filtersRow" class="w-full">
+            <!-- SORT -->
+            <div id="sortDropdown" class="relative">
             <button id="sortBtn"
                     class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg
                            bg-gradient-to-br from-gray-800 to-gray-700 border border-amber-500/30
@@ -317,8 +323,10 @@ input.selBox{ z-index:40; }
                 <span class="icon opacity-0">✔</span><span>Название A‑Z</span>
               </button>
             </div>
-            <!-- RIGHT: Model filter dropdown (hidden by default) -->
-            <div id="modelDropdown" class="aside text-xs">
+            </div><!-- /#sortDropdown -->
+
+            <!-- MODEL -->
+            <div id="modelDropdown" class="relative text-xs">
               <button id="modelBtn"
                       class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg
                              bg-gradient-to-br from-gray-800 to-gray-700 border border-amber-500/30
@@ -333,8 +341,8 @@ input.selBox{ z-index:40; }
               <div id="modelMenu"
                    class="hidden absolute right-0 mt-1 w-full rounded-lg border border-amber-500/30
                           bg-gray-900/95 backdrop-blur-sm shadow-xl z-10 max-h-72 overflow-auto"></div>
-            </div>
-          </div> <!-- /#sortDropdown -->
+            </div><!-- /#modelDropdown -->
+          </div><!-- /#filtersRow -->
         </div>
       </div>
 
