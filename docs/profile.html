@@ -148,8 +148,10 @@ input.selBox:checked:after{
 #sortDropdown,#modelDropdown{
   position:relative;
   overflow:visible;
-  flex:1 1 0;                /* половина строки */
-  max-width:100%;
+  /* фиксированная ширина на десктопах — кнопки больше не «прыгают» */
+  flex:0 0 176px;
+  width:176px;
+  max-width:176px;
 }
 
 /* крупнее кнопки */
