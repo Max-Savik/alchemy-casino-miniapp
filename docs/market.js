@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const nav = {
     navGame:    'index.html#game',
     navMarket:  'market.html',        // остаёмся здесь
-    navProfile: 'index.html#profile',
+    navProfile: 'profile.html',
     navEarn:    'index.html#earn'
   };
 
