@@ -402,29 +402,63 @@ input.selBox{ z-index:40; }
 
   
   <!-- ===== NAV ===== -->
-  <nav class="bottom-nav flex justify-around">
-    <button onclick="location.href='index.html'" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
-        <rect x="2" y="7" width="20" height="10" rx="2" ry="2"/><circle cx="8" cy="12" r="1.5"/>
-      </svg><span class="nav-lbl">Игры</span>
-    </button>
-    <button onclick="location.href='market.html'" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
-        <circle cx="9" cy="21" r="1.5"/><circle cx="19" cy="21" r="1.5"/>
-      </svg><span class="nav-lbl">Маркет</span>
-    </button>
-    <button class="nav-link active flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
-        <path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg><span class="nav-lbl">Профиль</span>
-    </button>
-    <button onclick="location.href='earn.html'" class="nav-link flex flex-col items-center">
-      <svg class="nav-ico" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
-        <circle cx="12" cy="12" r="8"/><path d="M12 14V10"/><path d="M10 12l2-2 2 2"/>
-      </svg><span class="nav-lbl">Доход</span>
-    </button>
-  </nav>
+<nav class="bottom-nav flex justify-around">
+  <!-- Игры -->
+  <button onclick="location.href='index.html'"
+          class="nav-link flex flex-col items-center">
+    <svg class="nav-ico" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="7" width="20" height="10" rx="2" ry="2"/>
+      <circle cx="8" cy="12" r="1.5"/>
+      <!-- крестовина -->
+      <path d="M12 10v4"/>
+      <path d="M11 12h2"/>
+      <path d="M16 11v2"/>
+      <path d="M15 12h2"/>
+    </svg>
+    <span class="nav-lbl">Игры</span>
+  </button>
+
+  <!-- Маркет -->
+  <button onclick="location.href='market.html'"
+          class="nav-link flex flex-col items-center">
+    <svg class="nav-ico" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9"  cy="21" r="1.5"/>
+      <circle cx="19" cy="21" r="1.5"/>
+      <!-- сама тележка -->
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 1.97 1.61h9.72a2 2 0 0 0 1.97-1.61L23 6H6"/>
+    </svg>
+    <span class="nav-lbl">Маркет</span>
+  </button>
+
+  <!-- Профиль -->
+  <button class="nav-link active flex flex-col items-center">
+    <svg class="nav-ico" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M4 21v-2a4 4 0 0 1 3-3.87"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+    <span class="nav-lbl">Профиль</span>
+  </button>
+
+  <!-- Доход -->
+  <button onclick="location.href='earn.html'"
+          class="nav-link flex flex-col items-center">
+    <svg class="nav-ico" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8"/>
+      <path d="M12 14V10"/>
+      <path d="M10 12l2-2 2 2"/>
+    </svg>
+    <span class="nav-lbl">Доход</span>
+  </button>
+</nav>
 
   <script src="profile.js" defer></script>
 </body>
