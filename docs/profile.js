@@ -214,7 +214,33 @@ function renderGrid() {
   const grid = $("#profileGrid");
   grid.innerHTML = viewGifts.map(giftCardHTML).join("");
 
-  $("#emptyState").classList.toggle("hidden", viewGifts.length !== 0);
+  // различать: вообще нет подарков vs по фильтру/поиску ничего не нашлось
+  const emptyState = $("#emptyState");
+  if (viewGifts.length === 0) {
+    if (gifts.length === 0) {
+      // стандартное сообщение (у вас пока нет подарков)
+      emptyState.innerHTML = `
+       <div class="mb-2">У вас пока нет подарков.</div>
+       <div class="text-sm">
+          Чтобы передать подарки, отправьте их аккаунту 
+          <a href="https://t.me/themis_transfer" target="_blank" 
+             class="text-amber-300 underline font-semibold hover:text-amber-400">
+            @themis_transfer
+          </a>.
+        </div>`;
+    } else {
+      // по фильтру / поиску ничего не найдено
+      emptyState.innerHTML = `
+        <div class="mb-2">По вашему запросу подарков не найдено.</div>
+        <div class="text-sm">
+          Попробуйте изменить фильтр или поиск.
+        </div>`;
+    }
+    emptyState.classList.remove("hidden");
+  } else {
+    emptyState.classList.add("hidden");
+  }
+
   pruneSelection();
   syncCheckAll();
   updateCounter();
