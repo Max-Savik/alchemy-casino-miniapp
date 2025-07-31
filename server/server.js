@@ -343,10 +343,10 @@ wallet.post("/withdraw", async (req, res) => {
   res.json({ balance: balances[req.userId], wid: id });
 });
 
-/* --- helper: создаём инвойс Stars (с payload вида "withdraw:<ownedId>") --- */
+/* --- helper: создаём инвойс Stars.  ---------------------------------------                                         */
 async function createStarsInvoice(userId, ownedIds) {
   const ids     = Array.isArray(ownedIds) ? ownedIds : [ownedIds];
-  const payload = `withdraw:${ids.join(",")}`;
+  const payload = `withdraw:${ids[0]}`; 
   const total   = STARS_PRICE * ids.length;
   const body = {
     title           : "Вывод подарка",
@@ -499,23 +499,42 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
 
 /* ───────── Stars‑webhook: платеж подтверждён ───────── */
 app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
-  const { ownedIds, payerId } = req.body || {};
-  const ids = Array.isArray(ownedIds)
-    ? ownedIds
-    : typeof ownedIds === "string"
-      ? ownedIds.split(",")
-      : [];
+  const { ownedIds, ownedId, payerId } = req.body || {};
+
+  /* поддерживаем оба формата: старый {ownedId} и новый {ownedIds[]} */
+  const ids =  ownedIds
+      ? (Array.isArray(ownedIds)
+          ? ownedIds
+          : typeof ownedIds === "string"
+            ? ownedIds.split(",")
+            : [])
+      : ownedId ? [ownedId] : [];
+
   if (!ids.length) return res.status(400).json({ error: "no gifts" });
 
+  /* ① ищем любой подарок этой пачки, чтобы узнать общий invoiceLink */
+  const probe = gifts.find(
+    g => g.ownedId === ids[0] && g.ownerId === String(payerId)
+  );
+  if (!probe || probe.status !== "pending_withdraw")
+    return res.status(400).json({ error: "gift not pending" });
+
+  const link = probe.invoiceLink;
+
+  /* ② помечаем ВСЕ подарки того же счёта как sent */
   let touched = false;
-  ids.forEach(id => {
-    const g = gifts.find(
-      x => x.ownedId === id && x.ownerId === String(payerId)
-    );
-    if (g && g.status === "pending_withdraw") {
+  gifts.forEach(g => {
+    if (
+      g.ownerId === String(payerId) &&
+      g.invoiceLink === link &&
+      g.status === "pending_withdraw"
+    ) {
       g.status = "sent";
       touched  = true;
-      io.to("u:" + payerId).emit("giftUpdate", { ownedId: id, status: "sent" });
+      io.to("u:" + payerId).emit("giftUpdate", {
+        ownedId: g.ownedId,
+        status : "sent"
+      });
     }
   });
 
@@ -523,6 +542,7 @@ app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
     await saveGifts();
     return res.json({ ok: true });
   }
+
   res.status(400).json({ error: "gifts not pending" });
 });
 
