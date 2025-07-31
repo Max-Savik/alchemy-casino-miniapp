@@ -271,6 +271,32 @@ input[type="checkbox"]{ pointer-events:auto; }
 .title-badge{ z-index:20; }
 .price-chip { z-index:25; }
 input.selBox{ z-index:40; }
+  /* 1. Базовый sans-serif такой же, как в главном скрипте */
+body{
+  /* убираем Manrope — оставляем Inter / системные */
+  font-family:'Inter','Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+}
+
+/* 2. Логотип “Themis” */
+.glow-text{
+  /* в обоих файлах логотип должен быть Cinzel / Forum */
+  font-family:'Cinzel','Forum',serif;
+}
+  /* символ ☿ уже задан Uncial Antiqua отдельным <span>,
+     поэтому его не трогаем */
+
+/* 3. Чип баланса TON */
+#tonBalance{
+  /* шрифт тот же, что и по умолчанию в главном файле */
+  font-family:'Inter','Segoe UI',sans-serif;
+}
+
+/* 4. Нижняя навигация */
+.bottom-nav .nav-lbl{
+  /* в оригинальном скрипте метки меню наследуют базовый sans,
+     фиксируем то же самое и здесь */
+  font-family:'Inter','Segoe UI',sans-serif;
+}
   </style>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
