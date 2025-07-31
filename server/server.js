@@ -260,30 +260,40 @@ wallet.get("/gifts", (req, res) => {
 
 /* POST /wallet/withdrawGift { ownedId } ➋ */
 wallet.post("/withdrawGift", async (req, res) => {
-  const { ownedId } = req.body || {};
-  const gift = gifts.find(
-    g => g.ownedId === ownedId && g.ownerId === req.userId && !g.staked
-  );
-  if (!gift) return res.status(404).json({ error: "gift not found" });
+  const { ownedIds, ownedId } = req.body || {};
+  const raw    = ownedIds ?? (ownedId ? [ownedId] : []);
+  const ids    = Array.isArray(raw) ? raw : [raw];
+  if (!ids.length) return res.status(400).json({ error: "no gifts" });
 
+  /* валидация всех подарков */
+  const batch = ids.map(id =>
+    gifts.find(g => g.ownedId === id && g.ownerId === req.userId && !g.staked)
+  );
+  if (batch.some(g => !g))
+    return res.status(404).json({ error: "some gifts not found" });
 
   try {
-    const link = await createStarsInvoice(req.userId, ownedId);
-    gift.status      = "pending_withdraw";
-    gift.ts          = Date.now(); 
-    gift.invoiceLink = link;
-    await saveGifts();
-    // немедленно сообщаем клиенту – чтобы задизэйблить карту
-    io.to("u:" + req.userId).emit("giftUpdate", {
-      ownedId,
-      status: "pending_withdraw"
+    const link = await createStarsInvoice(req.userId, ids);
+
+    batch.forEach(g => {
+      g.status      = "pending_withdraw";
+      g.ts          = Date.now();
+      g.invoiceLink = link;
     });
+    await saveGifts();
+
+    ids.forEach(ownedId =>
+      io.to("u:" + req.userId).emit("giftUpdate", {
+        ownedId,
+        status: "pending_withdraw"
+      })
+    );
+
     res.json({ link });
   } catch (e) {
     res.status(500).json({ error: String(e) });
   }
 });
-
 
 
 /* POST /wallet/withdraw { userId, amount } */
@@ -334,15 +344,17 @@ wallet.post("/withdraw", async (req, res) => {
 });
 
 /* --- helper: создаём инвойс Stars (с payload вида "withdraw:<ownedId>") --- */
-async function createStarsInvoice(userId, ownedId) {
-  const payload = `withdraw:${ownedId}`;
+async function createStarsInvoice(userId, ownedIds) {
+  const ids     = Array.isArray(ownedIds) ? ownedIds : [ownedIds];
+  const payload = `withdraw:${ids.join(",")}`;
+  const total   = STARS_PRICE * ids.length;
   const body = {
     title           : "Вывод подарка",
     description     : "Комиссия за вывод NFT‑подарка",
-    payload,                                  // вернётся в webhook
-    provider_token  : "STARS",                // ← ОБЯЗАТЕЛЬНО «STARS»
+    payload,                                 
+    provider_token  : "STARS",                
     currency        : "XTR",
-    prices          : [{ label: "Вывод", amount: STARS_PRICE }], // 25 → 25 ⭐️
+    prices          : [{ label: "Вывод", amount: total }],
     need_name       : false,
     need_email      : false,
     max_tip_amount  : 0
@@ -487,21 +499,31 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
 
 /* ───────── Stars‑webhook: платеж подтверждён ───────── */
 app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
-  const { ownedId, payerId } = req.body || {};
+  const { ownedIds, payerId } = req.body || {};
+  const ids = Array.isArray(ownedIds)
+    ? ownedIds
+    : typeof ownedIds === "string"
+      ? ownedIds.split(",")
+      : [];
+  if (!ids.length) return res.status(400).json({ error: "no gifts" });
 
-  /* ищем подарок владельца, который ждёт вывод */
-  const gift = gifts.find(
-    (g) => g.ownedId === ownedId && g.ownerId === String(payerId)
-  );
-  if (!gift || gift.status !== "pending_withdraw")
-    return res.status(400).json({ error: "gift not pending" });
+  let touched = false;
+  ids.forEach(id => {
+    const g = gifts.find(
+      x => x.ownedId === id && x.ownerId === String(payerId)
+    );
+    if (g && g.status === "pending_withdraw") {
+      g.status = "sent";
+      touched  = true;
+      io.to("u:" + payerId).emit("giftUpdate", { ownedId: id, status: "sent" });
+    }
+  });
 
-  /* помечаем как «sent» — бот уже отправил его пользователю */
-  gift.status = "sent";
-  await saveGifts();
-  // оповещаем только конкретного пользователя
-  io.to("u:" + payerId).emit("giftUpdate", { ownedId, status: "sent" });
-  res.json({ ok: true });
+  if (touched) {
+    await saveGifts();
+    return res.json({ ok: true });
+  }
+  res.status(400).json({ error: "gifts not pending" });
 });
 
 const httpServer = http.createServer(app);
