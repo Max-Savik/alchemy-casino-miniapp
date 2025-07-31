@@ -20,6 +20,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- monospaced font для числового баланса -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <!-- кириллица‑френдли -->
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap&subset=cyrillic"
         rel="stylesheet">
@@ -287,8 +289,8 @@ body{
 
 /* 3. Чип баланса TON */
 #tonBalance{
-  /* шрифт тот же, что и по умолчанию в главном файле */
-  font-family:'Inter','Segoe UI',sans-serif;
+  font-family:'JetBrains Mono','Courier New',monospace;
+  font-variant-numeric:tabular-nums;   /* фикс. ширина цифр */
 }
 
 /* 4. Нижняя навигация */
