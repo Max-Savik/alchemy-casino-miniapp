@@ -343,30 +343,46 @@ wallet.post("/withdraw", async (req, res) => {
   res.json({ balance: balances[req.userId], wid: id });
 });
 
-/* --- helper: создаём инвойс Stars.  ---------------------------------------                                         */
+/* --- helper: создаём инвойс Stars (одним чеком на все выбранные подарки) --- */
 async function createStarsInvoice(userId, ownedIds) {
-  const ids     = Array.isArray(ownedIds) ? ownedIds : [ownedIds];
-  const payload = `withdraw:${ids[0]}`; 
-  const total   = STARS_PRICE * ids.length;
+  const ids   = Array.isArray(ownedIds) ? ownedIds : [ownedIds];
+  const count = ids.length;
+  const total = STARS_PRICE * count;              // общая сумма в звёздах (XTR)
+
+  /*  payload оставляем в «старом» формате, чтобы бот-обработчик остался
+      совместимым.  Доп. данные о пачке передаём в provider_data.           */
+  const payload       = `withdraw:${ids[0]}`;      // withdraw:<firstOwnedId>
+  const providerData  = JSON.stringify({
+    k : "w",            // kind = withdraw (сжато)
+    c : count,          // сколько подарков
+    t : total,          // итоговая сумма
+    ids                // полный список ownedId (может пригодиться боту)
+  });
+
   const body = {
-    title           : "Вывод подарка",
-    description     : "Комиссия за вывод NFT‑подарка",
-    payload,                                 
-    provider_token  : "STARS",                
-    currency        : "XTR",
-    prices          : [{ label: "Вывод", amount: total }],
-    need_name       : false,
-    need_email      : false,
-    max_tip_amount  : 0
+    title          : "Вывод подарков",
+    description    : `Комиссия за вывод ${count} NFT-подарк${count === 1 ? 'а' : count < 5 ? 'а' : 'ов'}`,
+    payload,
+    provider_token : "STARS",
+    currency       : "XTR",
+    prices         : [{ label: `Вывод ×${count}`, amount: total }],
+    provider_data  : providerData,               // <— короткие метаданные
+    need_name      : false,
+    need_email     : false,
+    max_tip_amount : 0
   };
+
   const r = await fetch(`${TG_API}/createInvoiceLink`, {
     method : "POST",
     headers: { "Content-Type": "application/json" },
-    body   : JSON.stringify(body),
-  }).then(x => x.json());
+    body   : JSON.stringify(body)
+  }).then(res => res.json());
+
   if (!r.ok) throw new Error(r.description || "invoice error");
-  return r.result;
+
+  return r.result;                                // invoiceLink
 }
+
 /* ─── AUTO‑RESET for stale pending_withdraw ─────────────────── */
 function cleanupPendingGifts() {
   const now   = Date.now();
