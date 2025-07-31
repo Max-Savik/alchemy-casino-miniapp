@@ -299,12 +299,28 @@ async function doWithdraw(id) {
 async function withdrawSelected() {
   const ids = Array.from(selected);
   if (!ids.length) return;
-  toast("Операции идут по очереди, комиссия 25 ⭐ за каждый NFT");
-  for (const id of ids) {
-    await doWithdraw(id);
-    await new Promise(r => setTimeout(r, 800));
+  try {
+    /* один чек на все выбранные подарки */
+    const { link } = await postJSON("/wallet/withdrawGift", { ownedIds: ids });
+
+    /* локально помечаем подарки как pending */
+    ids.forEach(id => {
+      const g = gifts.find(x => x.id === id);
+      if (g) g.status = "pending_withdraw";
+    });
+    applyFilters();
+
+    /* открываем инвойс */
+    if (window.Telegram?.WebApp?.openInvoice) {
+      Telegram.WebApp.openInvoice(link);
+    } else {
+      window.open(link, "_blank");
+    }
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  } finally {
+    selected.clear();
   }
-  selected.clear();
 }
 
 const now = Date.now();
