@@ -55,7 +55,6 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   border-radius:12px;
   aspect-ratio:1/1;
   background:transparent;
-  transition:box-shadow .16s;
 }
 .nft-card.selected{ box-shadow:0 0 0 2px #fbbf24; }
 
@@ -224,10 +223,13 @@ input.selBox:checked:after{
 .nft-card:hover,
 .nft-card:active,
 .nft-card:focus{
-  transform:none!important;
-  box-shadow:none!important;
-  filter:none!important;
-  background:transparent!important;
+     transform:none!important;
+     box-shadow:none!important;
+     filter:none!important;
+     background:transparent!important;
+     /* гарантированно убираем любые сторонние эффекты наведения */
+     outline:none!important;
+     text-decoration:none!important;
 }
  
 /* ===== TOOLBAR “Select All” checkbox ===== */
