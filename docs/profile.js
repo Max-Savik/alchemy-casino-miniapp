@@ -172,14 +172,6 @@ checkAllEl.addEventListener("change", e=>{
   toggleSelectAll(e.target.checked);
 });
 
-// запасной клик по всей зоне label (если вдруг браузер не пробрасывает change)
-document.querySelector(".select-all")?.addEventListener("click", e=>{
-  if(e.target.id==="checkAll") return; // уже обработано
-  // инвертируем вручную и триггерим change
-  checkAllEl.checked = !checkAllEl.checked;
-  toggleSelectAll(checkAllEl.checked);
-});
-
 /* === UI RENDER === */
 function giftCardHTML(g) {
   const sel  = selected.has(g.id);
