@@ -141,7 +141,9 @@ function updateModelUI(){
 }
 
 /* === SELECT-ALL === */
-const checkAllEl = $("#checkAll");
+const checkAllEl  = $("#checkAll");        // скрытый чекбокс (для синхры)
+const checkAllBtn = $("#checkAllBtn");     // кликабельный квадратик
+const checkAllBox = $("#checkAllBtn .box");
 /* treat undefined → idle */
 function eligibleVisible(g){ return (g.status ?? "idle") === "idle"; }
 
@@ -157,9 +159,21 @@ function pruneSelection(){
 function syncCheckAll(){
   const total = viewGifts.filter(eligibleVisible).length;
   const sel   = viewGifts.filter(g=>eligibleVisible(g) && selected.has(g.id)).length;
-  checkAllEl.checked       = total>0 && sel===total;
-  checkAllEl.indeterminate = sel>0 && sel<total;
-  checkAllEl.disabled      = !dataReady || total === 0;
+  const isAll   = total>0 && sel===total;
+  const isSome  = sel>0 && sel<total;
+  const canUse  = dataReady && total>0;
+
+  // синхронизируем скрытый чекбокс (для сторонней логики, если вдруг нужна)
+  checkAllEl.checked       = isAll;
+  checkAllEl.indeterminate = isSome;
+
+  // визуал кнопки
+  checkAllBox.classList.toggle("on", isAll);          // заливаем только когда выбрано всё
+  checkAllBtn.setAttribute("aria-pressed", isAll ? "true" : "false");
+
+  // доступность
+  checkAllBtn.classList.toggle("opacity-50", !canUse);
+  checkAllBtn.classList.toggle("pointer-events-none", !canUse);
 }
 
 function toggleSelectAll(checked){
@@ -172,14 +186,12 @@ function toggleSelectAll(checked){
   renderGrid();
 }
 
-checkAllEl.addEventListener("change", e=>{
-  // защита от ранних кликов и состояний, когда выбирать нечего
-  if (checkAllEl.disabled) {
-   // вернём визуал к синхронизированному состоянию
-    syncCheckAll();
-    return;
-  }
-  toggleSelectAll(e.target.checked);
+// Единая точка клика — только по квадрату
+checkAllBtn.addEventListener("click", ()=>{
+  const eligibleIds = viewGifts.filter(eligibleVisible).map(g=>g.id);
+  if (!dataReady || eligibleIds.length===0) return;         // нечего выбирать
+  const allSelected = eligibleIds.every(id=>selected.has(id));
+  toggleSelectAll(!allSelected);                             // инвертируем пачку
 });
 
 /* === UI RENDER === */
