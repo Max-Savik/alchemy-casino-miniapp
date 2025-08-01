@@ -247,13 +247,15 @@ input.selBox:checked:after{
   position:absolute; inset:2px;
   background:#000;
   clip-path:polygon(14% 44%,0 65%,50% 100%,100% 0,80% 0,43% 62%);
-  opacity:0; transition:.15s;
+  opacity:0; transition:none!important;
 }
-.select-all input.peer:checked + .box{
+/* Включение визуального состояния делаем классом .on (JS) */
+.select-all .box.on{
   background:#fbbf24; border-color:#fbbf24;
 }
-.select-all input.peer:checked + .box::after{ opacity:1; }
-.select-all:hover .box{ border-color:#fcd34d; }
+.select-all .box.on::after{ opacity:1; }
+/* убираем любые hover-подсветки */
+.select-all:hover .box{ border-color:#fbbf24; }
 .select-all .label-text{
   white-space:nowrap;
 }
@@ -415,17 +417,17 @@ body{
                 flex items-center justify-between gap-3 py-2 px-3 text-sm">
 
 <div class="select-all flex items-center gap-1.5 font-medium">
-  <!-- Кликабельная зона — только чекбокс/квадратик -->
-  <label for="checkAll" class="inline-flex items-center gap-1.5 cursor-pointer">
-    <input id="checkAll" type="checkbox" class="peer sr-only" disabled>
-    <span class="box relative w-4 h-4 rounded border-2 border-amber-400/80
-                 peer-checked:bg-amber-400 peer-checked:border-amber-400 transition"
+  <!-- Управляемая кнопка (без label/for), кликается только квадрат -->
+  <button id="checkAllBtn" type="button"
+          class="inline-flex items-center gap-1.5"
+          aria-pressed="false" aria-label="Выбрать все">
+    <span class="box relative w-4 h-4 rounded border-2 border-amber-400/80"
           aria-hidden="true"></span>
-  </label>
-
-  <!-- Текст вне label: клик по нему НЕ влияет на чекбокс -->
+  </button>
+  <!-- Скрытый чекбокс — только для синхронизации состояния (без участия в кликах) -->
+  <input id="checkAll" type="checkbox" class="sr-only pointer-events-none" tabindex="-1" aria-hidden="true">
   <span class="pl-1 text-gray-300 select-none label-text">Выбрать все</span>
-</div>
+  </div>
 
 
       <span id="counter"
