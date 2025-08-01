@@ -347,26 +347,28 @@ wallet.post("/withdraw", async (req, res) => {
 async function createStarsInvoice(userId, ownedIds) {
   const ids   = Array.isArray(ownedIds) ? ownedIds : [ownedIds];
   const count = ids.length;
-  const total = STARS_PRICE * count;              // общая сумма в звёздах (XTR)
+  const total = STARS_PRICE * count;          // общая сумма XTR (целые звёзды)
 
-  /*  payload оставляем в «старом» формате, чтобы бот-обработчик остался
-      совместимым.  Доп. данные о пачке передаём в provider_data.           */
-  const payload       = `withdraw:${ids[0]}`;      // withdraw:<firstOwnedId>
-  const providerData  = JSON.stringify({
-    k : "w",            // kind = withdraw (сжато)
-    c : count,          // сколько подарков
-    t : total,          // итоговая сумма
-    ids                // полный список ownedId (может пригодиться боту)
+  // Бэкенд бота ожидает список id именно в payload → передаём все через запятую.
+  const payload = `withdraw:${ids.join(",")}`;
+
+  // Метаданные — необязательно, но удобно (бот может использовать при логировании).
+  const providerData = JSON.stringify({
+    kind: "withdraw",
+    user: String(userId),
+    count,
+    total,
+    ids
   });
 
   const body = {
     title          : "Вывод подарков",
-    description    : `Комиссия за вывод ${count} NFT-подарк${count === 1 ? 'а' : count < 5 ? 'а' : 'ов'}`,
+    description    : `Комиссия за вывод ${count} NFT-подарк${count === 1 ? "а" : count < 5 ? "а" : "ов"}`,
     payload,
     provider_token : "STARS",
     currency       : "XTR",
     prices         : [{ label: `Вывод ×${count}`, amount: total }],
-    provider_data  : providerData,               // <— короткие метаданные
+    provider_data  : providerData,
     need_name      : false,
     need_email     : false,
     max_tip_amount : 0
@@ -379,8 +381,7 @@ async function createStarsInvoice(userId, ownedIds) {
   }).then(res => res.json());
 
   if (!r.ok) throw new Error(r.description || "invoice error");
-
-  return r.result;                                // invoiceLink
+  return r.result; // invoiceLink
 }
 
 /* ─── AUTO‑RESET for stale pending_withdraw ─────────────────── */
