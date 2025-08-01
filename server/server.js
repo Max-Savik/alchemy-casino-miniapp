@@ -514,44 +514,46 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
-/* ───────── Stars‑webhook: платеж подтверждён ───────── */
+/* ───────── Stars-webhook: платеж подтверждён ───────── */
 app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
   const { ownedIds, ownedId, payerId } = req.body || {};
 
-  /* поддерживаем оба формата: старый {ownedId} и новый {ownedIds[]} */
-  const ids =  ownedIds
-      ? (Array.isArray(ownedIds)
-          ? ownedIds
-          : typeof ownedIds === "string"
-            ? ownedIds.split(",")
-            : [])
-      : ownedId ? [ownedId] : [];
+  // Нормализация входных id: поддерживаем массив, строку списком и одиночный id
+  const norm = (v) => {
+    if (Array.isArray(v)) return v.map(String);
+    if (typeof v === "string") return v.split(",").map(s => s.trim()).filter(Boolean);
+    if (v !== undefined && v !== null) return [String(v)];
+    return [];
+  };
 
+  // Приоритет: если пришёл ownedIds — берём его; иначе разбираем ownedId (в т.ч. "a,b,c")
+  const ids = norm(ownedIds).length ? norm(ownedIds) : norm(ownedId);
   if (!ids.length) return res.status(400).json({ error: "no gifts" });
 
-  /* ① ищем любой подарок этой пачки, чтобы узнать общий invoiceLink */
+  const owner = String(payerId);
+
+  // Ищем ЛЮБОЙ из переданных подарков у плательщика, который ждёт выдачу
   const probe = gifts.find(
-    g => g.ownedId === ids[0] && g.ownerId === String(payerId)
+    g =>
+      g.ownerId === owner &&
+      g.status === "pending_withdraw" &&
+      ids.includes(g.ownedId)
   );
-  if (!probe || probe.status !== "pending_withdraw")
-    return res.status(400).json({ error: "gift not pending" });
+  if (!probe) return res.status(400).json({ error: "gift not pending" });
 
+  // Все подарки, оплаченные одним и тем же invoiceLink — считаем этой же пачкой
   const link = probe.invoiceLink;
-
-  /* ② помечаем ВСЕ подарки того же счёта как sent */
   let touched = false;
+
   gifts.forEach(g => {
     if (
-      g.ownerId === String(payerId) &&
-      g.invoiceLink === link &&
-      g.status === "pending_withdraw"
+      g.ownerId === owner &&
+      g.status === "pending_withdraw" &&
+      g.invoiceLink === link
     ) {
       g.status = "sent";
-      touched  = true;
-      io.to("u:" + payerId).emit("giftUpdate", {
-        ownedId: g.ownedId,
-        status : "sent"
-      });
+      touched = true;
+      io.to("u:" + owner).emit("giftUpdate", { ownedId: g.ownedId, status: "sent" });
     }
   });
 
@@ -559,9 +561,9 @@ app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
     await saveGifts();
     return res.json({ ok: true });
   }
-
   res.status(400).json({ error: "gifts not pending" });
 });
+
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
