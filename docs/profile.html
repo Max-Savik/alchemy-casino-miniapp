@@ -56,7 +56,8 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   aspect-ratio:1/1;
   background:transparent;
 }
-.nft-card.selected{ box-shadow:0 0 0 2px #fbbf24; }
+/* убрали «жирную» жёлтую рамку выбора */
+.nft-card.selected{ box-shadow:none!important; }
 
 /* ===== IMAGE ===== */
 .nft-card .nft-img{
@@ -229,7 +230,6 @@ input.selBox:checked:after{
      background:transparent!important;
      /* гарантированно убираем любые сторонние эффекты наведения */
      outline:none!important;
-     text-decoration:none!important;
 }
  
 /* ===== TOOLBAR “Select All” checkbox ===== */
