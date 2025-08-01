@@ -72,12 +72,13 @@ async function loadGifts() {
     headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
   });
   const arr = await r.json();
-  gifts = arr.map(g => ({
-    ...g,
-    id    : g.ownedId,
-    img   : buildImgLink(g),
-    model : extractModel(g.name)
-  }));
+gifts = arr.map(g => ({
+  ...g,
+  id     : g.ownedId,
+  img    : buildImgLink(g),
+  model  : extractModel(g.name),
+  status : g.status || "idle"     // ← гарантируем статус
+}));
   selected.clear(); 
   // сформируем карту моделей
   rebuildModelsMap();
@@ -139,9 +140,10 @@ function updateModelUI(){
   });
 }
 
-/* === SELECT‑ALL === */
+/* === SELECT-ALL === */
 const checkAllEl = $("#checkAll");
-function eligibleVisible(g){ return g.status === "idle"; }
+/* treat undefined → idle */
+function eligibleVisible(g){ return (g.status ?? "idle") === "idle"; }
 
 // убрать из selected всё, чего уже нет/или не idle
 function pruneSelection(){
