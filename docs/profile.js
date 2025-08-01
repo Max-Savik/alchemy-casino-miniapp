@@ -9,6 +9,7 @@ let tonBalance = 0;
 let currentSort = "priceDesc";
 let modelFilter = null;          // null = все модели
 let modelsMap   = new Map();     // modelName -> {count, img}
+let dataReady   = false;         // когда true — данные загружены
 
 /* === Shortcuts === */
 const $  = s => document.querySelector(s);
@@ -81,6 +82,7 @@ async function loadGifts() {
   // сформируем карту моделей
   rebuildModelsMap();
   buildModelMenu();
+  dataReady = true;
   applyFilters();
 }
 
@@ -155,6 +157,7 @@ function syncCheckAll(){
   const sel   = viewGifts.filter(g=>eligibleVisible(g) && selected.has(g.id)).length;
   checkAllEl.checked       = total>0 && sel===total;
   checkAllEl.indeterminate = sel>0 && sel<total;
+  checkAllEl.disabled      = !dataReady || total === 0;
 }
 
 function toggleSelectAll(checked){
@@ -167,8 +170,13 @@ function toggleSelectAll(checked){
   renderGrid();
 }
 
-
 checkAllEl.addEventListener("change", e=>{
+  // защита от ранних кликов и состояний, когда выбирать нечего
+  if (checkAllEl.disabled) {
+   // вернём визуал к синхронизированному состоянию
+    syncCheckAll();
+    return;
+  }
   toggleSelectAll(e.target.checked);
 });
 
