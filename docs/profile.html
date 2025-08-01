@@ -255,9 +255,6 @@ input.selBox:checked:after{
 .select-all .label-text{
   white-space:nowrap;
 }
-.select-all .box{
-  pointer-events:auto; /* даём кликать по самому квадрату */
-}
 
 /* ===== BUTTONS ===== */
 .alch-btn:disabled{
@@ -415,13 +412,19 @@ body{
                 rounded-2xl shadow-lg
                 flex items-center justify-between gap-3 py-2 px-3 text-sm">
 
-      <label for="checkAll"
-             class="select-all flex items-center gap-1.5 cursor-pointer font-medium">
-        <input id="checkAll" type="checkbox" class="peer sr-only">
-        <span class="box relative w-4 h-4 rounded border-2 border-amber-400/80
-                     peer-checked:bg-amber-400 peer-checked:border-amber-400 transition"></span>
-        <span class="pl-1 text-gray-300 select-none label-text">Выбрать все</span>
-      </label>
+<div class="select-all flex items-center gap-1.5 font-medium">
+  <!-- Кликабельная зона — только чекбокс/квадратик -->
+  <label for="checkAll" class="inline-flex items-center gap-1.5 cursor-pointer">
+    <input id="checkAll" type="checkbox" class="peer sr-only">
+    <span class="box relative w-4 h-4 rounded border-2 border-amber-400/80
+                 peer-checked:bg-amber-400 peer-checked:border-amber-400 transition"
+          aria-hidden="true"></span>
+  </label>
+
+  <!-- Текст вне label: клик по нему НЕ влияет на чекбокс -->
+  <span class="pl-1 text-gray-300 select-none label-text">Выбрать все</span>
+</div>
+
 
       <span id="counter"
             class="text-gray-400 select-none min-w-[90px] text-right">0 / 0 (0 TON)</span>
