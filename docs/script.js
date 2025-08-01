@@ -165,19 +165,7 @@ function initSocketEvents() {
     }
   });
 }
-// 2. Локальное состояние
-const inventory = [
-  { id:'orb001',          name:'Loot Bag',      price:160, img:'https://nft.fragment.com/gift/lootbag-10075.medium.jpg',   staked:false },
-  { id:'pearl42',         name:'Loot Bag',      price:160, img:'https://nft.fragment.com/gift/lootbag-9355.medium.jpg',    staked:false },
-  { id:'egg007',          name:'Loot Bag',      price:175, img:'https://nft.fragment.com/gift/lootbag-767.medium.jpg',     staked:false },
-  { id:'elixir1',         name:'Vintage Cigar', price:55, img:'https://nft.fragment.com/gift/vintagecigar-19295.medium.jpg', staked:false },
-  { id:'cryst66',         name:'Vintage Cigar', price:55, img:'https://nft.fragment.com/gift/vintagecigar-6050.medium.jpg',    staked:false },
-  { id:'diamondring-4526',name:'Diamond Ring',  price:26, img:'https://nft.fragment.com/gift/diamondring-4526.medium.jpg',  staked:false },
-  { id:'eternalrose-9785',name:'Eternal Rose',  price:25, img:'https://nft.fragment.com/gift/eternalrose-9785.medium.jpg',  staked:false },
-  { id:'lovecandle-14932',name:'Love Candle',   price:15,  img:'https://nft.fragment.com/gift/lovecandle-14932.medium.jpg',   staked:false },
-  { id:'lovepotion-11784',name:'Love Potion',   price:19,  img:'https://nft.fragment.com/gift/lovepotion-11784.medium.jpg',  staked:false },
-  { id:'lovecandle-7853', name:'Love Candle',   price:16,  img:'https://nft.fragment.com/gift/lovecandle-7853.medium.jpg',   staked:false },
-];
+const inventory = [];
 // Состояние фильтров
 let filterName   = "";
 let filterMaxPr  =  Infinity;
@@ -341,9 +329,10 @@ function applyFilters(nft) {
   const nameMatch  = nft.name.toLowerCase().includes(filterName);
   const priceMatch = nft.price <= filterMaxPr;
   const notStaked  = !nft.staked;
+  const isIdle     = (nft.status ?? 'idle') === 'idle';   // показываем только готовые к ставке
   // убираем отправленные/не показываем (sent мы вообще удаляем, но на всякий случай)
   if (nft.status === 'sent') return false;
-  return nameMatch && priceMatch && notStaked;
+  return nameMatch && priceMatch && notStaked && isIdle;
 }
 
 function renderPicker() {
@@ -673,6 +662,20 @@ async function ensureJwt() {
 
  }                              
 
+/* === Картинка подарка — ровно как в профиле === */
+function buildImgLink(g) {
+  // ① letters-only из названия («DeskCalendar-190442» → deskcalendar)
+  const letters = (g.name || '')
+    .toLowerCase()
+    .replace(/[^a-z]+/g, '');
+  // ② цифры: сначала из названия, затем из ownedId, затем gid
+  const num =
+    (g.name?.match(/\d+/) ||
+     g.ownedId?.match(/\d+/) ||
+     [g.gid || '0'])[0];
+  return `https://nft.fragment.com/gift/${letters}-${num}.medium.jpg`;
+}
+
 /* ── запускаем авторизацию и сокет ── */
 (async () => {
   await ensureJwt();
@@ -684,12 +687,14 @@ async function ensureJwt() {
       headers: jwtToken ? { "Authorization": "Bearer " + jwtToken } : {}
     });
     const giftArr = await res.json();
+    // Очищаем возможные локальные остатки и берём только реальные NFT
+    inventory.length = 0;
     inventory.push(
       ...giftArr.map(g => ({
-        id: g.ownedId,
-        name: g.name,
-        price: g.price,
-        img: g.img,
+        id    : g.ownedId,
+        name  : g.name,
+        price : g.price,
+        img   : buildImgLink(g),   // тот же алгоритм, что в профиле
         staked: false,
         status: g.status || 'idle'
       }))
@@ -873,6 +878,8 @@ function attachGiftUpdates() {
       // удаляем окончательно
       inventory.splice(idx, 1);
     }
+    // Перерисуем пикер, чтобы скрыть/обновить карточки
+    renderPicker();
   });
 }
 
@@ -1185,4 +1192,5 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
