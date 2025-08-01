@@ -167,19 +167,9 @@ function toggleSelectAll(checked){
   renderGrid();
 }
 
-// Кастомная логика клика по чекбоксу «Выбрать все»
-// Чиним случай, когда при частичном выборе браузерный indeterminate
-// мог требовать 2 клика. Берём управление состоянием на себя.
-checkAllEl.addEventListener("click", (e)=>{
-  e.preventDefault(); // гасим нативный toggle от <label>
-  // считаем текущее покрытие видимых idle-элементов
-  const eligible = viewGifts.filter(eligibleVisible).map(g=>g.id);
-  const allSelected = eligible.length>0 && eligible.every(id=>selected.has(id));
-  const nextChecked = !allSelected;   // если все выбраны — снимаем; иначе — выбираем все
-  // синхронизируем визуальное состояние чекбокса до перерисовки
-  checkAllEl.indeterminate = false;
-  checkAllEl.checked = nextChecked;
-  toggleSelectAll(nextChecked);
+
+checkAllEl.addEventListener("change", e=>{
+  toggleSelectAll(e.target.checked);
 });
 
 /* === UI RENDER === */
