@@ -91,6 +91,7 @@ const WD_FILE       = path.join(DATA_DIR, "withdrawals.json");
 const GIFTS_FILE    = path.join(DATA_DIR, "gifts.json"); 
 const FLOORS_FILE   = path.join(DATA_DIR, "thermos_floors.json");   // кеш Thermos
 const MODEL_FLOORS_FILE = path.join(DATA_DIR, "thermos_model_floors.json"); // кеш моделей внутри коллекций
+const GIFT_XFER_FILE= path.join(DATA_DIR, "gift_transfers.json");
 
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
@@ -232,6 +233,28 @@ async function saveGifts() {
   await fs.writeFile(tmp, JSON.stringify(gifts, null, 2));
   await fs.rename(tmp, GIFTS_FILE);
 }
+
+/* ---------- QUEUE: gift transfers (TON-paid) ---------- */
+let giftTransfers = []; // [{id,userId,ownedIds,ts,status:'queued'|'working'|'done'|'fail', leaseTs?}]
+async function loadGiftTransfers(){
+  try { giftTransfers = JSON.parse(await fs.readFile(GIFT_XFER_FILE,'utf8')); }
+  catch(e){ if(e.code!=='ENOENT') console.error(e); giftTransfers=[]; }
+}
+async function saveGiftTransfers(){
+  const tmp = GIFT_XFER_FILE + '.tmp';
+  await fs.writeFile(tmp, JSON.stringify(giftTransfers,null,2));
+  await fs.rename(tmp, GIFT_XFER_FILE);
+}
+function reclaimLeases(){
+  const now = Date.now();
+  let changed=false;
+  giftTransfers.forEach(j=>{
+    if (j.status==='working' && j.leaseTs && now - j.leaseTs > 3*60_000){ j.status='queued'; j.leaseTs=null; changed=true; }
+  });
+  if (changed) saveGiftTransfers().catch(console.error);
+}
+setInterval(reclaimLeases, 30_000);
+
 const wallet = express.Router();
 wallet.use(apiLimiter, userAuth);   // защита и для JWT-роутов
 
@@ -305,17 +328,17 @@ wallet.post("/withdrawGift", async (req, res) => {
       });
       await saveTx();
 
-      // считаем, что выдача произошла мгновенно
-      batch.forEach(g => {
-        g.status = "sent";
-        g.ts     = Date.now();
-        delete g.invoiceLink;
-      });
+      // помечаем как ожидающие отправки складом
+      const now = Date.now();
+      batch.forEach(g => { g.status = "queued_transfer"; g.ts = now; delete g.invoiceLink; });
       await saveGifts();
-      ids.forEach(ownedId =>
-        io.to("u:" + req.userId).emit("giftUpdate", { ownedId, status: "sent" })
-      );
-      return res.json({ ok:true, balance: balances[req.userId], sent: ids });
+      // создаём/добавляем задание на отправку
+      const jobId = crypto.randomUUID();
+      giftTransfers.push({ id: jobId, userId: String(req.userId), ownedIds: ids, ts: now, status: 'queued' });
+      await saveGiftTransfers();
+
+      ids.forEach(ownedId => io.to("u:" + req.userId).emit("giftUpdate", { ownedId, status: "queued_transfer" }));
+      return res.json({ ok:true, balance: balances[req.userId], jobId });
     }catch(e){
       return res.status(500).json({ error: String(e) });
     }
@@ -473,6 +496,59 @@ wallet.post('/link', async (req,res)=>{
   res.json({ ok:true, address });
 });
 
+/* ======== INTERNAL: queue API for gifts_listener (TON-paid) ======== */
+// GET /internal/transfer/next?limit=10 → {jobs:[{id,userId,ownedIds,ts}]}
+app.get("/internal/transfer/next", adminAuth, (req,res)=>{
+  const lim = Math.min( Number(req.query.limit||10), 50);
+  const now = Date.now();
+  const jobs = [];
+  for (const j of giftTransfers) {
+    if (jobs.length>=lim) break;
+    if (j.status==='queued') {
+      j.status = 'working';
+      j.leaseTs = now;
+      jobs.push({ id:j.id, userId:j.userId, ownedIds:j.ownedIds, ts:j.ts });
+    }
+  }
+  saveGiftTransfers().catch(console.error);
+  res.json({ jobs });
+});
+
+// POST /internal/transfer/complete { jobId, ok, sent:[], failed:[] }
+app.post("/internal/transfer/complete", adminAuth, async (req,res)=>{
+  const { jobId, ok, sent=[], failed=[] } = req.body || {};
+  const job = giftTransfers.find(j=>j.id===jobId);
+  if (!job) return res.status(404).json({ error:"job not found" });
+
+  const uid = String(job.userId);
+  let changedGifts = false;
+  // помечаем подарки
+  for (const id of sent) {
+    const g = gifts.find(x=>x.ownedId===id && x.ownerId===uid);
+    if (g){ g.status='sent'; changedGifts=true; io.to("u:"+uid).emit("giftUpdate", { ownedId:id, status:"sent" }); }
+  }
+  for (const id of failed) {
+    const g = gifts.find(x=>x.ownedId===id && x.ownerId===uid);
+    if (g){ g.status='idle'; changedGifts=true; io.to("u:"+uid).emit("giftUpdate", { ownedId:id, status:"idle" }); }
+  }
+  if (changedGifts) await saveGifts();
+
+  // частичный/полный рефанд TON-комиссии
+  const total = (job.ownedIds||[]).length;
+  const failCnt = failed.length;
+  if (failCnt>0) {
+    const refund = GIFT_WITHDRAW_TON_FEE * failCnt;
+    balances[uid] = (balances[uid]||0) + refund;
+    await saveBalances();
+    txs.push({ userId: uid, type:"gift_withdraw_refund", amount: refund, ts: Date.now(), meta:{ jobId, failed: failCnt }});
+    await saveTx();
+  }
+
+  job.status = ok && failed.length===0 ? 'done' : (failed.length===total ? 'fail' : 'partial');
+  delete job.leaseTs;
+  await saveGiftTransfers();
+  res.json({ ok:true, status:job.status });
+});
 
  /* GET /wallet/history?limit=30 */
 wallet.get('/history', (req,res)=>{
@@ -1234,12 +1310,14 @@ async function processWithdrawals() {
   await loadAddr();
   await loadWithdrawals();
   await loadGifts(); 
+  await loadGiftTransfers();
   await loadFloorsCacheFromDisk();
   await loadModelFloorsCacheFromDisk();
   resetRound();      
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
