@@ -69,8 +69,11 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   object-position:center;
   pointer-events:none;
   z-index:0;
+  opacity:0;
+  transition:opacity .25s ease-out;
 }
-
+.nft-card .nft-img.loaded{ opacity:1; }
+    
 /* === PRICE CHIP (compact) === */
 .price-chip{
   position:absolute;
@@ -94,6 +97,31 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
   pointer-events:none;
 }
 
+/* ===== Skeleton loader for grid ===== */
+.skel-card{
+  position:relative;
+  overflow:hidden;
+  border-radius:12px;
+  aspect-ratio:1/1;
+  background:linear-gradient(180deg,#0f1012 0%, #111827 100%);
+}
+.skel-chip{
+  position:absolute; top:4px; right:4px;
+  height:18px; width:56px; border-radius:10px;
+  background:rgba(255,255,255,.08);
+}
+.skel-title{
+  position:absolute; left:0; right:0; bottom:0;
+  height:22%; background:linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,0));
+}
+.skel-anim::after{
+  content:""; position:absolute; inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+  animation:skel-shimmer 1.2s infinite;
+}
+@keyframes skel-shimmer { 100% { transform:translateX(100%); } }
+    
 /* ===== CHECKBOX (per-card) ===== */
 input.selBox{
   appearance:none;
