@@ -496,59 +496,7 @@ wallet.post('/link', async (req,res)=>{
   res.json({ ok:true, address });
 });
 
-/* ======== INTERNAL: queue API for gifts_listener (TON-paid) ======== */
-// GET /internal/transfer/next?limit=10 → {jobs:[{id,userId,ownedIds,ts}]}
-app.get("/internal/transfer/next", adminAuth, (req,res)=>{
-  const lim = Math.min( Number(req.query.limit||10), 50);
-  const now = Date.now();
-  const jobs = [];
-  for (const j of giftTransfers) {
-    if (jobs.length>=lim) break;
-    if (j.status==='queued') {
-      j.status = 'working';
-      j.leaseTs = now;
-      jobs.push({ id:j.id, userId:j.userId, ownedIds:j.ownedIds, ts:j.ts });
-    }
-  }
-  saveGiftTransfers().catch(console.error);
-  res.json({ jobs });
-});
 
-// POST /internal/transfer/complete { jobId, ok, sent:[], failed:[] }
-app.post("/internal/transfer/complete", adminAuth, async (req,res)=>{
-  const { jobId, ok, sent=[], failed=[] } = req.body || {};
-  const job = giftTransfers.find(j=>j.id===jobId);
-  if (!job) return res.status(404).json({ error:"job not found" });
-
-  const uid = String(job.userId);
-  let changedGifts = false;
-  // помечаем подарки
-  for (const id of sent) {
-    const g = gifts.find(x=>x.ownedId===id && x.ownerId===uid);
-    if (g){ g.status='sent'; changedGifts=true; io.to("u:"+uid).emit("giftUpdate", { ownedId:id, status:"sent" }); }
-  }
-  for (const id of failed) {
-    const g = gifts.find(x=>x.ownedId===id && x.ownerId===uid);
-    if (g){ g.status='idle'; changedGifts=true; io.to("u:"+uid).emit("giftUpdate", { ownedId:id, status:"idle" }); }
-  }
-  if (changedGifts) await saveGifts();
-
-  // частичный/полный рефанд TON-комиссии
-  const total = (job.ownedIds||[]).length;
-  const failCnt = failed.length;
-  if (failCnt>0) {
-    const refund = GIFT_WITHDRAW_TON_FEE * failCnt;
-    balances[uid] = (balances[uid]||0) + refund;
-    await saveBalances();
-    txs.push({ userId: uid, type:"gift_withdraw_refund", amount: refund, ts: Date.now(), meta:{ jobId, failed: failCnt }});
-    await saveTx();
-  }
-
-  job.status = ok && failed.length===0 ? 'done' : (failed.length===total ? 'fail' : 'partial');
-  delete job.leaseTs;
-  await saveGiftTransfers();
-  res.json({ ok:true, status:job.status });
-});
 
  /* GET /wallet/history?limit=30 */
 wallet.get('/history', (req,res)=>{
@@ -771,6 +719,59 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+/* ======== INTERNAL: queue API for gifts_listener (TON-paid) ======== */
+// GET /internal/transfer/next?limit=10 → {jobs:[{id,userId,ownedIds,ts}]}
+app.get("/internal/transfer/next", adminAuth, (req,res)=>{
+  const lim = Math.min( Number(req.query.limit||10), 50);
+  const now = Date.now();
+  const jobs = [];
+  for (const j of giftTransfers) {
+    if (jobs.length>=lim) break;
+    if (j.status==='queued') {
+      j.status = 'working';
+      j.leaseTs = now;
+      jobs.push({ id:j.id, userId:j.userId, ownedIds:j.ownedIds, ts:j.ts });
+    }
+  }
+  saveGiftTransfers().catch(console.error);
+  res.json({ jobs });
+});
+
+// POST /internal/transfer/complete { jobId, ok, sent:[], failed:[] }
+app.post("/internal/transfer/complete", adminAuth, async (req,res)=>{
+  const { jobId, ok, sent=[], failed=[] } = req.body || {};
+  const job = giftTransfers.find(j=>j.id===jobId);
+  if (!job) return res.status(404).json({ error:"job not found" });
+
+  const uid = String(job.userId);
+  let changedGifts = false;
+  // помечаем подарки
+  for (const id of sent) {
+    const g = gifts.find(x=>x.ownedId===id && x.ownerId===uid);
+    if (g){ g.status='sent'; changedGifts=true; io.to("u:"+uid).emit("giftUpdate", { ownedId:id, status:"sent" }); }
+  }
+  for (const id of failed) {
+    const g = gifts.find(x=>x.ownedId===id && x.ownerId===uid);
+    if (g){ g.status='idle'; changedGifts=true; io.to("u:"+uid).emit("giftUpdate", { ownedId:id, status:"idle" }); }
+  }
+  if (changedGifts) await saveGifts();
+
+  // частичный/полный рефанд TON-комиссии
+  const total = (job.ownedIds||[]).length;
+  const failCnt = failed.length;
+  if (failCnt>0) {
+    const refund = GIFT_WITHDRAW_TON_FEE * failCnt;
+    balances[uid] = (balances[uid]||0) + refund;
+    await saveBalances();
+    txs.push({ userId: uid, type:"gift_withdraw_refund", amount: refund, ts: Date.now(), meta:{ jobId, failed: failCnt }});
+    await saveTx();
+  }
+
+  job.status = ok && failed.length===0 ? 'done' : (failed.length===total ? 'fail' : 'partial');
+  delete job.leaseTs;
+  await saveGiftTransfers();
+  res.json({ ok:true, status:job.status });
+});
 /* ───────── Stars-webhook: платеж подтверждён ───────── */
 app.post("/internal/withdrawGiftPaid", adminAuth, async (req, res) => {
   const { ownedIds, ownedId, payerId } = req.body || {};
@@ -1317,6 +1318,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
