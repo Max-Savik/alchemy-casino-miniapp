@@ -126,6 +126,8 @@ async function loadModelFloorsFor(colKeys=[]){
 }
 
 async function loadGifts() {
+  dataReady = false;
+  showGridSkeleton(12);
   const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
     credentials: "include",
     headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
@@ -279,16 +281,15 @@ function giftCardHTML(g) {
   const sel  = selected.has(g.id);
   const pend = g.status === "pending_withdraw";
   const priceStr = (Number(g.valuation) || 0).toFixed(2);
-  const tip = g.floorTonModel ? "Флор модели (Thermos)"
-            : g.floorTonColl ? "Флор коллекции (Thermos)"
-            : "Цена (fallback)";
 
   return `
     <div data-id="${g.id}" class="nft-card ${sel?'selected':''} ${pend?'opacity-60 pointer-events-none':''}">
       <img src="${g.img}" alt="${g.name}" class="nft-img"
+           loading="lazy" decoding="async"
+           onload="this.classList.add('loaded')"
            onerror="this.onerror=null;this.src='${g.img}';">
 
-      <div class="price-chip" title="${tip}">${priceStr}&nbsp;${TON_LABEL}</div>
+      <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
 
       <div class="title-badge" title="${g.name}">${g.name}</div>
 
@@ -343,6 +344,19 @@ function renderGrid() {
   updateCounter();
 }
 
+/* === SKELETON: плавная загрузка профиля === */
+function showGridSkeleton(n = 12){
+  const grid = $("#profileGrid");
+  if (!grid) return;
+  const items = Array.from({length:n}, () => `
+    <div class="skel-card skel-anim">
+      <div class="skel-chip"></div>
+      <div class="skel-title"></div>
+    </div>
+  `).join("");
+  grid.innerHTML = items;
+}
+
 /* === COUNTER & BUTTONS === */
 function totalValue(list) {
   return list.reduce((s,g)=>s+(Number(g.valuation)||0),0);
@@ -350,9 +364,10 @@ function totalValue(list) {
 
 function updateCounter() {
   const all = viewGifts.length;
-  const sel = selected.size;
-  const val = totalValue(viewGifts).toFixed(2);
-  $("#counter").textContent = `${sel} / ${all} (${val} ${TON_LABEL})`;
+  const selectedVisible = viewGifts.filter(g => eligibleVisible(g) && selected.has(g.id));
+  const sel = selectedVisible.length;                                // выбрано из текущего списка
+  const valSel = totalValue(selectedVisible).toFixed(2);             // сумма выбранных
+  $("#counter").textContent = `${sel} / ${all} (${valSel} ${TON_LABEL})`;
 
   const btn = $("#withdrawSelected");
   btn.querySelector("[data-caption]").textContent = "Вывести";
@@ -468,6 +483,7 @@ function postJSON(path, data) {
   await ensureJwt();
   // сначала подтянем floor-цены, затем подарки (чтобы сразу отрисовать с floor)
   await ensureJwt();
+  showGridSkeleton(12);
   await Promise.all([refreshBalance(), loadFloors()]);
   await loadGifts();
   const socket = io(API_ORIGIN, { auth: { token: jwtToken } });
