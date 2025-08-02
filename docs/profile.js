@@ -10,6 +10,7 @@ let currentSort = "priceDesc";
 let modelFilter = null;          // null = все модели
 let modelsMap   = new Map();     // modelName -> {count, img}
 let dataReady   = false;         // когда true — данные загружены
+let floorsMap   = new Map();     // collectionKey -> { name, floorTon }
 
 /* === Shortcuts === */
 const $  = s => document.querySelector(s);
@@ -65,6 +66,25 @@ function buildImgLink(g) {
   return `https://nft.fragment.com/gift/${letters}-${num}.medium.jpg`;
 }
 
+/* нормализация ключа коллекции как в Thermos Proxy API */
+function collectionKey(name=""){
+  return String(name).toLowerCase().replace(/[^a-z]+/g,"");
+}
+
+async function loadFloors(){
+  try{
+    const r = await fetch(`${API_ORIGIN}/market/floors`, { credentials: "include" });
+    const j = await r.json();
+    const map = new Map();
+    for (const [k,v] of Object.entries(j.collections || {})) {
+      map.set(k, v);  // v = { name, floorTon }
+    }
+    floorsMap = map;
+  }catch(e){
+    console.warn("floors fetch failed:", e);
+    floorsMap = new Map();
+  }
+}
 
 async function loadGifts() {
   const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
@@ -72,13 +92,21 @@ async function loadGifts() {
     headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
   });
   const arr = await r.json();
-gifts = arr.map(g => ({
-  ...g,
-  id     : g.ownedId,
-  img    : buildImgLink(g),
-  model  : extractModel(g.name),
-  status : g.status || "idle"     // ← гарантируем статус
-}));
+gifts = arr.map(g => {
+  const colKey = collectionKey(g.name);
+  const floor  = floorsMap.get(colKey)?.floorTon ?? null;
+  const priceTon = Number(g.price) || 0;
+  const valuation = floor && floor > 0 ? floor : priceTon; // если нет floor — фолбэк
+  return {
+    ...g,
+    id       : g.ownedId,
+    img      : buildImgLink(g),
+    model    : extractModel(g.name),
+    status   : g.status || "idle",
+    floorTon : floor,             // может быть null
+    valuation: valuation          // число TON → используем во всех расчётах/сортировках
+  };
+});
   selected.clear(); 
   // сформируем карту моделей
   rebuildModelsMap();
@@ -198,7 +226,7 @@ checkAllBtn.addEventListener("click", ()=>{
 function giftCardHTML(g) {
   const sel  = selected.has(g.id);
   const pend = g.status === "pending_withdraw";
-  const priceStr = (parseFloat(g.price) || 0).toFixed(2);
+  const priceStr = (Number(g.valuation) || 0).toFixed(2);
 
   return `
     <div data-id="${g.id}" class="nft-card ${sel?'selected':''} ${pend?'opacity-60 pointer-events-none':''}">
@@ -262,7 +290,7 @@ function renderGrid() {
 
 /* === COUNTER & BUTTONS === */
 function totalValue(list) {
-  return list.reduce((s,g)=>s+g.price,0);
+  return list.reduce((s,g)=>s+(Number(g.valuation)||0),0);
 }
 
 function updateCounter() {
@@ -286,8 +314,8 @@ function applyFilters() {
   );
 
   viewGifts.sort((a,b)=>{
-    if (currentSort==="priceAsc")  return a.price - b.price;
-    if (currentSort==="priceDesc") return b.price - a.price;
+    if (currentSort==="priceAsc")  return (a.valuation||0) - (b.valuation||0);
+    if (currentSort==="priceDesc") return (b.valuation||0) - (a.valuation||0);
     return a.name.localeCompare(b.name,"ru");
   });
 
@@ -383,7 +411,10 @@ function postJSON(path, data) {
 /* === INIT === */
 (async ()=> {
   await ensureJwt();
-  await Promise.all([refreshBalance(), loadGifts()]);
+  // сначала подтянем floor-цены, затем подарки (чтобы сразу отрисовать с floor)
+  await ensureJwt();
+  await Promise.all([refreshBalance(), loadFloors()]);
+  await loadGifts();
   const socket = io(API_ORIGIN, { auth: { token: jwtToken } });
 
 socket.on("giftUpdate", ({ ownedId, status }) => {
