@@ -535,3 +535,40 @@ body{
   <script src="profile.js" defer></script>
 </body>
 </html>
+
+<!-- === PAY CHOICE MODAL === -->
+<div id="payModal" class="hidden fixed inset-0 z-[100]">
+  <!-- backdrop -->
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+  <!-- dialog -->
+  <div class="absolute inset-0 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl border border-amber-500/30 bg-gray-900/95 p-4 shadow-2xl">
+      <div class="flex items-start justify-between mb-3">
+        <h3 class="text-lg font-semibold">Оплата вывода</h3>
+        <button id="payCloseBtn" class="px-2 py-1 rounded-lg hover:bg-white/10">✕</button>
+      </div>
+      <p id="paySummary" class="text-sm text-gray-400 mb-4">
+        Выбрано: <span id="payCount">0</span> шт.
+      </p>
+      <div class="space-y-2">
+        <button id="payStarsBtn"
+          class="w-full alch-btn flex items-center justify-between gap-2
+                 bg-gradient-to-br from-amber-400 to-amber-500 text-gray-900
+                 font-extrabold px-4 py-2 rounded-xl shadow">
+          <span>Оплатить звёздами</span>
+          <span id="payStarsLbl" class="text-sm opacity-90">25 XTR</span>
+        </button>
+        <button id="payTonBtn"
+          class="w-full alch-btn flex items-center justify-between gap-2
+                 bg-gradient-to-br from-gray-800 to-gray-700 border border-amber-500/30
+                 text-gray-100 font-semibold px-4 py-2 rounded-xl shadow disabled:opacity-40">
+          <span>Оплатить TON с баланса</span>
+          <span id="payTonLbl" class="text-sm opacity-90">0.10 TON</span>
+        </button>
+        <div id="payTonHint" class="text-xs text-red-400 mt-1 hidden">
+          Недостаточно TON на балансе.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
