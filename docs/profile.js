@@ -6,6 +6,8 @@ let gifts      = [];             // оригинальный список
 let viewGifts  = [];             // после фильтра / сортировки
 let selected   = new Set();      // ownedId
 let tonBalance = 0;
+const STARS_PER_GIFT = 25;       // 25 XTR за подарок
+const GIFT_WITHDRAW_TON_FEE = 0.1; // 0.1 TON за подарок
 let currentSort = "priceDesc";
 let modelFilter = null;          // null = все модели
 let modelsMap   = new Map();     // modelName -> {count, img}
@@ -395,43 +397,80 @@ function applyFilters() {
 /* === WITHDRAW === */
 async function doWithdraw(id) {
   try {
-    const { link } = await postJSON("/wallet/withdrawGift", { ownedId:id });
-    const g = gifts.find(x=>x.id===id);
-    if (g) g.status = "pending_withdraw";
-    applyFilters();
-
-    window.Telegram?.WebApp?.openInvoice
-      ? Telegram.WebApp.openInvoice(link)
-      : window.open(link,"_blank");
+    // По одному — сразу открываем модалку выбора оплаты
+    selected.clear();
+    selected.add(id);
+    openPayModal();
+    return;
   } catch(e) {
     alert("Ошибка: "+e.message);
   }
 }
 
-async function withdrawSelected() {
+function openPayModal(){
+  const ids = viewGifts.filter(g=>eligibleVisible(g) && selected.has(g.id)).map(g=>g.id);
+  if (!ids.length) return;
+  const count = ids.length;
+  const starsTotal = STARS_PER_GIFT * count;
+  const tonTotal   = GIFT_WITHDRAW_TON_FEE * count;
+
+  $("#payCount").textContent = String(count);
+  $("#payStarsLbl").textContent = `${starsTotal} XTR`;
+  $("#payTonLbl").textContent   = `${tonTotal.toFixed(2)} TON`;
+
+  const enough = tonBalance >= tonTotal;
+  const tonBtn = $("#payTonBtn");
+  tonBtn.disabled = !enough;
+  $("#payTonHint").classList.toggle("hidden", enough);
+
+  $("#payModal").classList.remove("hidden");
+}
+
+function closePayModal(){
+  $("#payModal").classList.add("hidden");
+}
+
+async function withdrawSelected(method = "stars") {
   const ids = Array.from(selected);
   if (!ids.length) return;
   try {
-    /* один чек на все выбранные подарки */
-    const { link } = await postJSON("/wallet/withdrawGift", { ownedIds: ids });
-
-    /* локально помечаем подарки как pending */
-    ids.forEach(id => {
-      const g = gifts.find(x => x.id === id);
-      if (g) g.status = "pending_withdraw";
-    });
-    applyFilters();
-
-    /* открываем инвойс */
-    if (window.Telegram?.WebApp?.openInvoice) {
-      Telegram.WebApp.openInvoice(link);
+    if (method === "ton") {
+      // оплата TON с баланса
+      const { balance, sent } = await postJSON("/wallet/withdrawGift", {
+        ownedIds: ids,
+        method: "ton"
+      });
+      tonBalance = Number(balance)||0;
+      $("#tonBalance").textContent = tonBalance.toFixed(2);
+      // помечаем как отправленные
+      (sent||ids).forEach(id=>{
+        const g = gifts.find(x=>x.id===id);
+        if (g) g.status = "sent";
+      });
+      applyFilters();
+      toast("Подарки отправлены");
     } else {
-      window.open(link, "_blank");
+      // по умолчанию — через Stars (инвойс)
+      const { link } = await postJSON("/wallet/withdrawGift", {
+        ownedIds: ids,
+        method: "stars"
+      });
+      ids.forEach(id => {
+        const g = gifts.find(x => x.id === id);
+        if (g) g.status = "pending_withdraw";
+      });
+      applyFilters();
+      if (window.Telegram?.WebApp?.openInvoice) {
+        Telegram.WebApp.openInvoice(link);
+      } else {
+        window.open(link, "_blank");
+      }
     }
   } catch (e) {
     alert("Ошибка: " + e.message);
   } finally {
     selected.clear();
+    closePayModal();
   }
 }
 
@@ -445,7 +484,7 @@ gifts.forEach(g=>{
 /* === EVENTS === */
 $("#searchInput").addEventListener("input", applyFilters);
 
-$("#withdrawSelected").addEventListener("click", withdrawSelected);
+$("#withdrawSelected").addEventListener("click", openPayModal);
 
 $("#profileGrid").addEventListener("click", e => {
   const card = e.target.closest("[data-id]");
@@ -570,4 +609,16 @@ document.addEventListener("click", e=>{
     modelBtn?.querySelector("svg")?.classList.remove("rotate-180");
   }
 });
+/* === PAY MODAL BINDINGS === */
+document.getElementById("payCloseBtn")?.addEventListener("click", closePayModal);
+document.getElementById("payModal")?.addEventListener("click", (e)=>{
+  if (e.target.id === "payModal") closePayModal(); // клик по подложке
+});
+document.getElementById("payStarsBtn")?.addEventListener("click", ()=>{
+  withdrawSelected("stars");
+});
+document.getElementById("payTonBtn")?.addEventListener("click", ()=>{
+  withdrawSelected("ton");
+});
+
 })();
