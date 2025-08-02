@@ -36,16 +36,25 @@ h1,h2,h3,header a{ letter-spacing:-.02em }
 
 /* ===== GRID ===== */
 #profileGrid{
+  /* контроль размеров карточек */
+  --card-min: 148px;    /* min ширина карточки */
+  --card-max: 220px;    /* max ширина карточки */
+  --gap: 6px;
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:4px;
+  /* фиксируем разумный диапазон ширины и даём авто-подбор колонок */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(clamp(var(--card-min), 14vw, var(--card-max)), 1fr)
+  );
+  gap: var(--gap);
   position:relative;
   z-index:1;
 }
-@media (min-width:640px){
-  #profileGrid{
-    grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
-  }
+@media (min-width:640px){  /* tablet */
+  #profileGrid{ --gap: 8px; }
+}
+@media (min-width:1024px){ /* desktop */
+  #profileGrid{ --gap: 12px; }
 }
 
 /* ===== CARD ===== */
@@ -178,7 +187,7 @@ input.selBox:checked:after{
 #sortDropdown,#modelDropdown{
   position:relative;
   overflow:visible;
-  /* фиксированная ширина на десктопах — кнопки больше не «прыгают» */
+  /* базово мобильная ширина */
   flex:0 0 176px;
   width:176px;
   max-width:176px;
@@ -192,7 +201,7 @@ input.selBox:checked:after{
   border-radius:14px;
 }
  
-/* мобильная сетка 1 строка / 2 столбца */
+
 @media (max-width:640px){
   #filtersRow{
     display:grid;
@@ -328,6 +337,28 @@ body{
      фиксируем то же самое и здесь */
   font-family:'Inter','Segoe UI',sans-serif;
 }
+@media (min-width:1024px){
+  /* поиск тянется, фильтры справа «по содержимому» */
+  #toolbarOrigin > div:first-child{ align-items:center; }
+  #searchInput{ flex:1 1 520px; max-width:520px; min-width:0; }
+  #filtersRow{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:flex-end;
+  }
+  #sortDropdown,#modelDropdown{
+    flex:0 0 auto;
+    width:auto;
+    max-width:none;
+    min-width: 200px;
+  }
+  #sortMenu,#modelMenu{ right:0; left:auto; }
+}  
+@media (min-width:1024px){
+  .bottom-nav{ display:none; }
+  #bulkBar{ bottom: 16px; } /* опускаем панель ближе к низу */
+}  
   </style>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
@@ -350,7 +381,7 @@ body{
   <main class="flex-grow flex flex-col items-center pt-6 pb-28">
 
     <!-- card‑holder -->
-    <section class="w-full max-w-7xl flex flex-col gap-6 px-4">
+    <section class="w-full max-w-7xl flex flex-col gap-6 px-4 sm:px-6 lg:px-8">
 
       <!-- ─── Toolbar ─── -->
       <div id="toolbarOrigin" class="flex flex-col sm:flex-row sm:items-end gap-4">
