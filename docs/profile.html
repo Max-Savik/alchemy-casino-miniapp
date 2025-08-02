@@ -146,7 +146,6 @@ input.selBox:checked:after{
   clip-path:polygon(14% 44%,0 65%,50% 100%,100% 0,80% 0,43% 62%);
 }
 
-#modelDropdown{ z-index:1000!important; }
 .model-item{
   display:flex;align-items:center;gap:8px;width:100%;
   padding:6px 8px;font-size:12.5px;line-height:1.25;text-align:left;
@@ -239,11 +238,11 @@ input.selBox:checked:after{
   text-overflow:ellipsis;
   white-space:nowrap;                 /* одна строка */
 }
-
-
-/* ===== SORT DROPDOWN ===== */
-#sortMenu{ z-index:1000!important; }
-
+ /* дропдауны ниже модалки */
+ #sortDropdown, #modelDropdown, #sortMenu, #modelMenu { z-index: 30 !important; }
+ /* модалка всегда поверх */
+ #payModal { z-index: 1200 !important; }
+  
 /* ===== HOVERS OFF COMPLETELY ===== */
 .nft-card{
   transition:none!important;
@@ -537,7 +536,7 @@ body{
 </html>
 
 <!-- === PAY CHOICE MODAL (moved INSIDE <body>, styled) === -->
-<div id="payModal" class="hidden fixed inset-0 z-[100]">
+<div id="payModal" class="hidden fixed inset-0 z-[1200]">
   <!-- Backdrop -->
   <div class="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
   <!-- Dialog -->
@@ -563,7 +562,11 @@ body{
                  font-extrabold px-4 py-3 shadow-lg hover:brightness-110">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="inline-flex w-6 h-6 rounded-md bg-black/15 items-center justify-center">★</span>
+ <span class="inline-flex w-6 h-6 rounded-md bg-black/15 items-center justify-center">
+   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+     <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z"/>
+   </svg>
+ </span>
               <span>Оплатить звёздами</span>
             </div>
             <span id="payStarsLbl" class="text-sm opacity-90">25 XTR</span>
