@@ -89,6 +89,7 @@ const BALANCES_FILE = path.join(DATA_DIR, "balances.json");
 const TX_FILE       = path.join(DATA_DIR, "transactions.json");
 const WD_FILE       = path.join(DATA_DIR, "withdrawals.json"); 
 const GIFTS_FILE    = path.join(DATA_DIR, "gifts.json"); 
+const FLOORS_FILE   = path.join(DATA_DIR, "thermos_floors.json");   // кеш Thermos
 
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
@@ -476,6 +477,94 @@ app.use(express.json());
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 app.use(apiLimiter);  
+
+// ─────────── Thermos floors proxy (cache) ───────────
+const THERMOS_PROXY = "https://proxy.thermos.gifts/api/v1";
+const FLOORS_TTL_MS = 5 * 60_000; // 5 минут
+
+function normalizeKey(s=""){
+  return String(s).toLowerCase().replace(/[^a-z]+/g,"");
+}
+
+let thermosFloorsCache = { fetchedAt: 0, collections: {} }; // { key: { name, floorTon } }
+
+async function loadFloorsCacheFromDisk(){
+  try{
+    const j = JSON.parse(await fs.readFile(FLOORS_FILE,'utf8'));
+    if (j && j.collections) thermosFloorsCache = j;
+  }catch(e){ if (e.code!=="ENOENT") console.error("FLOORS read:", e.message); }
+}
+async function saveFloorsCacheToDisk(){
+  const tmp = FLOORS_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(thermosFloorsCache,null,2));
+  await fs.rename(tmp, FLOORS_FILE);
+}
+
+async function fetchThermosCollections(){
+  const r = await fetch(`${THERMOS_PROXY}/collections`, { timeout: 10_000 });
+  if(!r.ok) throw new Error("thermos collections http "+r.status);
+  const arr = await r.json(); // [{ name, image_url, stats:{count, floor:"nanoton"} }, ...]
+  const map = {};
+  for(const col of arr || []){
+    const key = normalizeKey(col.name);
+    const floorNano = BigInt(col?.stats?.floor ?? "0");
+    const floorTon  = Number(floorNano) / 1e9;
+    map[key] = { name: col.name, floorTon };
+  }
+  thermosFloorsCache = { fetchedAt: Date.now(), collections: map };
+  await saveFloorsCacheToDisk();
+  return thermosFloorsCache;
+}
+
+async function ensureFloorsFresh(){
+  const now = Date.now();
+  if (now - (thermosFloorsCache.fetchedAt||0) < FLOORS_TTL_MS &&
+      Object.keys(thermosFloorsCache.collections||{}).length) {
+    return thermosFloorsCache;
+  }
+  try{
+    return await fetchThermosCollections();
+  }catch(e){
+    console.error("Thermos floors fetch failed:", e.message);
+    // вернём то, что есть в кеше, даже если устарело
+    return thermosFloorsCache;
+  }
+}
+
+// GET /market/floors  → { fetchedAt, ttlMs, collections:{ key:{name,floorTon} } }
+app.get("/market/floors", async (_req,res)=>{
+  const data = await ensureFloorsFresh();
+  res.json({ fetchedAt: data.fetchedAt, ttlMs: FLOORS_TTL_MS, collections: data.collections });
+});
+
+// (опц.) GET /market/attributes?collections=A,B
+// вернёт по каждой коллекции floor по её моделям (для будущих задач фильтра по модели)
+app.get("/market/attributes", async (req,res)=>{
+  try{
+    const names = String(req.query.collections||"")
+      .split(",").map(s=>s.trim()).filter(Boolean);
+    if(!names.length) return res.status(400).json({error:"no collections"});
+    const r = await fetch(`${THERMOS_PROXY}/attributes`, {
+      method:"POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ collections: names })
+    });
+    if(!r.ok) return res.status(502).json({error:"thermos http "+r.status});
+    const j = await r.json(); // { "Plush Pepe": { models:[{name, stats:{floor}}], ... } }
+    const out = {};
+    for(const [colName, val] of Object.entries(j||{})){
+      const models = {};
+      for(const m of val?.models || []){
+        const floorTon = Number(BigInt(m?.stats?.floor ?? "0")) / 1e9;
+        models[ normalizeKey(m.name) ] = { name: m.name, floorTon };
+      }
+      out[colName] = { models };
+    }
+    res.json(out);
+  }catch(e){
+    res.status(500).json({ error: String(e.message||e) });
+  }
+});
 // === LOGIN ===  (вызывается телеграм-клиентом один раз)
 app.post("/auth/login", (req, res) => {
   /* Telegram должен подписывать userId — здесь минимальная проверка на число */
@@ -1053,7 +1142,9 @@ async function processWithdrawals() {
   await loadAddr();
   await loadWithdrawals();
   await loadGifts(); 
+  await loadFloorsCacheFromDisk();
   resetRound();      
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
