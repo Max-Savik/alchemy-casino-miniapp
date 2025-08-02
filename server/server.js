@@ -96,6 +96,8 @@ const MODEL_FLOORS_FILE = path.join(DATA_DIR, "thermos_model_floors.json"); // �
 const STARS_PRICE      = 25;               // фикс цена
 const BOT_TOKEN        = process.env.APP_BOT_TOKEN; 
 if (!BOT_TOKEN) throw new Error("APP_BOT_TOKEN not set");
+/* === Альтернатива: TON-комиссия за вывод подарка === */
+const GIFT_WITHDRAW_TON_FEE = Number(process.env.GIFT_WITHDRAW_TON_FEE || 0.1);
 
 /* для createInvoiceLink */
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`
@@ -262,7 +264,7 @@ wallet.get("/gifts", (req, res) => {
 
 /* POST /wallet/withdrawGift { ownedId } ➋ */
 wallet.post("/withdrawGift", async (req, res) => {
-  const { ownedIds, ownedId } = req.body || {};
+  const { ownedIds, ownedId, method } = req.body || {};
   const raw    = ownedIds ?? (ownedId ? [ownedId] : []);
   const ids    = Array.isArray(raw) ? raw : [raw];
   if (!ids.length) return res.status(400).json({ error: "no gifts" });
@@ -273,6 +275,52 @@ wallet.post("/withdrawGift", async (req, res) => {
   );
   if (batch.some(g => !g))
     return res.status(404).json({ error: "some gifts not found" });
+  // ── Новый метод: списание TON с внутреннего баланса ──────────
+  if ((method || "stars") === "ton") {
+    try{
+      const count = ids.length;
+      const charge = GIFT_WITHDRAW_TON_FEE * count;
+      const bal = Number(balances[req.userId] || 0);
+      if (bal < charge) return res.status(400).json({ error: "insufficient balance" });
+
+      // списываем с пользователя и начисляем «сервису»
+      balances[req.userId] = bal - charge;
+      balances.__service__ = (balances.__service__ || 0) + charge;
+      await saveBalances();
+
+      // транзакции учёта
+      txs.push({
+        userId : req.userId,
+        type   : "gift_withdraw_fee",
+        amount : charge,
+        ts     : Date.now(),
+        meta   : { count }
+      });
+      txs.push({
+        userId : "__service__",
+        type   : "gift_withdraw_income",
+        amount : charge,
+        ts     : Date.now(),
+        meta   : { payer: String(req.userId), count }
+      });
+      await saveTx();
+
+      // считаем, что выдача произошла мгновенно
+      batch.forEach(g => {
+        g.status = "sent";
+        g.ts     = Date.now();
+        delete g.invoiceLink;
+      });
+      await saveGifts();
+      ids.forEach(ownedId =>
+        io.to("u:" + req.userId).emit("giftUpdate", { ownedId, status: "sent" })
+      );
+      return res.json({ ok:true, balance: balances[req.userId], sent: ids });
+    }catch(e){
+      return res.status(500).json({ error: String(e) });
+    }
+  }
+
 
   try {
     const link = await createStarsInvoice(req.userId, ids);
@@ -1192,5 +1240,6 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
