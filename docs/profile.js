@@ -72,8 +72,12 @@ function collectionKey(name=""){
   return String(name).toLowerCase().replace(/[^a-z]+/g,"");
 }
 
-function modelKeyFromName(name=""){
-  return collectionKey(extractModel(name));
+function modelLabelFromGift(g){
+  return String(g?.gid || extractModel(g?.name || ""));
+}
+// Нормализованный ключ модели для запросов/карт
+function modelKeyFromGift(g){
+  return collectionKey(modelLabelFromGift(g));
 }
 
 async function loadFloors(){
@@ -124,16 +128,16 @@ gifts = arr.map(g => ({
   ...g,
   id     : g.ownedId,
   img    : buildImgLink(g),
-  model  : extractModel(g.name),
+  model  : modelLabelFromGift(g),
   status : g.status || "idle"
-}));
++}));
 // 2) получим список коллекций у пользователя и подтянем floors по моделям
 const colKeys = Array.from(new Set(gifts.map(g=>collectionKey(g.name))));
 await loadModelFloorsFor(colKeys);
 // 3) проставим оценку: сначала floor по МОДЕЛИ, затем по КОЛЛЕКЦИИ, затем fallback price
 gifts = gifts.map(g => {
   const colKey = collectionKey(g.name);
-  const modKey = modelKeyFromName(g.name);
+  const modKey = modelKeyFromGift(g);
   const modelFloorTon = modelFloors.get(colKey)?.get(modKey)?.floorTon ?? null;
   const collFloorTon  = floorsMap.get(colKey)?.floorTon ?? null;
   const priceTon      = Number(g.price) || 0;
@@ -276,7 +280,7 @@ function giftCardHTML(g) {
       <img src="${g.img}" alt="${g.name}" class="nft-img"
            onerror="this.onerror=null;this.src='${g.img}';">
 
-      <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
+      <div class="price-chip" title="${tip}">${priceStr}&nbsp;${TON_LABEL}</div>
 
       <div class="title-badge" title="${g.name}">${g.name}</div>
 
