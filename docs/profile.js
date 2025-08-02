@@ -137,11 +137,12 @@ async function loadGifts() {
   });
   const arr = await r.json();
 // 1) первичная сборка базовых полей (без оценки)
+//    ⚠️ model = КОЛЛЕКЦИЯ (как раньше)
 gifts = arr.map(g => ({
   ...g,
   id     : g.ownedId,
   img    : buildImgLink(g),
-  model  : modelLabelFromGift(g),
+  model  : extractModel(g.name),   // ← коллекция (например: "DeskCalendar")
   status : g.status || "idle"
 }));
 // 2) получим список коллекций у пользователя и подтянем floors по моделям
@@ -192,7 +193,7 @@ function buildModelMenu(){
   items.push(`
     <button class="model-item ${modelFilter? "":"active"}" data-model="">
       <img src="https://nft.fragment.com/gift/deskcalendar-190442.medium.jpg" alt="">
-      <span>Все модели</span>
+      <span>Все коллекции</span>
       <span class="count">${gifts.length}</span>
     </button>
   `);
@@ -213,7 +214,7 @@ function buildModelMenu(){
 function updateModelUI(){
   const labelEl = $("[data-current-model]");
   if (labelEl) {
-    labelEl.textContent = modelFilter ? `Модель: ${modelFilter}` : "Модель: Все";
+    labelEl.textContent = modelFilter ? `Коллекция: ${modelFilter}` : "Коллекция: Все";
   }
   const modelMenu = $("#modelMenu");
   if(!modelMenu) return;
