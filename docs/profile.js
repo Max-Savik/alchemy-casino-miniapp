@@ -72,13 +72,21 @@ function collectionKey(name=""){
   return String(name).toLowerCase().replace(/[^a-z]+/g,"");
 }
 
+// Достаём "чистое" имя модели
+function extractModelLabel(raw){
+  if (!raw) return "";
+  const s = String(raw);
+  // Пробуем распарсить repr: UniqueGiftModel(name='Choco Top', ...)
+  const m = s.match(/name=['"]([^'"]+)['"]/i);
+  return m ? m[1] : s; // если repr нет — вернём исходную строку
+}
+
+// Человеческая метка модели: сперва gid (gift.model из бэка), иначе name до дефиса
 function modelLabelFromGift(g){
-  return String(g?.gid || extractModel(g?.name || ""));
+  return extractModelLabel(g?.gid) || extractModel(g?.name || "");
 }
-// Нормализованный ключ модели для запросов/карт
-function modelKeyFromGift(g){
-  return collectionKey(modelLabelFromGift(g));
-}
+// Нормализованный ключ модели
+function modelKeyFromGift(g){ return collectionKey(modelLabelFromGift(g)); }
 
 async function loadFloors(){
   try{
