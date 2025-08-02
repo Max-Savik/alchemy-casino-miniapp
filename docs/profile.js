@@ -11,6 +11,7 @@ let modelFilter = null;          // null = все модели
 let modelsMap   = new Map();     // modelName -> {count, img}
 let dataReady   = false;         // когда true — данные загружены
 let floorsMap   = new Map();     // collectionKey -> { name, floorTon }
+let modelFloors = new Map();     // collectionKey -> Map(modelKey -> {name, floorTon})
 
 /* === Shortcuts === */
 const $  = s => document.querySelector(s);
@@ -71,6 +72,10 @@ function collectionKey(name=""){
   return String(name).toLowerCase().replace(/[^a-z]+/g,"");
 }
 
+function modelKeyFromName(name=""){
+  return collectionKey(extractModel(name));
+}
+
 async function loadFloors(){
   try{
     const r = await fetch(`${API_ORIGIN}/market/floors`, { credentials: "include" });
@@ -86,25 +91,60 @@ async function loadFloors(){
   }
 }
 
+async function loadModelFloorsFor(colKeys=[]){
+  if (!colKeys.length) { modelFloors = new Map(); return; }
+  try{
+    const url = `${API_ORIGIN}/market/model-floors?keys=${encodeURIComponent(colKeys.join(","))}`;
+    const r = await fetch(url, { credentials: "include" });
+    const j = await r.json(); // { keys:{ [colKey]: { models:{ [modelKey]:{name,floorTon} } } } }
+    const out = new Map();
+    const keys = j.keys || {};
+    for (const [ck, payload] of Object.entries(keys)) {
+      const m = new Map();
+      for (const [mk, obj] of Object.entries(payload.models || {})) {
+        m.set(mk, obj);
+      }
+      out.set(ck, m);
+    }
+    modelFloors = out;
+  }catch(e){
+    console.warn("model-floors fetch failed:", e);
+    modelFloors = new Map();
+  }
+}
+
 async function loadGifts() {
   const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
     credentials: "include",
     headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
   });
   const arr = await r.json();
-gifts = arr.map(g => {
+// 1) первичная сборка базовых полей (без оценки)
+gifts = arr.map(g => ({
+  ...g,
+  id     : g.ownedId,
+  img    : buildImgLink(g),
+  model  : extractModel(g.name),
+  status : g.status || "idle"
+}));
+// 2) получим список коллекций у пользователя и подтянем floors по моделям
+const colKeys = Array.from(new Set(gifts.map(g=>collectionKey(g.name))));
+await loadModelFloorsFor(colKeys);
+// 3) проставим оценку: сначала floor по МОДЕЛИ, затем по КОЛЛЕКЦИИ, затем fallback price
+gifts = gifts.map(g => {
   const colKey = collectionKey(g.name);
-  const floor  = floorsMap.get(colKey)?.floorTon ?? null;
-  const priceTon = Number(g.price) || 0;
-  const valuation = floor && floor > 0 ? floor : priceTon; // если нет floor — фолбэк
+  const modKey = modelKeyFromName(g.name);
+  const modelFloorTon = modelFloors.get(colKey)?.get(modKey)?.floorTon ?? null;
+  const collFloorTon  = floorsMap.get(colKey)?.floorTon ?? null;
+  const priceTon      = Number(g.price) || 0;
+  const valuation     = (modelFloorTon && modelFloorTon>0) ? modelFloorTon
+                        : (collFloorTon && collFloorTon>0) ? collFloorTon
+                        : priceTon;
   return {
     ...g,
-    id       : g.ownedId,
-    img      : buildImgLink(g),
-    model    : extractModel(g.name),
-    status   : g.status || "idle",
-    floorTon : floor,             // может быть null
-    valuation: valuation          // число TON → используем во всех расчётах/сортировках
+    floorTonModel : modelFloorTon,  // может быть null
+    floorTonColl  : collFloorTon,   // может быть null
+    valuation
   };
 });
   selected.clear(); 
@@ -227,6 +267,9 @@ function giftCardHTML(g) {
   const sel  = selected.has(g.id);
   const pend = g.status === "pending_withdraw";
   const priceStr = (Number(g.valuation) || 0).toFixed(2);
+  const tip = g.floorTonModel ? "Флор модели (Thermos)"
+            : g.floorTonColl ? "Флор коллекции (Thermos)"
+            : "Цена (fallback)";
 
   return `
     <div data-id="${g.id}" class="nft-card ${sel?'selected':''} ${pend?'opacity-60 pointer-events-none':''}">
