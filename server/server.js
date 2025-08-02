@@ -90,6 +90,7 @@ const TX_FILE       = path.join(DATA_DIR, "transactions.json");
 const WD_FILE       = path.join(DATA_DIR, "withdrawals.json"); 
 const GIFTS_FILE    = path.join(DATA_DIR, "gifts.json"); 
 const FLOORS_FILE   = path.join(DATA_DIR, "thermos_floors.json");   // кеш Thermos
+const MODEL_FLOORS_FILE = path.join(DATA_DIR, "thermos_model_floors.json"); // кеш моделей внутри коллекций
 
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
@@ -481,12 +482,14 @@ app.use(apiLimiter);
 // ─────────── Thermos floors proxy (cache) ───────────
 const THERMOS_PROXY = "https://proxy.thermos.gifts/api/v1";
 const FLOORS_TTL_MS = 5 * 60_000; // 5 минут
+const MODEL_FLOORS_TTL_MS = 5 * 60_000; // 5 минут для моделей
 
 function normalizeKey(s=""){
   return String(s).toLowerCase().replace(/[^a-z]+/g,"");
 }
 
 let thermosFloorsCache = { fetchedAt: 0, collections: {} }; // { key: { name, floorTon } }
+let thermosModelFloors = { byCollection: {} };
 
 async function loadFloorsCacheFromDisk(){
   try{
@@ -499,6 +502,19 @@ async function saveFloorsCacheToDisk(){
   await fs.writeFile(tmp, JSON.stringify(thermosFloorsCache,null,2));
   await fs.rename(tmp, FLOORS_FILE);
 }
+
+async function loadModelFloorsCacheFromDisk(){
+  try{
+    const j = JSON.parse(await fs.readFile(MODEL_FLOORS_FILE,'utf8'));
+    if (j && j.byCollection) thermosModelFloors = j;
+  }catch(e){ if (e.code!=="ENOENT") console.error("MODEL_FLOORS read:", e.message); }
+}
+async function saveModelFloorsCacheToDisk(){
+  const tmp = MODEL_FLOORS_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(thermosModelFloors,null,2));
+  await fs.rename(tmp, MODEL_FLOORS_FILE);
+}
+
 
 async function fetchThermosCollections(){
   const r = await fetch(`${THERMOS_PROXY}/collections`, { timeout: 10_000 });
@@ -537,30 +553,58 @@ app.get("/market/floors", async (_req,res)=>{
   res.json({ fetchedAt: data.fetchedAt, ttlMs: FLOORS_TTL_MS, collections: data.collections });
 });
 
-// (опц.) GET /market/attributes?collections=A,B
-// вернёт по каждой коллекции floor по её моделям (для будущих задач фильтра по модели)
-app.get("/market/attributes", async (req,res)=>{
-  try{
-    const names = String(req.query.collections||"")
-      .split(",").map(s=>s.trim()).filter(Boolean);
-    if(!names.length) return res.status(400).json({error:"no collections"});
-    const r = await fetch(`${THERMOS_PROXY}/attributes`, {
-      method:"POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ collections: names })
-    });
-    if(!r.ok) return res.status(502).json({error:"thermos http "+r.status});
-    const j = await r.json(); // { "Plush Pepe": { models:[{name, stats:{floor}}], ... } }
-    const out = {};
-    for(const [colName, val] of Object.entries(j||{})){
-      const models = {};
-      for(const m of val?.models || []){
-        const floorTon = Number(BigInt(m?.stats?.floor ?? "0")) / 1e9;
-        models[ normalizeKey(m.name) ] = { name: m.name, floorTon };
-      }
-      out[colName] = { models };
+// helper: подтянуть/обновить floors по моделям для заданных ИМЁН коллекций
+async function ensureModelFloorsForCollections(collectionNames=[]){
+  const need = [];
+  const now = Date.now();
+  for (const name of collectionNames) {
+    const rec = thermosModelFloors.byCollection[name];
+    if (!rec || (now - (rec.fetchedAt||0)) > MODEL_FLOORS_TTL_MS) need.push(name);
+  }
+  if (!need.length) return;
+  const r = await fetch(`${THERMOS_PROXY}/attributes`, {
+    method:"POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ collections: need })
+  });
+  if(!r.ok) throw new Error("thermos attributes http "+r.status);
+  const j = await r.json(); // { "Collection Name": { models:[{name, stats:{floor}}], ... } }
+  for (const [colName, val] of Object.entries(j||{})) {
+    const models = {};
+    for (const m of (val?.models || [])) {
+      const floorTon = Number(BigInt(m?.stats?.floor ?? "0")) / 1e9;
+      models[ normalizeKey(m.name) ] = { name: m.name, floorTon };
     }
-    res.json(out);
+    thermosModelFloors.byCollection[colName] = { fetchedAt: Date.now(), models };
+  }
+  await saveModelFloorsCacheToDisk();
+}
+
+// GET /market/model-floors?keys=deskcalendar,plushpepe
+// → { keys:{ [colKey]: { models:{ [modelKey]:{name,floorTon} } } }, ttlMs:... }
+app.get("/market/model-floors", async (req,res)=>{
+  try{
+    const keys = String(req.query.keys||"").split(",").map(s=>s.trim()).filter(Boolean);
+    if (!keys.length) return res.json({ keys:{}, ttlMs: MODEL_FLOORS_TTL_MS });
+    // гарантируем наличие коллекций (имён) в кеше
+    const floors = await ensureFloorsFresh();
+    const wantNames = [];
+    const keyToName = {};
+    for (const k of keys) {
+      const col = floors.collections[k];
+      if (col?.name) {
+        keyToName[k] = col.name;
+        wantNames.push(col.name);
+      }
+    }
+    await ensureModelFloorsForCollections(wantNames);
+    const out = {};
+    for (const k of keys) {
+      const name = keyToName[k];
+      const rec = name ? thermosModelFloors.byCollection[name] : null;
+      out[k] = { models: rec?.models || {} };
+    }
+    res.json({ keys: out, ttlMs: MODEL_FLOORS_TTL_MS });
   }catch(e){
     res.status(500).json({ error: String(e.message||e) });
   }
@@ -1143,8 +1187,10 @@ async function processWithdrawals() {
   await loadWithdrawals();
   await loadGifts(); 
   await loadFloorsCacheFromDisk();
+  await loadModelFloorsCacheFromDisk();
   resetRound();      
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
