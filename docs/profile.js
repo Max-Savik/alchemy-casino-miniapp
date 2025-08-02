@@ -8,6 +8,7 @@ let selected   = new Set();      // ownedId
 let tonBalance = 0;
 const STARS_PER_GIFT = 25;       // 25 XTR за подарок
 const GIFT_WITHDRAW_TON_FEE = 0.1; // 0.1 TON за подарок
+const PAY_LEASE_SEC = 180;       // инфо-лейбл ожидания отправки при TON
 let currentSort = "priceDesc";
 let modelFilter = null;          // null = все модели
 let modelsMap   = new Map();     // modelName -> {count, img}
@@ -417,6 +418,7 @@ function openPayModal(){
   $("#payCount").textContent = String(count);
   $("#payStarsLbl").textContent = `${starsTotal} XTR`;
   $("#payTonLbl").textContent   = `${tonTotal.toFixed(2)} TON`;
+  $("#payTonBalance").textContent = (Number(tonBalance)||0).toFixed(2);
 
   const enough = tonBalance >= tonTotal;
   const tonBtn = $("#payTonBtn");
@@ -442,13 +444,13 @@ async function withdrawSelected(method = "stars") {
       });
       tonBalance = Number(balance)||0;
       $("#tonBalance").textContent = tonBalance.toFixed(2);
-      // помечаем как отправленные
-      (sent||ids).forEach(id=>{
+      // локально пометим как ожидающие отправки складом
+      ids.forEach(id=>{
         const g = gifts.find(x=>x.id===id);
-        if (g) g.status = "sent";
+        if (g) g.status = "queued_transfer";
       });
       applyFilters();
-      toast("Подарки отправлены");
+      toast("Подарки будут выданы автоматически в ближайшие минуты.");
     } else {
       // по умолчанию — через Stars (инвойс)
       const { link } = await postJSON("/wallet/withdrawGift", {
@@ -534,7 +536,22 @@ socket.on("giftUpdate", ({ ownedId, status }) => {
     applyFilters();           // перерисовать сетку
   }
 });
-
+  
+function giftCardHTML(g) {
+  const sel  = selected.has(g.id);
+  const pend = g.status === "pending_withdraw";
+  const queued = g.status === "queued_transfer";
+  const priceStr = (Number(g.valuation) || 0).toFixed(2);
+  return `
+    <div data-id="${g.id}" class="nft-card ${sel?'selected':''} ${(pend||queued)?'opacity-60 pointer-events-none':''}">
+      <img src="${g.img}" alt="${g.name}" class="nft-img" loading="lazy" decoding="async"
+           onload="this.classList.add('loaded')" onerror="this.onerror=null;this.src='${g.img}';">
+      <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
+      ${queued?'<div class="absolute bottom-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-amber-200 z-30">в ожидании отправки</div>':''}
+      <div class="title-badge" title="${g.name}">${g.name}</div>
+      <input type="checkbox" class="selBox" ${sel?"checked":""} ${(pend||queued)?"disabled":""}/>
+    </div>`;
+}
 /* === SORT DROPDOWN === */
 const sortBtn  = $("#sortBtn");
 const sortMenu = $("#sortMenu");
