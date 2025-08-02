@@ -130,7 +130,7 @@ gifts = arr.map(g => ({
   img    : buildImgLink(g),
   model  : modelLabelFromGift(g),
   status : g.status || "idle"
-+}));
+}));
 // 2) получим список коллекций у пользователя и подтянем floors по моделям
 const colKeys = Array.from(new Set(gifts.map(g=>collectionKey(g.name))));
 await loadModelFloorsFor(colKeys);
