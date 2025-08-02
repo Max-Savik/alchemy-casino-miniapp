@@ -536,37 +536,59 @@ body{
 </body>
 </html>
 
-<!-- === PAY CHOICE MODAL === -->
+<!-- === PAY CHOICE MODAL (moved INSIDE <body>, styled) === -->
 <div id="payModal" class="hidden fixed inset-0 z-[100]">
-  <!-- backdrop -->
-  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-  <!-- dialog -->
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
+  <!-- Dialog -->
   <div class="absolute inset-0 flex items-center justify-center p-4">
-    <div class="w-full max-w-sm rounded-2xl border border-amber-500/30 bg-gray-900/95 p-4 shadow-2xl">
-      <div class="flex items-start justify-between mb-3">
-        <h3 class="text-lg font-semibold">Оплата вывода</h3>
+    <div class="w-full max-w-md rounded-2xl border border-amber-400/30
+                bg-gradient-to-b from-gray-900/95 to-gray-900/80
+                shadow-[0_10px_40px_rgba(0,0,0,.6)]">
+      <div class="p-4 sm:p-5 border-b border-white/5 flex items-start justify-between">
+        <div>
+          <h3 class="text-lg font-semibold tracking-tight">Оплата вывода</h3>
+          <p class="text-xs text-gray-400 mt-0.5">
+            Выбрано: <span id="payCount">0</span> шт.
+          </p>
+        </div>
         <button id="payCloseBtn" class="px-2 py-1 rounded-lg hover:bg-white/10">✕</button>
       </div>
-      <p id="paySummary" class="text-sm text-gray-400 mb-4">
-        Выбрано: <span id="payCount">0</span> шт.
-      </p>
-      <div class="space-y-2">
+
+      <div class="p-4 sm:p-5 space-y-3">
+        <!-- Stars -->
         <button id="payStarsBtn"
-          class="w-full alch-btn flex items-center justify-between gap-2
+          class="group w-full overflow-hidden rounded-xl relative border border-amber-400/30
                  bg-gradient-to-br from-amber-400 to-amber-500 text-gray-900
-                 font-extrabold px-4 py-2 rounded-xl shadow">
-          <span>Оплатить звёздами</span>
-          <span id="payStarsLbl" class="text-sm opacity-90">25 XTR</span>
+                 font-extrabold px-4 py-3 shadow-lg hover:brightness-110">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex w-6 h-6 rounded-md bg-black/15 items-center justify-center">★</span>
+              <span>Оплатить звёздами</span>
+            </div>
+            <span id="payStarsLbl" class="text-sm opacity-90">25 XTR</span>
+          </div>
         </button>
+
+        <!-- TON -->
         <button id="payTonBtn"
-          class="w-full alch-btn flex items-center justify-between gap-2
-                 bg-gradient-to-br from-gray-800 to-gray-700 border border-amber-500/30
-                 text-gray-100 font-semibold px-4 py-2 rounded-xl shadow disabled:opacity-40">
-          <span>Оплатить TON с баланса</span>
-          <span id="payTonLbl" class="text-sm opacity-90">0.10 TON</span>
+          class="group w-full rounded-xl border border-amber-400/30
+                 bg-gradient-to-br from-gray-800 to-gray-700
+                 text-gray-100 font-semibold px-4 py-3
+                 shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <img alt="TON" src="https://s3.coinmarketcap.com/static/img/portraits/6304d4f7dcf54d0fb59743ba.png"
+                   class="w-5 h-5 rounded-md object-cover"/>
+              <span>Оплатить TON с баланса</span>
+            </div>
+            <span id="payTonLbl" class="text-sm opacity-90">0.10 TON</span>
+          </div>
         </button>
-        <div id="payTonHint" class="text-xs text-red-400 mt-1 hidden">
-          Недостаточно TON на балансе.
+
+        <div class="flex items-center justify-between text-xs text-gray-400 pt-1">
+          <div>Баланс: <span id="payTonBalance" class="font-medium text-gray-200">0.00</span> TON</div>
+          <div id="payTonHint" class="text-red-400 hidden">Недостаточно TON на балансе</div>
         </div>
       </div>
     </div>
