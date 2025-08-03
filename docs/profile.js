@@ -282,6 +282,23 @@ checkAllBtn.addEventListener("click", ()=>{
 
 /* === UI RENDER === */
 
+/* === CARD TEMPLATE (global) === */
+function giftCardHTML(g) {
+  const sel    = selected.has(g.id);
+  const pend   = g.status === "pending_withdraw";
+  const queued = g.status === "queued_transfer";
+  const priceStr = (Number(g.valuation) || 0).toFixed(2);
+  return `
+    <div data-id="${g.id}" class="nft-card ${sel ? 'selected' : ''} ${(pend||queued)?'opacity-60 pointer-events-none':''}">
+      <img src="${g.img}" alt="${g.name}" class="nft-img" loading="lazy" decoding="async"
+           onload="this.classList.add('loaded')" onerror="this.onerror=null;this.src='${g.img}';">
+      <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
+      ${queued?'<div class="absolute bottom-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-amber-200 z-30">в ожидании отправки</div>':''}
+      <div class="title-badge" title="${g.name}">${g.name}</div>
+      <input type="checkbox" class="selBox" ${sel?"checked":""} ${(pend||queued)?"disabled":""}/>
+    </div>`;
+}
+
 /* === Toast helper === */
 function toast(msg) {
   const t = document.createElement("div");
@@ -523,21 +540,7 @@ socket.on("giftUpdate", ({ ownedId, status }) => {
   }
 });
   
-function giftCardHTML(g) {
-  const sel  = selected.has(g.id);
-  const pend = g.status === "pending_withdraw";
-  const queued = g.status === "queued_transfer";
-  const priceStr = (Number(g.valuation) || 0).toFixed(2);
-  return `
-    <div data-id="${g.id}" class="nft-card ${sel?'selected':''} ${(pend||queued)?'opacity-60 pointer-events-none':''}">
-      <img src="${g.img}" alt="${g.name}" class="nft-img" loading="lazy" decoding="async"
-           onload="this.classList.add('loaded')" onerror="this.onerror=null;this.src='${g.img}';">
-      <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
-      ${queued?'<div class="absolute bottom-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-amber-200 z-30">в ожидании отправки</div>':''}
-      <div class="title-badge" title="${g.name}">${g.name}</div>
-      <input type="checkbox" class="selBox" ${sel?"checked":""} ${(pend||queued)?"disabled":""}/>
-    </div>`;
-}
+
 /* === SORT DROPDOWN === */
 const sortBtn  = $("#sortBtn");
 const sortMenu = $("#sortMenu");
