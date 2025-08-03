@@ -281,32 +281,18 @@ checkAllBtn.addEventListener("click", ()=>{
 });
 
 /* === UI RENDER === */
-function giftCardHTML(g) {
-  const sel  = selected.has(g.id);
-  const pend = g.status === "pending_withdraw";
-  const priceStr = (Number(g.valuation) || 0).toFixed(2);
-
-  return `
-    <div data-id="${g.id}" class="nft-card ${sel?'selected':''} ${pend?'opacity-60 pointer-events-none':''}">
-      <img src="${g.img}" alt="${g.name}" class="nft-img"
-           loading="lazy" decoding="async"
-           onload="this.classList.add('loaded')"
-           onerror="this.onerror=null;this.src='${g.img}';">
-
-      <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
-
-      <div class="title-badge" title="${g.name}">${g.name}</div>
-
-      <input type="checkbox" class="selBox" ${sel?"checked":""} ${pend?"disabled":""}/>
-    </div>`;
-}
 
 /* === Toast helper === */
 function toast(msg) {
   const t = document.createElement("div");
   t.textContent = msg;
-  t.className = "fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 px-4 py-2" +
-                " rounded-xl shadow-lg text-sm text-gray-100 opacity-0 transition";
+  t.setAttribute("role","status");
+  t.setAttribute("aria-live","polite");
+  t.className = "fixed left-1/2 -translate-x-1/2 bg-gray-800 px-4 py-2 rounded-xl shadow-lg text-sm text-gray-100 opacity-0 transition pointer-events-none z-[1300]";
+  // располагать всегда чуть выше панели bulkBar
+  const bulk = document.getElementById("bulkBar");
+  const bottomPx = (bulk?.offsetHeight || 0) + 20; // 20px запас над панелью
+  t.style.bottom = bottomPx + "px";
   document.body.appendChild(t);
   requestAnimationFrame(()=>t.classList.add("opacity-90"));
   setTimeout(()=>{ t.classList.remove("opacity-90"); setTimeout(()=>t.remove(),300); }, 2500);
@@ -522,7 +508,6 @@ function postJSON(path, data) {
 
 /* === INIT === */
 (async ()=> {
-  await ensureJwt();
   // сначала подтянем floor-цены, затем подарки (чтобы сразу отрисовать с floor)
   await ensureJwt();
   showGridSkeleton(12);
@@ -631,6 +616,12 @@ document.addEventListener("click", e=>{
 document.getElementById("payCloseBtn")?.addEventListener("click", closePayModal);
 document.getElementById("payModal")?.addEventListener("click", (e)=>{
   if (e.target.id === "payModal") closePayModal(); // клик по подложке
+});
+// закрытие по Esc
+document.addEventListener("keydown", (e)=>{
+  if (e.key === "Escape" && !document.getElementById("payModal")?.classList.contains("hidden")) {
+    closePayModal();
+  }
 });
 document.getElementById("payStarsBtn")?.addEventListener("click", ()=>{
   withdrawSelected("stars");
