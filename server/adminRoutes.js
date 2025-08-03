@@ -19,6 +19,8 @@ export default function createAdminRouter(opts) {
     saveTx,
     withdrawals,
     saveWithdrawals,
+    gifts,
+    saveGifts,
   } = opts;
 
   if (!ADMIN_TOKEN) throw new Error("ADMIN_TOKEN not set");
@@ -231,5 +233,60 @@ export default function createAdminRouter(opts) {
       res.json({ ok: true, pendingId: id, newBalance: balances.__service__ });
     }
   );
+ /* 15) GET /admin/gifts?uid=123[&status=all|unsent|idle|pending_withdraw|queued_transfer|staked|sent]
+         Возвращает список подарков пользователя (по умолчанию — все). */
+  router.get("/gifts", (req, res) => {
+    const uid = (req.query.uid || "").trim();
+    const st  = String(req.query.status || "").trim().toLowerCase();
+    if (!uid) return res.status(400).json({ error: "uid required" });
+
+    let list = gifts.filter(g => g.ownerId === uid);
+    if (st && st !== "all") {
+      if (st === "unsent") {
+        // как в /wallet/gifts: не staked и не "sent"
+        list = list.filter(g => !g.staked && g.status !== "sent");
+      } else if (st === "staked") {
+        list = list.filter(g => g.staked);
+      } else {
+        list = list.filter(g => (g.status || "idle") === st);
+      }
+    }
+    // компактный JSON для бота/панели
+    res.json(
+      list.map(g => ({
+        ownedId: g.ownedId,
+        gid    : g.gid,
+        name   : g.name,
+        price  : g.price,
+        img    : g.img,
+        staked : !!g.staked,
+        status : g.status || "idle",
+        ts     : g.ts || null
+      }))
+    );
+  });
+
+  /* 16) POST /admin/gift/transfer  { ownedId, toUid }
+         Передаёт подарок другому пользователю (если не staked и не в процессе выдачи). */
+  router.post("/gift/transfer", express.json(), async (req, res) => {
+    const ownedId = String(req.body?.ownedId || "").trim();
+    const toUid   = String(req.body?.toUid   || "").trim();
+    if (!ownedId || !toUid) return res.status(400).json({ error: "ownedId & toUid required" });
+
+    const g = gifts.find(x => x.ownedId === ownedId);
+    if (!g) return res.status(404).json({ error: "gift not found" });
+    if (g.staked) return res.status(400).json({ error: "gift is staked in a bet" });
+    const st = g.status || "idle";
+    if (st === "sent" || st === "queued_transfer" || st === "pending_withdraw")
+      return res.status(400).json({ error: `gift status ${st} cannot be transferred` });
+
+    const fromUid = g.ownerId;
+    g.ownerId = toUid;
+    g.status  = "idle";
+    delete g.invoiceLink;
+    await saveGifts();
+    res.json({ ok: true, ownedId, fromUid, toUid });
+  });
+
   return router;
  }
