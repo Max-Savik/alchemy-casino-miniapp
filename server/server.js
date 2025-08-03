@@ -1031,6 +1031,8 @@ app.use(
     saveTx,
     withdrawals,
     saveWithdrawals,
+    gifts,
+    saveGifts,
   })
 );
 
@@ -1318,6 +1320,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
