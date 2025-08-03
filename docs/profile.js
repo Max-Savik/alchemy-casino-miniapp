@@ -288,12 +288,20 @@ function giftCardHTML(g) {
   const pend   = g.status === "pending_withdraw";
   const queued = g.status === "queued_transfer";
   const priceStr = (Number(g.valuation) || 0).toFixed(2);
+  const statusLabel = pend ? "Ожидает оплаты" : "Скоро отправим";
   return `
     <div data-id="${g.id}" class="nft-card ${sel ? 'selected' : ''} ${(pend||queued)?'opacity-60 pointer-events-none':''}">
       <img src="${g.img}" alt="${g.name}" class="nft-img" loading="lazy" decoding="async"
            onload="this.classList.add('loaded')" onerror="this.onerror=null;this.src='${g.img}';">
       <div class="price-chip">${priceStr}&nbsp;${TON_LABEL}</div>
-      ${queued?'<div class="absolute bottom-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-amber-200 z-30">в ожидании отправки</div>':''}
+      ${(pend||queued)?`
+        <div class="status-overlay">
+          <div class="status-pill">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>${statusLabel}</span>
+          </div>
+        </div>
+      `:''}
       <div class="title-badge" title="${g.name}">${g.name}</div>
       <input type="checkbox" class="selBox" ${sel?"checked":""} ${(pend||queued)?"disabled":""}/>
     </div>`;
@@ -385,10 +393,13 @@ function updateCounter() {
 function applyFilters() {
   const q = $("#searchInput").value.trim().toLowerCase();
 
-  viewGifts = gifts.filter(g =>
-       (g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q)) &&
-       (!modelFilter || g.model === modelFilter)
-  );
+  viewGifts = gifts.filter(g => {
+    const isIdle = (g.status ?? "idle") === "idle";
+    if (!isIdle) return false;                                  // показываем только готовые к действиям
+    const matchesText  = g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q);
+    const matchesModel = !modelFilter || g.model === modelFilter;
+    return matchesText && matchesModel;
+  });
 
   viewGifts.sort((a,b)=>{
     if (currentSort==="priceAsc")  return (a.valuation||0) - (b.valuation||0);
@@ -448,11 +459,12 @@ async function withdrawSelected(method = "stars") {
       });
       tonBalance = Number(balance)||0;
       $("#tonBalance").textContent = tonBalance.toFixed(2);
-      // локально пометим как ожидающие отправки складом
+      // помечаем и сразу убираем из списка (UI моментально «чистый»)
       ids.forEach(id=>{
         const g = gifts.find(x=>x.id===id);
         if (g) g.status = "queued_transfer";
       });
+      // скрываем не-idle из массива отображения
       applyFilters();
       toast("Подарки будут выданы автоматически в ближайшие минуты.");
     } else {
@@ -465,6 +477,7 @@ async function withdrawSelected(method = "stars") {
         const g = gifts.find(x => x.id === id);
         if (g) g.status = "pending_withdraw";
       });
+      // скрываем не-idle из списка
       applyFilters();
       if (window.Telegram?.WebApp?.openInvoice) {
         Telegram.WebApp.openInvoice(link);
@@ -536,7 +549,12 @@ socket.on("giftUpdate", ({ ownedId, status }) => {
   const g = gifts.find(x => x.id === ownedId);
   if (g) {
     g.status = status;
-    applyFilters();           // перерисовать сетку
+    // если подарок окончательно выдан/ушёл со склада — удалим из локального списка
+    const terminal = new Set(["transferred","done","completed","sent","delivered"]);
+    if (terminal.has(String(status))) {
+      gifts = gifts.filter(x => x.id !== ownedId);
+    }
+    applyFilters();           // перерисовать сетку (не-idle всё равно скрыты)
   }
 });
   
