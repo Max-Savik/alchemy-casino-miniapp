@@ -301,7 +301,9 @@ function cardHTML(nft, extra='', addBtn=false) {
 
       <div class="mt-1 flex items-center justify-between text-sm">
         <span>${nft.name}</span>
-        <span class="text-amber-300 font-semibold">$${nft.price}</span>
+        <span class="text-amber-300 font-semibold">
+          ${Number(nft.price||0).toFixed(2)} TON
+        </span>
       </div>
 
       ${
@@ -363,6 +365,16 @@ function renderPicker() {
 
   // 2.5 кнопка «Поставить»
   placeBetBtn.disabled = selected.size === 0;
+  // динамическая подпись: количество и сумма в TON
+  if (selected.size > 0) {
+    const totalSelTon = Array.from(selected).reduce((s,id)=>{
+      const n = inventory.find(x=>x.id===id);
+      return s + (Number(n?.price)||0);
+    },0);
+    placeBetBtn.innerHTML = `Поставить ×${selected.size} — ${totalSelTon.toFixed(2)} TON`;
+  } else {
+    placeBetBtn.textContent = 'Поставить';
+  }
 }
 
 // 3. Обработчик «Количество»
@@ -609,7 +621,7 @@ nftSearch.addEventListener('input', () => {
 priceRange.addEventListener('input', () => {
   const v = +priceRange.value;
   filterMaxPr = v;
-  priceValue.textContent = v;
+  priceValue.textContent = `${v} TON`;
   renderPicker();
 });
 
@@ -622,7 +634,7 @@ clearFiltersBtn.addEventListener('click', () => {
   // 2) вернуть цену на максимум
   filterMaxPr = Infinity;
   priceRange.value = priceRange.max;
-  priceValue.textContent = priceRange.value;
+  priceValue.textContent = `${priceRange.value} TON`;
 
   // 3) обнулить селектор количества
   selectCount.value = 0;
@@ -699,6 +711,17 @@ function buildImgLink(g) {
         status: g.status || 'idle'
       }))
     );
+    // динамически настроим «макс. цену» под реальные подарки
+    try {
+      const maxPrice = Math.max(0, ...inventory.map(g => Number(g.price)||0));
+      const slider = document.getElementById('priceRange');
+      const label  = document.getElementById('priceValue');
+      if (Number.isFinite(maxPrice) && slider) {
+        slider.max   = Math.max(1, Math.ceil(maxPrice));
+        slider.value = slider.max;
+        if (label) label.textContent = `${slider.value} TON`;
+      }
+    } catch(_) {}
   } catch (e) { console.warn("Gift fetch error", e); }                                  
 
   const token = (document.cookie.split("; ")
@@ -879,6 +902,17 @@ function attachGiftUpdates() {
       inventory.splice(idx, 1);
     }
     // Перерисуем пикер, чтобы скрыть/обновить карточки
+    renderPicker();
+  });
+  socket.on('giftGain', (g) => {
+    if (!g || !g.ownedId) return;
+    // если вдруг уже есть — обновим; иначе добавим
+    const i = inventory.findIndex(x => x.id === g.ownedId);
+    const rec = {
+      id: g.ownedId, name: g.name, price: g.price,
+      img: g.img || buildImgLink(g), staked: false, status: g.status || 'idle'
+    };
+    if (i >= 0) inventory[i] = rec; else inventory.push(rec);
     renderPicker();
   });
 }
@@ -1176,7 +1210,7 @@ const initialView =
   ['#game', '#profile', '#earn'].includes(location.hash)
     ? location.hash.slice(1)
     : 'game';
-+show(initialView);
+show(initialView);
 refreshUI();
 refreshBalance();  
 
@@ -1192,5 +1226,6 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
