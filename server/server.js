@@ -992,7 +992,56 @@ function startSpin() {
           await saveTx();
         }
       }
-    // ───── persist round to mounted disk ─────
+  /* ──────────────────────────────────────────────────────────
+     ПЕРЕНОС ПОДАРКОВ: все NFT, поставленные в этом раунде,
+     переходят победителю. TON-«токены» (id: "ton-…") не трогаем.
+     • Проигравшим шлём giftUpdate{status:'sent'} → клиент удалит.
+     • Победителю шлём giftGain{…} → клиент добавит в инвентарь.
+     • Свои собственные поставленные NFT у победителя просто
+       снимаем со стейка (владельцем уже является победитель).
+  ─────────────────────────────────────────────────────────── */
+  try {
+    const winUid = String(winner.userId);
+    let touched = false;
+
+    for (const p of game.players) {
+      const uid = String(p.userId);
+      for (const n of (p.nfts || [])) {
+        // пропускаем TON-ставки
+        if (String(n.id).startsWith('ton-')) continue;
+        // ищем реальную запись подарка у исходного владельца
+        const g = gifts.find(x => x.ownedId === n.id && String(x.ownerId) === uid);
+        if (!g) continue;
+
+        if (uid === winUid) {
+          // подарок уже у победителя → просто снимаем «staked»
+          if (g.staked) { g.staked = false; touched = true; }
+          // можно уведомить клиента позже общим state-reset
+          continue;
+        }
+
+        // перенос права собственности
+        g.ownerId = winUid;
+        g.staked  = false;
+        g.status  = "idle";
+        touched   = true;
+
+        // уведомляем проигравшего — убрать из инвентаря
+        io.to("u:" + uid).emit("giftUpdate", {
+          ownedId: g.ownedId, status: "sent"
+        });
+        // уведомляем победителя — добавить в инвентарь
+        io.to("u:" + winUid).emit("giftGain", {
+          gid: g.gid, ownedId: g.ownedId, name: g.name,
+          price: g.price, img: g.img, status: "idle"
+        });
+      }
+    }
+    if (touched) await saveGifts();
+  } catch (e) {
+    console.error("Gift transfer error:", e);
+  }
+
 
 history.push({
   timestamp: new Date().toISOString(),
@@ -1326,6 +1375,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
