@@ -266,26 +266,33 @@ export default function createAdminRouter(opts) {
     );
   });
 
-  /* 16) POST /admin/gift/transfer  { ownedId, toUid }
-         Передаёт подарок другому пользователю (если не staked и не в процессе выдачи). */
+  /* 16) POST /admin/gift/transfer
+         body: { fromUid, toUid, ownedId? , ownedIds?[] }
+         → переносит 1 или несколько подарков ТОЛЬКО если они принадлежат fromUid и не заняты/не в процессе выдачи. */
   router.post("/gift/transfer", express.json(), async (req, res) => {
-    const ownedId = String(req.body?.ownedId || "").trim();
+    const fromUid = String(req.body?.fromUid || "").trim();
     const toUid   = String(req.body?.toUid   || "").trim();
-    if (!ownedId || !toUid) return res.status(400).json({ error: "ownedId & toUid required" });
+    const raw     = req.body?.ownedIds ?? (req.body?.ownedId ? [req.body.ownedId] : []);
+    const ids     = (Array.isArray(raw) ? raw : [raw]).map(v => String(v).trim()).filter(Boolean);
+    if (!fromUid || !toUid || !ids.length)
+      return res.status(400).json({ error: "fromUid, toUid & ownedId(s) required" });
 
-    const g = gifts.find(x => x.ownedId === ownedId);
-    if (!g) return res.status(404).json({ error: "gift not found" });
-    if (g.staked) return res.status(400).json({ error: "gift is staked in a bet" });
-    const st = g.status || "idle";
-    if (st === "sent" || st === "queued_transfer" || st === "pending_withdraw")
-      return res.status(400).json({ error: `gift status ${st} cannot be transferred` });
-
-    const fromUid = g.ownerId;
-    g.ownerId = toUid;
-    g.status  = "idle";
-    delete g.invoiceLink;
-    await saveGifts();
-    res.json({ ok: true, ownedId, fromUid, toUid });
+    const moved = [], skipped = [];
+    for (const id of ids) {
+      const g = gifts.find(x => String(x.ownedId) === id && String(x.ownerId) === fromUid);
+      if (!g) { skipped.push({ id, reason: "not found or owner mismatch" }); continue; }
+      if (g.staked) { skipped.push({ id, reason: "staked" }); continue; }
+      const st = g.status || "idle";
+      if (st === "sent" || st === "queued_transfer" || st === "pending_withdraw") {
+        skipped.push({ id, reason: `status ${st}` }); continue;
+      }
+      g.ownerId = toUid;
+      g.status  = "idle";
+      delete g.invoiceLink;
+      moved.push(id);
+    }
+    if (moved.length) await saveGifts();
+    res.json({ ok: true, movedCount: moved.length, moved, skipped });
   });
 
   return router;
