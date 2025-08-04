@@ -286,6 +286,47 @@ function arc(cx,cy,r,start,end,color){
 let sortAsc = true;
 let txRefreshTimer = null; 
 
+// Клиентская нормализация (как на сервере)
+function normalizeKeyClient(s=""){
+  return String(s).toLowerCase().replace(/[^a-z]+/g,"");
+}
+
+// Доукомплектовываем цены по floor (TON), если пустые/0
+async function ensureGiftPricesClient() {
+  const need = inventory.filter(g => !(Number(g.price) > 0));
+  if (!need.length) return;
+  try {
+    const r = await fetch(`${API_ORIGIN}/market/floors`, { credentials: "include" });
+    const j = await r.json();
+    const map = j?.collections || {};
+    let touched = false;
+    for (const g of need) {
+      const key = normalizeKeyClient(g.name || "");
+      const floorTon = Number(map[key]?.floorTon || 0);
+      if (floorTon > 0) { g.price = floorTon; touched = true; }
+    }
+    if (touched) {
+      // пересчитаем ограничители и перерисуем
+      try {
+        const maxPrice = Math.max(0, ...inventory.map(x => Number(x.price)||0));
+        const slider = document.getElementById('priceRange');
+        const label  = document.getElementById('priceValue');
+        if (Number.isFinite(maxPrice) && slider) {
+          slider.max   = Math.max(1, Math.ceil(maxPrice));
+          if (Number(slider.value) > Number(slider.max)) {
+            slider.value = slider.max;
+          }
+          if (label) label.textContent = `${slider.value} TON`;
+        }
+      } catch(_) {}
+      renderPicker();
+      refreshUI();
+    }
+  } catch(e) {
+    console.warn("ensureGiftPricesClient:", e);
+  }
+}
+
 /**
  * cardHTML
  * @param {object} nft
@@ -705,12 +746,14 @@ function buildImgLink(g) {
       ...giftArr.map(g => ({
         id    : g.ownedId,
         name  : g.name,
-        price : g.price,
+        price : Number(g.price || 0),  // ожидаем TON
         img   : buildImgLink(g),   // тот же алгоритм, что в профиле
         staked: false,
         status: g.status || 'idle'
       }))
     );
+    // если всё ещё есть нули — добьём floor-ами
+    ensureGiftPricesClient();
     // динамически настроим «макс. цену» под реальные подарки
     try {
       const maxPrice = Math.max(0, ...inventory.map(g => Number(g.price)||0));
@@ -909,11 +952,18 @@ function attachGiftUpdates() {
     // если вдруг уже есть — обновим; иначе добавим
     const i = inventory.findIndex(x => x.id === g.ownedId);
     const rec = {
-      id: g.ownedId, name: g.name, price: g.price,
+      id: g.ownedId,
+      name: g.name,
+      price: Number(g.price || 0), // мог прийти 0 — добьём ниже
       img: g.img || buildImgLink(g), staked: false, status: g.status || 'idle'
     };
     if (i >= 0) inventory[i] = rec; else inventory.push(rec);
-    renderPicker();
+    // Если цены нет — подтянем по floor
+    if (!(Number(rec.price) > 0)) {
+      ensureGiftPricesClient();
+    } else {
+      renderPicker();
+    }
   });
 }
 
@@ -1226,6 +1276,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
