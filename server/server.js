@@ -270,25 +270,38 @@ wallet.get("/balance", (req, res) => {
   res.json({ balance: bal });
 });
 
-/* GET /wallet/gifts  — список НЕ поставленных подарков */
-wallet.get("/gifts", (req, res) => {
-  // показываем все НЕ отправленные и не staked подарки, включая pending_withdraw
-  res.json(
-    gifts
+/* GET /wallet/gifts  — список НЕ поставленных подарков (цены в TON) */
+wallet.get("/gifts", async (req, res) => {
+  try {
+    // Берём кеш floor-цен (TON)
+    const floors = await ensureFloorsFresh();
+    const map = floors?.collections || {};
+
+    // показываем все НЕ отправленные и не staked подарки, включая pending_withdraw
+    const out = gifts
       .filter(g =>
         g.ownerId === req.userId &&
         !g.staked &&
         g.status !== "sent"
       )
-      .map(g => ({
-        gid: g.gid,
-        ownedId: g.ownedId,
-        name: g.name,
-        price: g.price,
-        img: g.img,
-        status: g.status || "idle"
-      }))
-  );
+      .map(g => {
+        const key = normalizeKey(g.name || "");
+        const floorTon = Number(map[key]?.floorTon || 0);
+        const priceTon = Number(g.price || 0) > 0 ? Number(g.price) : floorTon;
+        return {
+          gid     : g.gid,
+          ownedId : g.ownedId,
+          name    : g.name,
+          price   : priceTon,   // ← всегда TON
+          img     : g.img,
+          status  : g.status || "idle"
+        };
+      });
+    res.json(out);
+  } catch (e) {
+    console.error("/wallet/gifts:", e);
+    res.status(500).json({ error: "gifts fetch failed" });
+  }
 });
 
 /* POST /wallet/withdrawGift { ownedId } ➋ */
@@ -1375,6 +1388,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
