@@ -106,7 +106,7 @@ const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`
 const ADDR_FILE = path.join(DATA_DIR, "addresses.json");
 const DEPOSIT_LIMIT = Number(process.env.DEPOSIT_LIMIT || 100);
 let addrMap = {};           // { [userId]: "EQB…" }
-let gifts   = [];           // { gid, ownedId, name, price, img, ownerId, staked }
+const gifts = [];           // { gid, ownedId, name, price, img, ownerId, staked }
 
 if (!DEPOSIT_ADDR) throw new Error("DEPOSIT_ADDR not set");
 
@@ -225,8 +225,14 @@ async function saveWithdrawals() {
 }   
 // ---------- GIFTS ----------
 async function loadGifts() {
-  try { gifts = JSON.parse(await fs.readFile(GIFTS_FILE, "utf8")); }
-  catch (e) { if (e.code !== "ENOENT") console.error(e); gifts = []; }
+  try {
+    const data = JSON.parse(await fs.readFile(GIFTS_FILE, "utf8"));
+    gifts.length = 0;        // сохраняем ссылку
+    gifts.push(...data);
+  } catch (e) {
+    if (e.code !== "ENOENT") console.error(e);
+    gifts.length = 0;        // очищаем, но не пересоздаём
+  }
 }
 async function saveGifts() {
   const tmp = GIFTS_FILE + ".tmp";
@@ -1320,6 +1326,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
