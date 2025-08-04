@@ -240,7 +240,7 @@ export default function createAdminRouter(opts) {
     const st  = String(req.query.status || "").trim().toLowerCase();
     if (!uid) return res.status(400).json({ error: "uid required" });
 
-    let list = gifts.filter(g => g.ownerId === uid);
+    let list = gifts.filter(g => String(g.ownerId) === uid);
     if (st && st !== "all") {
       if (st === "unsent") {
         // как в /wallet/gifts: не staked и не "sent"
