@@ -167,11 +167,9 @@ function initSocketEvents() {
 }
 const inventory = [];
 // Состояние фильтров
-let filterName   = "";
 let filterMaxPr  =  Infinity;
 
 // Селекторы для элементов управления
-const nftSearch     = document.getElementById('nftSearch');
 const priceRange    = document.getElementById('priceRange');
 const priceValue    = document.getElementById('priceValue');
 const selectCount   = document.getElementById('selectCount');
@@ -328,20 +326,19 @@ function modelKeyFromImg(img = "") {
 }
 
 // универсальная цена NFT: сперва floor модели, потом то, что пришло (price), иначе 0
-function priceForNFT(nft) {
+function priceForNFT(nft){
+  // 1) пробуем модельный floor
   const mk = modelKeyFromImg(nft?.img || "");
-  if (mk) {
-    // модельный floor ищем по всем коллекциям (ключ модели в URL уже нормализован)
-    for (const [, rec] of modelFloors) {
+  if(mk){
+    for(const [,rec] of modelFloors){
       const v = rec?.map?.get(mk);
-      if (v > 0) return v;
+      if(v>0) return v;          // нашли модель – возвращаем
     }
   }
-  // если модельный floor не нашли — используем прямую цену
-  const direct = Number(nft?.price);
-  if (direct > 0) return direct;
-  return 0;
+  // 2) берём цену, присвоенную в профиле (сервер присылает её)
+  return Number(nft?.price) || 0;
 }
+
 
 
 async function ensureGiftPricesClient() {
@@ -425,7 +422,6 @@ function cardHTML(nft, extra='') {
 selectCount.max = inventory.length;
 
 function applyFilters(nft) {
-  const nameMatch  = nft.name.toLowerCase().includes(filterName);
   const priceMatch = nft.price <= filterMaxPr;
   const notStaked  = !nft.staked;
   const isIdle     = (nft.status ?? 'idle') === 'idle';   // показываем только готовые к ставке
@@ -715,11 +711,6 @@ wrapper.addEventListener('click', () => {
   drawWheel();
   renderPicker();
 }
-// Поиск по имени
-nftSearch.addEventListener('input', () => {
-  filterName = nftSearch.value.trim().toLowerCase();
-  renderPicker();
-});
 
 // Ограничение по цене
 priceRange.addEventListener('input', () => {
@@ -1338,6 +1329,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
