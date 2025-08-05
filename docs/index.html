@@ -125,10 +125,16 @@
   /* === Сетка NFT-пикера === */
 #nftPicker{
   display:grid;
-  gap:1rem;                 /* как было */
-  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+  gap:.5rem;
+  /* минимум 3 в ряд на мобилках */
+  grid-template-columns:repeat(3, minmax(0,1fr));
 }
-
+@media (min-width: 640px){
+  #nftPicker{
+    grid-template-columns:repeat(auto-fill, minmax(90px,1fr));
+  }
+}
+  #placeBet{ white-space:nowrap; }
   /* Показываем бейдж как только кликают */
   .price-badge.show {
     opacity: 1 !important;
@@ -360,8 +366,6 @@
   <!-- Сетка NFT -->
 <div id="nftPicker"
      class="grid
-            grid-cols-2 sm:grid-cols-3 
-            gap-4
             max-h-64
             overflow-y-auto
             p-1">
@@ -374,7 +378,8 @@
       Сбросить фильтры
     </button>
     <button id="placeBet"
-            class="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-gray-900 rounded-lg font-semibold transition disabled:opacity-50"
+            class="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-gray-900 rounded-lg font-semibold transition
+                   disabled:opacity-50 whitespace-nowrap flex-shrink-0 min-w-[10rem]"
             disabled>
       Поставить
     </button>
@@ -569,6 +574,7 @@
   </nav>
 </body>
 </html>
+
 
 
 
