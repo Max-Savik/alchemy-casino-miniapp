@@ -329,17 +329,17 @@ function modelKeyFromImg(img = "") {
 
 // универсальная цена NFT: сперва floor модели, потом то, что пришло (price), иначе 0
 function priceForNFT(nft) {
+  const mk = modelKeyFromImg(nft?.img || "");
+  if (mk) {
+    // модельный floor ищем по всем коллекциям (ключ модели в URL уже нормализован)
+    for (const [, rec] of modelFloors) {
+      const v = rec?.map?.get(mk);
+      if (v > 0) return v;
+    }
+  }
+  // если модельный floor не нашли — используем прямую цену
   const direct = Number(nft?.price);
   if (direct > 0) return direct;
-
-  const mk = modelKeyFromImg(nft?.img || "");
-  if (!mk) return 0;
-
-  // модельный floor ищем по всем коллекциям (ключ модели в URL уже нормализован)
-  for (const [, rec] of modelFloors) {
-    const v = rec?.map?.get(mk);
-    if (v > 0) return v;
-  }
   return 0;
 }
 
@@ -367,7 +367,7 @@ async function ensureGiftPricesClient() {
     let touched = false;
     for (const g of need) {
       const ck = colKey(g.name);
-      const mk = modelKey(modelFromName(g.name));
+      const mk = modelKeyFromImg(g.img) || modelKey(modelFromName(g.name));
       const mf = modelFloor(ck, mk);
       const cf = Number(collMap[ck]?.floorTon || 0);
       const val = mf > 0 ? mf : cf;
@@ -399,35 +399,25 @@ async function ensureGiftPricesClient() {
  * @param {string} extra – доп.классы (`staked` и т.п.)
  * @param {boolean} addBtn – добавлять ли кнопку «Вывести»
  */
-function cardHTML(nft, extra='', addBtn=false) {
+function cardHTML(nft, extra='') {
+  const priceStr = priceForNFT(nft).toFixed(2);
   const withdrawing = nft.status === 'pending_withdraw';
-  const sent = nft.status === 'sent'; // на клиенте почти не увидим (мы его удалим), но оставим для совместимости
+  const queued = nft.status === 'queued_transfer' || nft.status === 'sent';
+  const statusLabel = withdrawing ? 'Ожидает оплаты' : 'Скоро отправим';
   return `
-    <div class="nft-card relative ${extra} ${withdrawing ? 'opacity-60 pointer-events-none' : ''}" data-id="${nft.id}">
-      <img src="${nft.img}" alt="${nft.name}" class="rounded-md w-full" />
-
-      <div class="mt-1 flex items-center justify-between text-sm">
-        <span>${nft.name}</span>
-        <span class="text-amber-300 font-semibold">
-          ${priceForNFT(nft).toFixed(2)} TON
-        </span>
-      </div>
-
-      ${
-        addBtn && !nft.staked && !withdrawing && !sent
-          ? `<button
-               class="withdraw-btn mt-2 w-full inline-flex justify-center items-center gap-1
-                      py-1.5 rounded-md bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600
-                      text-[13px] font-semibold text-gray-900 transition"
-               data-owned="${nft.id}">
-               ⇄ Вывести <span class="text-[15px]">⭐25</span>
-             </button>`
-          : (withdrawing
-              ? `<div class="mt-2 w-full text-center text-[11px] text-amber-300 font-semibold select-none">
-                   ⏳ вывод...
-                 </div>`
-              : "")
-      }
+    <div class="nft-card ${extra} ${(withdrawing||queued)?'opacity-60 pointer-events-none':''}" data-id="${nft.id}">
+      <img src="${nft.img}" alt="${nft.name}" class="nft-img" loading="lazy" decoding="async"
+           onload="this.classList.add('loaded')" onerror="this.onerror=null;this.src='${nft.img}';">
+      <div class="price-chip">${priceStr}&nbsp;TON</div>
+      ${(withdrawing||queued)?`
+        <div class="status-overlay">
+          <div class="status-pill">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>${statusLabel}</span>
+          </div>
+        </div>
+      `:''}
+      <div class="title-badge" title="${nft.name}">${nft.name}</div>
     </div>`;
 }
 
@@ -493,7 +483,9 @@ selectCount.addEventListener('input', () => {
   // снова фильтруем + сортируем
   const sorted = inventory
     .filter(n => applyFilters(n))
-    .sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+    .sort((a, b) =>
+      sortAsc ? priceForNFT(a) - priceForNFT(b) : priceForNFT(b) - priceForNFT(a)
+    );
 
   // отмечаем первые N
   sorted.slice(0, N).forEach(n => selected.add(n.id));
@@ -1346,6 +1338,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
