@@ -122,6 +122,12 @@
     transition: opacity .15s;
     border-radius: inherit;             /* скругления от wrapper */
   }
+  /* === Сетка NFT-пикера === */
+#nftPicker{
+  display:grid;
+  gap:1rem;                 /* как было */
+  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+}
 
   /* Показываем бейдж как только кликают */
   .price-badge.show {
@@ -302,15 +308,6 @@
   <div class="flex justify-between items-center">
     <h3 class="text-2xl font-semibold text-amber-300">Выберите NFT</h3>
     <button id="closePicker" class="text-gray-400 hover:text-white transition" aria-label="Закрыть">✕</button>
-  </div>
-
-  <!-- Поиск по названию -->
-  <div class="flex flex-col gap-1">
-    <label for="nftSearch" class="text-gray-300 text-sm">По названию</label>
-    <input id="nftSearch"
-           type="text"
-           placeholder="Введите название NFT…"
-           class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition" />
   </div>
 
 
@@ -572,5 +569,6 @@
   </nav>
 </body>
 </html>
+
 
 
