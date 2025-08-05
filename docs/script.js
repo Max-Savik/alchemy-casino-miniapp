@@ -1,5 +1,22 @@
 // ============================ script.js ============================
 
+/* === Telegram guard === */
+function isTelegramWebApp(){
+  return !!(window?.Telegram?.WebApp?.initData && window?.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+}
+
+if (!isTelegramWebApp()) {
+  // Ничего не делаем вне Telegram: показываем простую заглушку и выходим
+  document.documentElement.innerHTML = `
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;display:flex;height:100vh;align-items:center;justify-content:center;background:#0b0f16;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial">
+      <div style="text-align:center">
+        <div style="font-size:20px;margin-bottom:8px">Откройте мини-приложение в Telegram</div>
+        <div style="opacity:.8;font-size:14px">Сайт работает только внутри Telegram WebApp</div>
+      </div>
+    </body>`;
+  throw new Error("Blocked: not in Telegram WebApp");
+}
 
 /* === TonConnect === */
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
@@ -30,7 +47,7 @@ async function makeCommentPayload(text) {
   return TonWeb.utils.bytesToBase64(boc);
 }
 
-async function postJSON(url, data){
+async function postJSON(url, data, { _retry } = {}){
   const res = await fetch(url, {
     method: 'POST',
     headers:{
@@ -40,6 +57,11 @@ async function postJSON(url, data){
     body: JSON.stringify(data),
     credentials: "include" 
   });
+  if (res.status === 401 && !_retry) {
+    // токен мог протухнуть — обновим и попробуем ещё раз
+    await ensureJwt(true);
+    return postJSON(url, data, { _retry: true });
+  }
   if(!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -82,6 +104,25 @@ const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 let socket;   
 // JWT, сохранённый локально, если кука не работает
 let jwtToken = localStorage.getItem("jwt") || null;
+
+async function fetchJSON(url, opts={}, { _retry } = {}) {
+  const res = await fetch(url, {
+    credentials: "include",
+    headers: {
+      ...(opts.headers||{}),
+      ...(jwtToken ? { 'Authorization': 'Bearer '+jwtToken } : {})
+    }
+  });
+  if (res.status === 401 && !_retry) {
+    await ensureJwt(true);
+    return fetchJSON(url, opts, { _retry: true });
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(()=>String(res.status));
+    throw new Error(text);
+  }
+  return res.json();
+}
 
 function initSocketEvents() {
   /* ---------- состояние игры ---------- */
@@ -190,15 +231,9 @@ const expandedPlayers = new Set();
 let tonBalance = 0;
 async function refreshBalance(){
   try{
-        const res = await fetch(`${API_ORIGIN}/wallet/balance`, {
-        credentials: "include",
-        headers: jwtToken ? { 'Authorization': 'Bearer '+jwtToken } : {}
-      });
-  if(res.ok){
-  const {balance=0}=await res.json();
-  tonBalance=balance;
-  document.getElementById('tonBalance').textContent=tonBalance.toFixed(2);
-}
+    const { balance=0 } = await fetchJSON(`${API_ORIGIN}/wallet/balance`);
+    tonBalance=balance;
+    document.getElementById('tonBalance').textContent=tonBalance.toFixed(2);
   }catch(e){ console.warn('Balance fetch error',e); }
 }
 
@@ -747,26 +782,31 @@ clearFiltersBtn.addEventListener('click', () => {
   renderPicker();
 });
 
-// логин сразу после получения tgUser
-async function ensureJwt() {
-  // 1) есть рабочая кука → всё хорошо
-  if (document.cookie.split("; ").some(c => c.startsWith("sid="))) return;
+async function ensureJwt(forceRefresh = false) {
+  const hasSid = document.cookie.split("; ").some(c => c.startsWith("sid="));
+  if (hasSid && !forceRefresh) return;
+  if (!forceRefresh && jwtToken) return;
 
-  // 2) уже получали токен ранее
-  if (jwtToken) return;
+  // Логинимся строго по подписанным данным Telegram
+  const initDataRaw = window?.Telegram?.WebApp?.initData;
+  if (!initDataRaw) throw new Error("No Telegram initData");
 
-  // 3) запрашиваем новый
-  const r   = await fetch(`${API_ORIGIN}/auth/login`, {
+  const r = await fetch(`${API_ORIGIN}/auth/login`, {
     method      : "POST",
     credentials : "include",
     headers     : { "Content-Type": "application/json" },
-    body        : JSON.stringify({ userId: myId })
+    body        : JSON.stringify({ initData: initDataRaw })
   });
+  if (!r.ok) {
+    // чистим локальный мусор и падаем
+    localStorage.removeItem("jwt");
+    jwtToken = null;
+    throw new Error(`login failed ${r.status}`);
+  }
   const j = await r.json();
-  jwtToken = j.token;
-  localStorage.setItem("jwt", jwtToken);
-
- }                              
+  jwtToken = j.token || null;
+  if (jwtToken) localStorage.setItem("jwt", jwtToken);
+}                            
 
 /* === Картинка подарка — ровно как в профиле === */
 function buildImgLink(g) {
@@ -788,11 +828,11 @@ function buildImgLink(g) {
 
   /* 1) Забираем реальные подарки после логина */
   try {
-    const res = await fetch(`${API_ORIGIN}/wallet/gifts`, {
-      credentials: "include",
-      headers: jwtToken ? { "Authorization": "Bearer " + jwtToken } : {}
-    });
-    const giftArr = await res.json();
+    const giftArr = await fetchJSON(`${API_ORIGIN}/wallet/gifts`);
+    if (!Array.isArray(giftArr)) {
+      console.warn("Unexpected /wallet/gifts payload:", giftArr);
+      throw new Error("bad gifts payload");
+    }
     // Очищаем возможные локальные остатки и берём только реальные NFT
     inventory.length = 0;
     inventory.push(
@@ -818,7 +858,9 @@ function buildImgLink(g) {
         if (label) label.textContent = `${slider.value} TON`;
       }
     } catch(_) {}
-  } catch (e) { console.warn("Gift fetch error", e); }                                  
+  } catch (e) {
+    console.warn("Gift fetch error", e);
+  }                                 
 
   const token = (document.cookie.split("; ")
       .find(c => c.startsWith("sid=")) || "")
@@ -1262,11 +1304,7 @@ withdrawInp.addEventListener('input', () => {
 async function loadTxHistory(){
   panelTx.innerHTML = '<div class="py-2 text-center text-gray-400">Загрузка…</div>';
   try{
-   const res = await fetch(`${API_ORIGIN}/wallet/history?limit=50`, {
-     credentials: "include",
-     headers: jwtToken ? { 'Authorization': 'Bearer '+jwtToken } : {}
-   });
-    const arr = await res.json();
+    const arr = await fetchJSON(`${API_ORIGIN}/wallet/history?limit=50`);
     if(arr.length===0){
       panelTx.innerHTML = '<div class="py-4 text-center text-gray-400">Пока пусто</div>';
       return;
@@ -1354,6 +1392,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
