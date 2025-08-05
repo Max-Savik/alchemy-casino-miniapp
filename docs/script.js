@@ -17,7 +17,7 @@ tonConnectUI.onStatusChange(async walletInfo => {
   tonAddress = walletInfo.account.address;
 
  await postJSON(`${API_ORIGIN}/wallet/link`, { address: tonAddress })
-      .catch(()=>{});
+      .catch(e => console.warn('wallet/link failed', e));
 
   refreshBalance();
 });
@@ -291,41 +291,83 @@ function normalizeKeyClient(s=""){
   return String(s).toLowerCase().replace(/[^a-z]+/g,"");
 }
 
-// Доукомплектовываем цены по floor (TON), если пустые/0
+/* ===== MODEL-FLOOR CACHE ===== */
+const modelFloors = new Map();   // colKey -> Map(modelKey -> floorTon)
+const MODEL_TTL = 5 * 60_000;
+
+async function fetchModelFloors(colKeys=[]) {
+  if (!colKeys.length) return;
+
+  const url = `${API_ORIGIN}/market/model-floors?keys=${encodeURIComponent(colKeys.join(","))}`;
+  const { keys, ttlMs } = await fetch(url, { credentials:"include" }).then(r=>r.json());
+
+  Object.entries(keys || {}).forEach(([colKey, payload])=>{
+    const m = new Map();
+    Object.entries(payload.models || {})
+      .forEach(([modelKey, o]) => m.set(modelKey, Number(o.floorTon)||0));
+    modelFloors.set(colKey, { fetched: Date.now(), map:m, ttl: ttlMs||MODEL_TTL });
+  });
+}
+
+function modelFloor(colKey, modelKey){
+  const rec = modelFloors.get(colKey);
+  if (!rec) return 0;
+  if (Date.now() - rec.fetched > (rec.ttl||MODEL_TTL)) return 0; // устарело
+  return rec.map.get(modelKey) || 0;
+}
+
+function colKey(name=""){ return String(name).toLowerCase().replace(/[^a-z]+/g,""); }
+function modelKey(name=""){ return String(name).toLowerCase().replace(/[^a-z]+/g,""); }
+function modelFromName(n=""){ return n.split("-")[0].trim(); }
+
 async function ensureGiftPricesClient() {
-  const need = inventory.filter(g => !(Number(g.price) > 0));
-  if (!need.length) return;
   try {
-    const r = await fetch(`${API_ORIGIN}/market/floors`, { credentials: "include" });
-    const j = await r.json();
-    const map = j?.collections || {};
+    // (1) собираем нужные коллекции/модели
+    const colSet = new Set(), need = [];
+    inventory.forEach(g => {
+      if (!(Number(g.price) > 0)) {
+        colSet.add(colKey(g.name));
+        need.push(g);
+      }
+    });
+    if (!need.length) return;
+
+    // (2) тянем floors
+    const [collFloors] = await Promise.all([
+      fetch(`${API_ORIGIN}/market/floors`, { credentials: "include" }).then(r => r.json()),
+      fetchModelFloors(Array.from(colSet))
+    ]);
+    const collMap = collFloors.collections || {};
+
+    // (3) присваиваем цену: modelFloor > collFloor
     let touched = false;
     for (const g of need) {
-      const key = normalizeKeyClient(g.name || "");
-      const floorTon = Number(map[key]?.floorTon || 0);
-      if (floorTon > 0) { g.price = floorTon; touched = true; }
+      const ck = colKey(g.name);
+      const mk = modelKey(modelFromName(g.name));
+      const mf = modelFloor(ck, mk);
+      const cf = Number(collMap[ck]?.floorTon || 0);
+      const val = mf > 0 ? mf : cf;
+      if (val > 0) { g.price = val; touched = true; }
     }
+
     if (touched) {
       // пересчитаем ограничители и перерисуем
-      try {
-        const maxPrice = Math.max(0, ...inventory.map(x => Number(x.price)||0));
-        const slider = document.getElementById('priceRange');
-        const label  = document.getElementById('priceValue');
-        if (Number.isFinite(maxPrice) && slider) {
-          slider.max   = Math.max(1, Math.ceil(maxPrice));
-          if (Number(slider.value) > Number(slider.max)) {
-            slider.value = slider.max;
-          }
-          if (label) label.textContent = `${slider.value} TON`;
-        }
-      } catch(_) {}
+      const maxPrice = Math.max(0, ...inventory.map(x => Number(x.price) || 0));
+      const slider = document.getElementById('priceRange');
+      const label  = document.getElementById('priceValue');
+      if (Number.isFinite(maxPrice) && slider) {
+        slider.max = Math.max(1, Math.ceil(maxPrice));
+        if (Number(slider.value) > Number(slider.max)) slider.value = slider.max;
+        if (label) label.textContent = `${slider.value} TON`;
+      }
       renderPicker();
       refreshUI();
     }
-  } catch(e) {
+  } catch (e) {
     console.warn("ensureGiftPricesClient:", e);
   }
 }
+
 
 /**
  * cardHTML
@@ -572,7 +614,11 @@ function makeNFTIcon(nftObj) {
   priceBadge.className = 'price-badge absolute bottom-0 left-0 inline-flex items-center justify-center bg-gray-900/80 text-xs text-amber-300 px-1';
   priceBadge.innerHTML = `
     ${nftObj.price.toFixed(2)}
-    <img src="data:image/svg+xml,…" alt="TON" class="inline-block ml-0.25" />
+    <img
+      src="data:image/svg+xml,%3csvg%20width='32'%20height='28'%20viewBox='0%200%2032%2028'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M31.144%205.84244L17.3468%2027.1579C17.1784%2027.4166%2016.9451%2027.6296%2016.6686%2027.7768C16.3922%2027.9241%2016.0817%2028.0009%2015.7664%2028C15.451%2027.9991%2015.141%2027.9205%2014.8655%2027.7716C14.59%2027.6227%2014.3579%2027.4084%2014.1911%2027.1487L0.664576%205.83477C0.285316%205.23695%200.0852825%204.54843%200.0869241%203.84647C0.104421%202.81116%200.544438%201.82485%201.31047%201.10385C2.0765%200.382844%203.10602%20-0.0139909%204.17322%200.000376986H27.6718C29.9143%200.000376986%2031.7391%201.71538%2031.7391%203.83879C31.7391%204.54199%2031.5333%205.23751%2031.1424%205.84244M3.98489%205.13003L14.0503%2020.1858V3.61156H5.03732C3.99597%203.61156%203.5291%204.28098%203.98647%205.13003M17.7742%2020.1858L27.8395%205.13003C28.3032%204.28098%2027.8285%203.61156%2026.7871%203.61156H17.7742V20.1858Z'%20fill='white'/%3e%3c/svg%3e"
+      alt="TON"
+      class="inline-block ml-0.25"
+    />
   `;
   wrapper.appendChild(priceBadge);
 
@@ -808,7 +854,7 @@ async function weightedPick(seed, players) {
     acc += p.value;
     if (ticket <= acc) return p;
   }
-  return players.at(-1);
+  return players[players.length - 1];
 }
 
 
@@ -884,7 +930,6 @@ function updateStatus(sec = null){
 // =================== PICKER & BET ===================
 // Открываем модальное окно выбора NFT
 depositNFTBtn.addEventListener('click', () => {
-  renderPicker();
   selected.clear();
   renderPicker();
   placeBetBtn.disabled = true;
@@ -1076,7 +1121,7 @@ walletAmountInp.addEventListener('input', () => {
 
 walletDepositBtn.addEventListener('click', async () => {
   const amt = parseFloat(walletAmountInp.value);
-  if (!(amt > 0)) return;
+  if (!(amt >= 0.1)) return;
 
   /* ===== 1. Формируем TonConnect-запрос ===== */
   const nanoAmount = BigInt(Math.round(amt * 1e9)).toString();   // TON → nanotons
@@ -1276,6 +1321,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
