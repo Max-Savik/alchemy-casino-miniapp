@@ -422,12 +422,14 @@ function cardHTML(nft, extra='') {
 selectCount.max = inventory.length;
 
 function applyFilters(nft) {
-  const priceMatch = nft.price <= filterMaxPr;
+  const priceMatch = priceForNFT(nft) <= filterMaxPr; // используем унифицированную цену
   const notStaked  = !nft.staked;
-  const isIdle     = (nft.status ?? 'idle') === 'idle';   // показываем только готовые к ставке
-  // убираем отправленные/не показываем (sent мы вообще удаляем, но на всякий случай)
+  const isIdle     = (nft.status ?? 'idle') === 'idle';
+
+  // отправленные вообще не показываем
   if (nft.status === 'sent') return false;
-  return nameMatch && priceMatch && notStaked && isIdle;
+
+  return priceMatch && notStaked && isIdle;
 }
 
 function renderPicker() {
@@ -722,9 +724,6 @@ priceRange.addEventListener('input', () => {
 
 // Сброс всех фильтров и перерисовка
 clearFiltersBtn.addEventListener('click', () => {
-  // 1) Очистить текст поиска
-  filterName = "";
-  nftSearch.value = "";
 
   // 2) вернуть цену на максимум
   filterMaxPr = Infinity;
@@ -1329,6 +1328,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
