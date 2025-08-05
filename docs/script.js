@@ -938,9 +938,16 @@ function updateStatus(sec = null){
 // Открываем модальное окно выбора NFT
 depositNFTBtn.addEventListener('click', () => {
   selected.clear();
-  renderPicker();
   placeBetBtn.disabled = true;
+
+  // показать модалку и включить fade только на первое отображение
   pickerOverlay.classList.remove('hidden');
+  pickerOverlay.classList.add('with-fade');
+
+  renderPicker();
+
+  // через секунду отключаем fade, чтобы дальнейшие изменения не мигали
+  setTimeout(() => pickerOverlay.classList.remove('with-fade'), 1200);
 });
 
 // Закрываем окно без ставки
@@ -954,12 +961,31 @@ closePickerBtn.addEventListener('click', () => {
 nftPicker.addEventListener('click', e => {
   const card = e.target.closest('.nft-card');
   if (!card) return;
+
   const id = card.dataset.id;
-  if (selected.has(id)) selected.delete(id);
-  else selected.add(id);
-  renderPicker();
+
+  if (selected.has(id)) {
+    selected.delete(id);
+    card.classList.remove('selected');
+  } else {
+    selected.add(id);
+    card.classList.add('selected');
+  }
+
+  // только обновляем кнопку и сумму — без полной перерисовки
   placeBetBtn.disabled = selected.size === 0;
+
+  if (selected.size > 0) {
+    const totalSelTon = Array.from(selected).reduce((s, _id) => {
+      const n = inventory.find(x => x.id === _id);
+      return s + priceForNFT(n || {});
+    }, 0);
+    placeBetBtn.innerHTML = `Поставить ×${selected.size} — ${totalSelTon.toFixed(2)} TON`;
+  } else {
+    placeBetBtn.textContent = 'Поставить';
+  }
 });
+
 
 // Нажата кнопка «Поставить выбранные»
 placeBetBtn.addEventListener('click', () => {
@@ -1328,6 +1354,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
