@@ -680,10 +680,16 @@ input[type=range]::-webkit-slider-runnable-track {
   z-index: 9999; /* должно быть больше, чем у .bottom-nav */
 }
 
-/* 2. Ограничиваем высоту самой панели, чтобы не выпадала за экран */
-#nftPickerOverlay .filter-panel {
-  overflow-y: auto;
+
+#nftPickerOverlay .filter-panel{
+  background: linear-gradient(to bottom, rgba(17,24,39,.95), rgba(17,24,39,.85));
+  border: 1px solid rgba(252,211,77,.30);
+  box-shadow: 0 10px 40px rgba(0,0,0,.6);
+  border-radius: 16px;
 }
+
+#nftPickerOverlay h3{ font-weight:600; letter-spacing:-.01em; color:#FDE68A; }
+#nftPickerOverlay label{ color:#d1d5db; font-size:12.5px; }
 
 /* 3. Поднимаем кружок ползунка чуть выше */
 input[type=range]::-webkit-slider-thumb {
@@ -753,4 +759,60 @@ input[type=range]::-moz-range-thumb {
   100% { opacity:1;   transform:scale(1);   }
 }
 
+/* Поля ввода/поиска */
+#nftPickerOverlay input[type="text"]{
+  background:#374151; color:#e5e7eb; border:1px solid rgba(252,211,77,.25);
+}
+#nftPickerOverlay input[type="text"]:focus{
+  outline:none; box-shadow:0 0 0 2px rgba(251,191,36,.35);
+}
+
+/* Слайдеры — аккуратнее */
+#nftPickerOverlay input[type="range"]{
+  height:6px; border-radius:3px; background:rgba(251,191,36,.25);
+}
+#nftPickerOverlay input[type="range"]::-webkit-slider-thumb{
+  width:16px;height:16px;border-radius:50%;
+  background:#fbbf24; box-shadow:0 0 6px rgba(0,0,0,.5);
+}
+
+/* Кнопки внизу */
+#clearFilters{
+  background:linear-gradient(135deg,#374151,#4b5563);
+  border:1px solid rgba(255,255,255,.08);
+  color:#e5e7eb;
+}
+#clearFilters:hover{ filter:brightness(1.05); }
+
+#placeBet{
+  background:linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%);
+  color:#1b1405; font-weight:800;
+  border:1px solid rgba(252,211,77,.35);
+  box-shadow:0 6px 18px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
+}
+#placeBet:hover{ filter:brightness(1.07); }
+#placeBet:disabled{ filter:grayscale(.5) opacity:.6; }
+
+/* Кнопочки «Показать все / Скрыть» рядом с иконками */
+#players .show-all, #players .hide-all{
+  font-size:11.5px; padding:2px 6px; border-radius:9999px;
+  border:1px solid rgba(252,211,77,.25);
+  background:rgba(17,24,39,.65);
+}
+#players .show-all:hover, #players .hide-all:hover{ background:rgba(251,191,36,.12); }
+
+/* === TON picker под стиль профиля === */
+#tonPickerOverlay .rounded-2xl{
+  background: linear-gradient(to bottom, rgba(17,24,39,.95), rgba(17,24,39,.85)) !important;
+  border: 1px solid rgba(252,211,77,.30) !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,.6) !important;
+}
+#tonPickerTitle{ color:#FDE68A; }
+#placeTonBet{
+  background:linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%) !important;
+  color:#1b1405 !important; font-weight:800;
+  border:1px solid rgba(252,211,77,.35);
+  box-shadow:0 6px 18px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
+}
+#placeTonBet:hover{ filter:brightness(1.07); }
 
