@@ -570,21 +570,37 @@ const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 app.use(apiLimiter);  
 
-/* ───────── Block non-Telegram environments ─────────
-   Доп. защита: сайт и API работают только из Telegram WebApp.
-   Исключения: внутренние/админ-роуты и статика. */
 app.use((req, res, next) => {
   const p = req.path || "";
-  if (p.startsWith("/internal") || p.startsWith("/admin")) return next();
-  if (req.method === "GET" && (p === "/" || p.endsWith(".html") || p.startsWith("/icons/") || p.startsWith("/assets/"))) {
-    // страницы тоже блокируем вне Telegram
+
+  // пропускаем внутренние/админ и сокеты
+  if (p.startsWith("/internal") || p.startsWith("/admin") || p.startsWith("/socket.io")) {
+    return next();
   }
-  const ua = String(req.get("User-Agent") || "");
-  const ref = String(req.get("Referer") || "");
-  const isTg = ua.includes("Telegram") || ref.startsWith("https://t.me/");
-  if (!isTg) return res.status(403).send("Open this mini app inside Telegram");
+
+  // если у клиента уже есть валидный sid — пропускаем куда угодно
+  const bearer = (req.get("Authorization") || "").replace("Bearer ", "");
+  const sid = req.cookies?.sid || bearer;
+  try {
+    jwt.verify(sid, JWT_SECRET);
+    return next();
+  } catch {}
+
+  // блокируем только страницы/статику, если зашли ВНЕ Telegram и БЕЗ токена
+  const isPage = req.method === "GET" && (
+    p === "/" || p.endsWith(".html") || p.startsWith("/icons/") || p.startsWith("/assets/")
+  );
+
+  if (isPage) {
+    const ua  = String(req.get("User-Agent") || "");
+    const ref = String(req.get("Referer") || "");
+    const isTg = ua.includes("Telegram") || ref.startsWith("https://t.me/");
+    if (!isTg) return res.status(403).send("Open this mini app inside Telegram");
+  }
+
   next();
 });
+
 
 // ─────────── Thermos floors proxy (cache) ───────────
 const THERMOS_PROXY = "https://proxy.thermos.gifts/api/v1";
@@ -1432,6 +1448,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
