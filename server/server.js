@@ -105,7 +105,6 @@ const GIFT_XFER_FILE= path.join(DATA_DIR, "gift_transfers.json");
 
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
-if (!BOT_TOKEN) throw new Error("APP_BOT_TOKEN not set");
 /* === Альтернатива: TON-комиссия за вывод подарка === */
 const GIFT_WITHDRAW_TON_FEE = Number(process.env.GIFT_WITHDRAW_TON_FEE || 0.1);
 
@@ -553,8 +552,7 @@ async function saveTx(){
   await fs.writeFile(tmp, JSON.stringify(txs,null,2));
   await fs.rename(tmp, TX_FILE);
 }
-// ─────────────────── Express / Socket.IO ───────────────────────
-const app = express();
+
 // ---------- CORS (должен быть ПЕРВЫМ) ----------
 const allowed = (process.env.ALLOWED_ORIGINS || "")
   .split(",").map(s=>s.trim()).filter(Boolean);
@@ -1457,6 +1455,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
