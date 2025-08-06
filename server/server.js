@@ -27,6 +27,16 @@ import { parse as parseCookie } from "cookie";
 import createAdminRouter from "./adminRoutes.js";
 dotenv.config();  
 
+// где-то после dotenv.config()
+const BOT_TOKEN = process.env.APP_BOT_TOKEN;
+console.log('BOT_TOKEN hash:', require('crypto').createHash('sha256')
+  .update(BOT_TOKEN||'').digest('hex').slice(0,12)); // только хэш, без секрета
+app.get('/_whoami', (_req,res)=> {
+  res.json({ up: true, botHash: require('crypto').createHash('sha256')
+    .update(BOT_TOKEN||'').digest('hex').slice(0,12) });
+});
+
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ───────────────────────── Config & Disk ─────────────────────────
@@ -1448,6 +1458,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
