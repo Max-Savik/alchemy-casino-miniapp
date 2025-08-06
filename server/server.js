@@ -27,15 +27,15 @@ import { parse as parseCookie } from "cookie";
 import createAdminRouter from "./adminRoutes.js";
 dotenv.config();  
 
-// где-то после dotenv.config()
+// BOT token (define ONCE and use everywhere)
 const BOT_TOKEN = process.env.APP_BOT_TOKEN;
-console.log('BOT_TOKEN hash:', require('crypto').createHash('sha256')
-  .update(BOT_TOKEN||'').digest('hex').slice(0,12)); // только хэш, без секрета
-app.get('/_whoami', (_req,res)=> {
-  res.json({ up: true, botHash: require('crypto').createHash('sha256')
-    .update(BOT_TOKEN||'').digest('hex').slice(0,12) });
-});
-
+if (!BOT_TOKEN) throw new Error("APP_BOT_TOKEN not set");
+// Create Express app BEFORE adding routes that use it
+const app = express();
+// Debug endpoint to verify which token is live (hashed)
+const botHash = crypto.createHash('sha256').update(BOT_TOKEN || '').digest('hex').slice(0,12);
+console.log('BOT_TOKEN hash:', botHash);
+app.get('/_whoami', (_req,res)=> res.json({ up: true, botHash }));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -105,7 +105,6 @@ const GIFT_XFER_FILE= path.join(DATA_DIR, "gift_transfers.json");
 
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
-const BOT_TOKEN        = process.env.APP_BOT_TOKEN; 
 if (!BOT_TOKEN) throw new Error("APP_BOT_TOKEN not set");
 /* === Альтернатива: TON-комиссия за вывод подарка === */
 const GIFT_WITHDRAW_TON_FEE = Number(process.env.GIFT_WITHDRAW_TON_FEE || 0.1);
@@ -1458,6 +1457,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
+
 
 
 
