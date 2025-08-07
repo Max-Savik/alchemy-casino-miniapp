@@ -563,6 +563,14 @@ const corsOptions = {
 app.use(cors(corsOptions));           // ①
 app.options("*", cors(corsOptions));  // ②  отвечаем на pre‑flight БЕЗ auth
 
+// ──────────────── Body-parsers ────────────────
+// Если фронт вдруг шлёт запрос без `Content-Type: application/json`,
+// Express не разбирает тело и `req.body` остаётся пустым.
+// Добавляем поддерж­ку form-urlencoded и raw-text *до* json-парсера,
+// чтобы /auth/login корректно обрабатывал любые варианты.
+app.use(express.urlencoded({ extended: false }));
+app.use(express.text());
+
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cookieParser());
 app.use(express.json());
@@ -702,11 +710,21 @@ app.get("/market/model-floors", async (req,res)=>{
 });
 // === LOGIN ===  (вызывается телеграм-клиентом один раз)
 app.post("/auth/login", (req, res) => {
-  /* Telegram должен подписывать userId — здесь минимальная проверка на число */
-  const { userId } = req.body || {};
-  if (!/^\d+$/.test(userId)) return res.status(400).json({ error: "bad userId" });
+  /*  Принимаем userId в трёх форматах:
+        ① JSON            →  { "userId": 123 }
+        ② form-urlencoded →  userId=123
+        ③ text/plain      →  "123"
+  */
+  let uid = "";
+  if (typeof req.body === "string") {
+    uid = req.body.trim();                 // raw-text
+  } else if (req.body && req.body.userId !== undefined) {
+    uid = String(req.body.userId).trim();  // json / form
+  }
 
-  const token = jwt.sign({ uid: String(userId) }, JWT_SECRET, {
+  if (!/^\d+$/.test(uid)) return res.status(400).json({ error: "bad userId" });
+
+  const token = jwt.sign({ uid }, JWT_SECRET, {
     expiresIn: JWT_LIFE,
   });
 
@@ -1388,3 +1406,4 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
