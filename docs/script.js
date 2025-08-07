@@ -383,7 +383,7 @@ function priceForNFT(nft){
   const ck = colKey(nft.name);
   const mk = modelKeyFromGift(nft);
   const mf = modelFloor(ck, mk);
-  return mf > 0 ? mf : Number(nft?.price) || 0;
+  return mf;
 }
 
 
@@ -404,11 +404,10 @@ async function ensureGiftPricesClient() {
       const ck = colKey(g.name);
       const mk = modelKeyFromGift(g);
       const mf = modelFloor(ck, mk);
-      const val = mf > 0 ? mf : Number(g.price) || 0;
-      if (val > 0 && val !== g.price) {
-        g.price = val;
-        touched = true;
-      }
+      if (g.price !== mf) {
+      g.price = mf;          // даже если 0 – это именно то, что нужно
+      touched = true;
+   }
     }
 
     if (touched) {
@@ -1397,6 +1396,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
