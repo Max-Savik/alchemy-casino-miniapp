@@ -27,16 +27,6 @@ import { parse as parseCookie } from "cookie";
 import createAdminRouter from "./adminRoutes.js";
 dotenv.config();  
 
-// BOT token (define ONCE and use everywhere)
-const BOT_TOKEN = process.env.APP_BOT_TOKEN;
-if (!BOT_TOKEN) throw new Error("APP_BOT_TOKEN not set");
-// Create Express app BEFORE adding routes that use it
-const app = express();
-// Debug endpoint to verify which token is live (hashed)
-const botHash = crypto.createHash('sha256').update(BOT_TOKEN || '').digest('hex').slice(0,12);
-console.log('BOT_TOKEN hash:', botHash);
-app.get('/_whoami', (_req,res)=> res.json({ up: true, botHash }));
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ───────────────────────── Config & Disk ─────────────────────────
@@ -105,6 +95,8 @@ const GIFT_XFER_FILE= path.join(DATA_DIR, "gift_transfers.json");
 
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
+const BOT_TOKEN        = process.env.APP_BOT_TOKEN; 
+if (!BOT_TOKEN) throw new Error("APP_BOT_TOKEN not set");
 /* === Альтернатива: TON-комиссия за вывод подарка === */
 const GIFT_WITHDRAW_TON_FEE = Number(process.env.GIFT_WITHDRAW_TON_FEE || 0.1);
 
@@ -552,7 +544,8 @@ async function saveTx(){
   await fs.writeFile(tmp, JSON.stringify(txs,null,2));
   await fs.rename(tmp, TX_FILE);
 }
-
+// ─────────────────── Express / Socket.IO ───────────────────────
+const app = express();
 // ---------- CORS (должен быть ПЕРВЫМ) ----------
 const allowed = (process.env.ALLOWED_ORIGINS || "")
   .split(",").map(s=>s.trim()).filter(Boolean);
@@ -577,37 +570,21 @@ const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 app.use(apiLimiter);  
 
+/* ───────── Block non-Telegram environments ─────────
+   Доп. защита: сайт и API работают только из Telegram WebApp.
+   Исключения: внутренние/админ-роуты и статика. */
 app.use((req, res, next) => {
   const p = req.path || "";
-
-  // пропускаем внутренние/админ и сокеты
-  if (p.startsWith("/internal") || p.startsWith("/admin") || p.startsWith("/socket.io")) {
-    return next();
+  if (p.startsWith("/internal") || p.startsWith("/admin")) return next();
+  if (req.method === "GET" && (p === "/" || p.endsWith(".html") || p.startsWith("/icons/") || p.startsWith("/assets/"))) {
+    // страницы тоже блокируем вне Telegram
   }
-
-  // если у клиента уже есть валидный sid — пропускаем куда угодно
-  const bearer = (req.get("Authorization") || "").replace("Bearer ", "");
-  const sid = req.cookies?.sid || bearer;
-  try {
-    jwt.verify(sid, JWT_SECRET);
-    return next();
-  } catch {}
-
-  // блокируем только страницы/статику, если зашли ВНЕ Telegram и БЕЗ токена
-  const isPage = req.method === "GET" && (
-    p === "/" || p.endsWith(".html") || p.startsWith("/icons/") || p.startsWith("/assets/")
-  );
-
-  if (isPage) {
-    const ua  = String(req.get("User-Agent") || "");
-    const ref = String(req.get("Referer") || "");
-    const isTg = ua.includes("Telegram") || ref.startsWith("https://t.me/");
-    if (!isTg) return res.status(403).send("Open this mini app inside Telegram");
-  }
-
+  const ua = String(req.get("User-Agent") || "");
+  const ref = String(req.get("Referer") || "");
+  const isTg = ua.includes("Telegram") || ref.startsWith("https://t.me/");
+  if (!isTg) return res.status(403).send("Open this mini app inside Telegram");
   next();
 });
-
 
 // ─────────── Thermos floors proxy (cache) ───────────
 const THERMOS_PROXY = "https://proxy.thermos.gifts/api/v1";
@@ -1455,17 +1432,3 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
