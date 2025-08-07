@@ -378,20 +378,16 @@ function modelKeyFromGift(g) {
   return normalizeKey(modelLabelFromGift(g));
 }
 
-// универсальная цена NFT: сперва floor модели, потом то, что пришло (price), иначе 0
 function priceForNFT(nft){
-  // 1) пробуем модельный floor
-  const mk = modelKeyFromGift(nft);;
-  if(mk){
-    for(const [,rec] of modelFloors){
-      const v = rec?.map?.get(mk);
-      if(v>0) return v;          // нашли модель – возвращаем
-    }
-  }
-  // 2) берём цену, присвоенную в профиле (сервер присылает её)
+  // ① floor по модели внутри своей коллекции
+  const ck = colKey(nft.name);          // key коллекции
+  const mk = modelKeyFromGift(nft);     // key модели
+  const mf = modelFloor(ck, mk);
+  if (mf > 0) return mf;
+
+  // ② иначе — то, что уже лежит в g.price (collection floor или ручная цена)
   return Number(nft?.price) || 0;
 }
-
 
 
 async function ensureGiftPricesClient() {
@@ -413,7 +409,7 @@ async function ensureGiftPricesClient() {
     let touched = false;
     for (const g of inventory) {
       const ck = colKey(g.name);
-      const mk = modelKeyFromImg(g.img) || modelKey(modelFromName(g.name));
+      const mk = modelKeyFromGift(g);
       const mf = modelFloor(ck, mk);
       const cf = Number(collMap[ck]?.floorTon || 0);
       const val = mf > 0 ? mf
@@ -1411,6 +1407,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
