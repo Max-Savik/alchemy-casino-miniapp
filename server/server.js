@@ -24,6 +24,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { parse as parseCookie } from "cookie";
+import { URLSearchParams } from "url"; 
 import createAdminRouter from "./adminRoutes.js";
 dotenv.config();  
 
@@ -709,18 +710,49 @@ app.get("/market/model-floors", async (req,res)=>{
   }
 });
 // === LOGIN ===  (вызывается телеграм-клиентом один раз)
-app.post("/auth/login", (req, res) => {
-  /*  Принимаем userId в трёх форматах:
-        ① JSON            →  { "userId": 123 }
-        ② form-urlencoded →  userId=123
-        ③ text/plain      →  "123"
-  */
-  let uid = "";
-  if (typeof req.body === "string") {
-    uid = req.body.trim();                 // raw-text
-  } else if (req.body && req.body.userId !== undefined) {
-    uid = String(req.body.userId).trim();  // json / form
+/* helper: вытаскиваем user.id из initData                                 *
+ * initData — это query-string вида                                       *
+ *   "query_id=...&user=%7B%22id%22%3A123%2C...%7D&hash=..."              */
+function userIdFromInitData(str = "") {
+  try {
+    const params = new URLSearchParams(str);
+    const userJson = params.get("user");
+    if (!userJson) return "";
+    const userObj = JSON.parse(userJson);
+    return userObj?.id ? String(userObj.id) : "";
+  } catch {
+    return "";
   }
+}
+
+app.post("/auth/login", (req, res) => {
+  /*  Принимаем userId в ПЯТИ возможных вариантах:
+        ① JSON            → { "userId": 123 }
+        ② form-urlencoded → userId=123
+        ③ text/plain      → "123"
+        ④ initData (JSON) → { "initData": "query_id=...&user=%7B...%7D&..." }
+        ⑤ initData (text) → "query_id=...&user=%7B...%7D&..."               */
+
+  let uid = "";
+
+  // raw-text body
+  if (typeof req.body === "string") {
+    uid = /^\d+$/.test(req.body.trim())
+      ? req.body.trim()               // вариант ③
+      : userIdFromInitData(req.body); // вариант ⑤
+  }
+
+  // JSON / form body
+  if (!uid && req.body) {
+    if (req.body.userId !== undefined) {
+      uid = String(req.body.userId).trim();           // вариант ① / ②
+    } else if (req.body.initData) {
+      uid = userIdFromInitData(String(req.body.initData)); // вариант ④
+    }
+  }
+
+  // fallback: ?userId=123 в query-string
+  if (!uid && req.query.userId) uid = String(req.query.userId).trim();
 
   if (!/^\d+$/.test(uid)) return res.status(400).json({ error: "bad userId" });
 
@@ -1406,4 +1438,5 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
