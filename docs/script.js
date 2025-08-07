@@ -378,34 +378,33 @@ function priceForNFT(nft){
 
 async function ensureGiftPricesClient() {
   try {
-    // (1) собираем нужные коллекции/модели
-    const colSet = new Set(), need = [];
-    inventory.forEach(g => {
-      if (!(Number(g.price) > 0)) {
-        colSet.add(colKey(g.name));
-        need.push(g);
-      }
-    });
-    if (!need.length) return;
+    // (1) собираем **все** коллекции пользователя — модельные floor-цены
+    //     нужны даже тем NFT, у которых уже стоит цена (обычно это
+    //     floor самой коллекции).
+    const colSet = new Set();
+    inventory.forEach(g => colSet.add(colKey(g.name)));
 
-    // (2) тянем floors
+    // (2) тянем floors: сначала коллекционные, затем по моделям
     const [collFloors] = await Promise.all([
       fetch(`${API_ORIGIN}/market/floors`, { credentials: "include" }).then(r => r.json()),
       fetchModelFloors(Array.from(colSet))
     ]);
     const collMap = collFloors.collections || {};
 
-    // (3) присваиваем цену: modelFloor > collFloor
+    // (3) для КАЖДОГО подарка: modelFloor > collFloor > старое price
     let touched = false;
-    for (const g of need) {
+    for (const g of inventory) {
       const ck = colKey(g.name);
       const mk = modelKeyFromImg(g.img) || modelKey(modelFromName(g.name));
       const mf = modelFloor(ck, mk);
       const cf = Number(collMap[ck]?.floorTon || 0);
-      const val = mf > 0
-          ? mf
-          : (cf > 0 ? cf : Number(g.price) || 0);
-      if (val > 0) { g.price = val; touched = true; }
+      const val = mf > 0 ? mf
+                 : (cf > 0 ? cf
+                   : Number(g.price) || 0);
+      if (val > 0 && val !== g.price) {
+        g.price = val;
+        touched = true;
+      }
     }
 
     if (touched) {
@@ -1394,6 +1393,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
