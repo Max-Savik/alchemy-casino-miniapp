@@ -274,9 +274,23 @@ wallet.get("/balance", (req, res) => {
 /* GET /wallet/gifts  — список НЕ поставленных подарков (цены в TON) */
 wallet.get("/gifts", async (req, res) => {
   try {
-    // Берём кеш floor-цен (TON)
+    /* ① Коллекционные floor-цены */
     const floors = await ensureFloorsFresh();
     const map = floors?.collections || {};
+
+    /* ② Готовим список коллекций пользователя, чтобы сразу
+          подтянуть floor-цены **по моделям**                */
+    const wantNames  = new Set();
+    const keyToName  = {};
+    gifts.forEach(g => {
+      const k   = normalizeKey(g.name || "");
+      const rec = map[k];
+      if (rec?.name) {
+        keyToName[k] = rec.name;      // cache key → «Human Name»
+        wantNames.add(rec.name);
+      }
+    });
+    await ensureModelFloorsForCollections([...wantNames]);
 
     // показываем все НЕ отправленные и не staked подарки, включая pending_withdraw
     const out = gifts
@@ -286,8 +300,19 @@ wallet.get("/gifts", async (req, res) => {
         g.status !== "sent"
       )
       .map(g => {
-        const key = normalizeKey(g.name || "");
-        const floorTon = Number(map[key]?.floorTon || 0);
+        const key       = normalizeKey(g.name || "");
+        const colName   = keyToName[key];            // «DeskCalendar», «Plush Pepe» …
+        const modelKey  = normalizeKey((g.name || "").split("-")[0]);
+
+        /* ── приоритет: floor по модели → floor по коллекции ── */
+        let modelFloorTon = 0;
+        if (colName) {
+          const models   = thermosModelFloors.byCollection[colName]?.models || {};
+          modelFloorTon  = Number(models[modelKey]?.floorTon || 0);
+        }
+        const collFloorTon = Number(map[key]?.floorTon || 0);
+        const floorTon     = modelFloorTon > 0 ? modelFloorTon : collFloorTon;
+
         const priceTon = Number(g.price || 0) > 0 ? Number(g.price) : floorTon;
         return {
           gid     : g.gid,
@@ -1438,5 +1463,6 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
