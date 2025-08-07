@@ -381,7 +381,7 @@ function modelKeyFromGift(g) {
 function priceForNFT(nft){
   // ① floor по модели внутри своей коллекции
   const ck = colKey(nft.name);          // key коллекции
-  const mk = modelKeyFromGift(nft);     // key модели
+  const mk = modelKeyFromGift(g);
   const mf = modelFloor(ck, mk);
   if (mf > 0) return mf;
 
@@ -398,23 +398,16 @@ async function ensureGiftPricesClient() {
     const colSet = new Set();
     inventory.forEach(g => colSet.add(colKey(g.name)));
 
-    // (2) тянем floors: сначала коллекционные, затем по моделям
-    const [collFloors] = await Promise.all([
-      fetch(`${API_ORIGIN}/market/floors`, { credentials: "include" }).then(r => r.json()),
-      fetchModelFloors(Array.from(colSet))
-    ]);
-    const collMap = collFloors.collections || {};
+    // (2) тянем ТОЛЬКО floor-ы по моделям
+    await fetchModelFloors(Array.from(colSet));
 
     // (3) для КАЖДОГО подарка: modelFloor > collFloor > старое price
     let touched = false;
-    for (const g of inventory) {
-      const ck = colKey(g.name);
-      const mk = modelKeyFromGift(g);
-      const mf = modelFloor(ck, mk);
-      const cf = Number(collMap[ck]?.floorTon || 0);
-      const val = mf > 0 ? mf
-                 : (cf > 0 ? cf
-                   : Number(g.price) || 0);
+      const ck = colKey(g.name);               // коллекция
+      const mk = modelKeyFromGift(g);          // модель
+      const mf = modelFloor(ck, mk);           // только модель-floor
+      const val = mf > 0 ? mf                  // нашли цену модели
+                 : Number(g.price) || 0;       // иначе — что прислал бэк
       if (val > 0 && val !== g.price) {
         g.price = val;
         touched = true;
@@ -1407,6 +1400,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
