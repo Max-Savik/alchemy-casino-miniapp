@@ -570,22 +570,6 @@ const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 app.use(apiLimiter);  
 
-/* ───────── Block non-Telegram environments ─────────
-   Доп. защита: сайт и API работают только из Telegram WebApp.
-   Исключения: внутренние/админ-роуты и статика. */
-app.use((req, res, next) => {
-  const p = req.path || "";
-  if (p.startsWith("/internal") || p.startsWith("/admin")) return next();
-  if (req.method === "GET" && (p === "/" || p.endsWith(".html") || p.startsWith("/icons/") || p.startsWith("/assets/"))) {
-    // страницы тоже блокируем вне Telegram
-  }
-  const ua = String(req.get("User-Agent") || "");
-  const ref = String(req.get("Referer") || "");
-  const isTg = ua.includes("Telegram") || ref.startsWith("https://t.me/");
-  if (!isTg) return res.status(403).send("Open this mini app inside Telegram");
-  next();
-});
-
 // ─────────── Thermos floors proxy (cache) ───────────
 const THERMOS_PROXY = "https://proxy.thermos.gifts/api/v1";
 const FLOORS_TTL_MS = 5 * 60_000; // 5 минут
@@ -716,49 +700,21 @@ app.get("/market/model-floors", async (req,res)=>{
     res.status(500).json({ error: String(e.message||e) });
   }
 });
-
-/* === LOGIN via Telegram initData (secure) === */
-function verifyTelegramInitData(initData, botToken){
-  // Алгоритм из доков TG Web Apps:
-  // 1) secret = sha256(botToken)
-  // 2) check_string = строки key=value по алфавиту через \n (без hash)
-  // 3) hexHmac = HMAC_SHA256(check_string, secret)
-  // 4) hexHmac должен совпадать с 'hash' из initData
-  const params = new URLSearchParams(initData);
-  const hash = params.get("hash");
-  if (!hash) return null;
-  const data = [];
-  params.forEach((v,k)=>{ if (k !== "hash") data.push(`${k}=${v}`); });
-  data.sort();
-  const checkString = data.join("\n");
-  const secret = crypto.createHash("sha256").update(botToken).digest();
-  const hmac = crypto.createHmac("sha256", secret).update(checkString).digest("hex");
-  if (hmac !== hash) return null;
-  // Вытаскиваем user
-  const userJson = params.get("user");
-  if (!userJson) return null;
-  let user;
-  try { user = JSON.parse(userJson); } catch { return null; }
-  if (!user?.id || !/^\d+$/.test(String(user.id))) return null;
-  // Дополнительная защита: не старше 1 суток
-  const authDate = Number(params.get("auth_date") || 0);
-  const now = Math.floor(Date.now()/1000);
-  if (!(authDate > 0 && now - authDate < 24*60*60)) return null;
-  return { id: String(user.id), username: user.username || "" };
-}
-
+// === LOGIN ===  (вызывается телеграм-клиентом один раз)
 app.post("/auth/login", (req, res) => {
-  const { initData } = req.body || {};
-  if (!initData) return res.status(400).json({ error: "no initData" });
-  const verified = verifyTelegramInitData(String(initData), BOT_TOKEN);
-  if (!verified) return res.status(401).json({ error: "bad initData" });
+  /* Telegram должен подписывать userId — здесь минимальная проверка на число */
+  const { userId } = req.body || {};
+  if (!/^\d+$/.test(userId)) return res.status(400).json({ error: "bad userId" });
 
-  const token = jwt.sign({ uid: verified.id }, JWT_SECRET, { expiresIn: JWT_LIFE });
+  const token = jwt.sign({ uid: String(userId) }, JWT_SECRET, {
+    expiresIn: JWT_LIFE,
+  });
+
   res
     .cookie("sid", token, {
       httpOnly : true,
-      sameSite : "None",
-      secure   : true,
+      sameSite : "None",          // ← разрешаем отправлять с другого домена
+      secure   : true,            // must-have для SameSite=None
       maxAge   : 1000*60*60*24*30
     })
     .json({ ok: true, token });
@@ -1431,4 +1387,4 @@ async function processWithdrawals() {
   resetRound();      
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
-})();
+})()
