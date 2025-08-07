@@ -354,16 +354,21 @@ function modelKey(name=""){ return String(name).toLowerCase().replace(/[^a-z]+/g
 function modelFromName(n=""){ return n.split("-")[0].trim(); }
 
 /* ===== Helpers: model price ===== */
-// из ссылки вида .../gift/deskcalendar-190442.medium.jpg → "deskcalendar"
-function modelKeyFromImg(img = "") {
-  const m = String(img).match(/gift\/([a-z0-9]+)-/i);
-  return m ? m[1].toLowerCase() : null;
+function modelLabelFromGift(g) {
+  // UniqueGiftModel(name='Choco Top', …) → 'Choco Top'
+  const r = String(g?.gid || "").match(/name=['"]([^'"]+)['"]/i);
+  if (r) return r[1];
+  // fallback: всё до первого дефиса в gift.name
+  return (g?.name || "").split("-")[0].trim();
+}
+function modelKeyFromGift(g) {
+  return normalizeKey(modelLabelFromGift(g));
 }
 
 // универсальная цена NFT: сперва floor модели, потом то, что пришло (price), иначе 0
 function priceForNFT(nft){
   // 1) пробуем модельный floor
-  const mk = modelKeyFromImg(nft?.img || "");
+  const mk = modelKeyFromGift(nft);;
   if(mk){
     for(const [,rec] of modelFloors){
       const v = rec?.map?.get(mk);
@@ -1393,6 +1398,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
