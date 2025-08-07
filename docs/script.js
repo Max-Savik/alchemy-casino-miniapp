@@ -379,14 +379,11 @@ function modelKeyFromGift(g) {
 }
 
 function priceForNFT(nft){
-  // ① floor по модели внутри своей коллекции
-  const ck = colKey(nft.name);          // key коллекции
-  const mk = modelKeyFromGift(g);
+  // единственный источник — floor по модели
+  const ck = colKey(nft.name);
+  const mk = modelKeyFromGift(nft);
   const mf = modelFloor(ck, mk);
-  if (mf > 0) return mf;
-
-  // ② иначе — то, что уже лежит в g.price (collection floor или ручная цена)
-  return Number(nft?.price) || 0;
+  return mf > 0 ? mf : Number(nft?.price) || 0;
 }
 
 
@@ -401,13 +398,13 @@ async function ensureGiftPricesClient() {
     // (2) тянем ТОЛЬКО floor-ы по моделям
     await fetchModelFloors(Array.from(colSet));
 
-    // (3) для КАЖДОГО подарка: modelFloor > collFloor > старое price
+    // (3) для КАЖДОГО подарка: modelFloor > старое price
     let touched = false;
-      const ck = colKey(g.name);               // коллекция
-      const mk = modelKeyFromGift(g);          // модель
-      const mf = modelFloor(ck, mk);           // только модель-floor
-      const val = mf > 0 ? mf                  // нашли цену модели
-                 : Number(g.price) || 0;       // иначе — что прислал бэк
+    for (const g of inventory) {
+      const ck = colKey(g.name);
+      const mk = modelKeyFromGift(g);
+      const mf = modelFloor(ck, mk);
+      const val = mf > 0 ? mf : Number(g.price) || 0;
       if (val > 0 && val !== g.price) {
         g.price = val;
         touched = true;
@@ -1400,6 +1397,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
