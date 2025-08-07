@@ -324,6 +324,19 @@ function normalizeKeyClient(s=""){
   return String(s).toLowerCase().replace(/[^a-z]+/g,"");
 }
 
+
+// alias на уже имеющуюся функцию, чтобы старые вызовы продолжили работать
+function normalizeKey(str = "") {
+  return normalizeKeyClient(str);
+}
+
+// извлекает «модель» из URL изображения подарка
+//   …/gift/deskcalendar-190442.medium.jpg  →  "deskcalendar"
+function modelKeyFromImg(url = "") {
+  const m = String(url).match(/\/gift\/([a-z0-9]+)-/i);
+  return m ? normalizeKey(m[1]) : "";
+}
+
 /* ===== MODEL-FLOOR CACHE ===== */
 const modelFloors = new Map();   // colKey -> Map(modelKey -> floorTon)
 const MODEL_TTL = 5 * 60_000;
@@ -1398,6 +1411,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
