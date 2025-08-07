@@ -402,7 +402,9 @@ async function ensureGiftPricesClient() {
       const mk = modelKeyFromImg(g.img) || modelKey(modelFromName(g.name));
       const mf = modelFloor(ck, mk);
       const cf = Number(collMap[ck]?.floorTon || 0);
-      const val = mf > 0 ? mf : cf;
+      const val = mf > 0
+          ? mf
+          : (cf > 0 ? cf : Number(g.price) || 0);
       if (val > 0) { g.price = val; touched = true; }
     }
 
@@ -1392,6 +1394,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
