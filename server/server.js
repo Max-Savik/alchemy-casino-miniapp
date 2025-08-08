@@ -1040,6 +1040,20 @@ function startSpin() {
       /* ───────── начисляем приз и комиссию (TON + NFT) ───────── */
       const uid = String(winner.userId);
       if (uid) {
+        // Собираем сводку для модалки победителя
+        const summary = {
+          potTon: 0,
+          winnerStakeTon: 0,
+          netTonWin: 0,
+          payoutTon: 0,
+          tonCommission: 0,
+          commissionNftSum: 0,
+          commissionNftCount: 0,
+          refundTon: 0,
+          gained: [],            // [{ownedId,name,price,img}]
+          commitHash: game.commitHash,
+          seed: game.seed
+        };
         // 1) Общий TON-банк раунда
         const potTON = game.players.reduce(
           (sum, p) => sum + p.nfts.filter(n => n.id.startsWith("ton-")).reduce((s, n) => s + n.price, 0),
@@ -1051,6 +1065,9 @@ function startSpin() {
           .reduce((s, n) => s + n.price, 0);
         // 3) Чужой TON, выигранный победителем (net-win по тону)
         const netTonWin = Math.max(0, potTON - winnerStakeTON);
+        summary.potTon        = potTON;
+        summary.winnerStakeTon= winnerStakeTON;
+        summary.netTonWin     = netTonWin;
 
         // 4) NFT, которые переходят победителю (кандидаты: НЕ ton-токены, не от победителя)
         const prizeNFTCandidates = [];
@@ -1079,6 +1096,9 @@ function startSpin() {
               txs.push({ userId: "__service__", type: "commission", amount: commissionTon, ts: Date.now() });
             }
             await saveTx();
+            summary.payoutTon    = payoutTon;
+            summary.tonCommission= commissionTon;
+            summary.refundTon    = 0;
           }
         } else {
           // 6) Смешанный приз (TON + NFT): комиссия = 5% от (net-TON + NFT-стоимость)
@@ -1096,6 +1116,7 @@ function startSpin() {
           // 6b) Если нужно — удерживаем NFT на сумму не меньше остатка комиссии (лучшая подгонка)
           let withheld = [];
           let withheldSum = 0;
+          let refund = 0;
           if (tonRemainder > 0.0000001 && prizeNFTCandidates.length) {
             // попытка точного/почти точного покрытия: одиночка → пары → жадно по возрастанию
             const items = [...prizeNFTCandidates];
@@ -1130,9 +1151,9 @@ function startSpin() {
             // если перебрали — вернём разницу в TON на баланс победителя
            // кламп с эпсилон, чтобы не уйти в отрицательное из-за флоатов
             const EPS = 1e-9;
-            let refund = withheldSum - tonRemainder;
-            if (refund < EPS) refund = 0;
-            refund = +refund.toFixed(9);
+            let refundCalc = withheldSum - tonRemainder;
+            if (refundCalc < EPS) refundCalc = 0;
+            refund = +refundCalc.toFixed(9);
             if (refund > 0) {
               balances[uid] = (balances[uid] || 0) + refund;
               txs.push({ userId: uid, type: "commission_refund", amount: refund, ts: Date.now() });
@@ -1155,6 +1176,12 @@ function startSpin() {
 
           // передадим список удержанных NFT дальше (в блок переноса подарков)
           winner.__withheldIds = new Set(withheld.map(it => it.gift.ownedId));
+          // Сводка для модалки
+          summary.payoutTon        = payoutTon;
+          summary.tonCommission    = tonTaken;
+          summary.commissionNftSum = withheldSum;
+          summary.commissionNftCount = withheld.length;
+          summary.refundTon        = refund;
         }
       }
   /* ──────────────────────────────────────────────────────────
@@ -1208,9 +1235,15 @@ function startSpin() {
           gid: g.gid, ownedId: g.ownedId, name: g.name,
           price: g.price, img: g.img, status: "idle"
         });
+        // добавим в список полученных для сводки
+        summary.gained.push({ ownedId: g.ownedId, name: g.name, price: Number(g.price||0), img: g.img });
       }
     }
     if (touched) await saveGifts();
+    // 🔔 Отправляем персональную сводку победителю
+    if (summary && winUid) {
+      io.to("u:" + winUid).emit("winSummary", summary);
+    }
   } catch (e) {
     console.error("Gift transfer error:", e);
   }
@@ -1548,6 +1581,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
