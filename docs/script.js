@@ -229,16 +229,8 @@ let players   = [];
 let totalTON  = 0;
 let phase     = "waiting";              // waiting | countdown | spinning
 
-// Храним развернутых игроков (по userId) для истории NFT 
+// Храним развернутых игроков (по имени) для истории NFT 
 const expandedPlayers = new Set();
-
-/* ---------- маленькие утилиты безопасности ---------- */
-function escHtml(s){
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-function escAttr(s){ // для атрибутов
-  return escHtml(s).replace(/`/g,'&#96;');
-}
 
 /* ================= TON BALANCE ================= */
 let tonBalance = 0;
@@ -277,29 +269,10 @@ const tonAmountInput = document.getElementById('tonAmount');
 const placeTonBetBtn = document.getElementById('placeTonBet');
 const depositTONBtn = document.getElementById('depositTON');
 
-/* ===== helpers: open/close TON picker with proper a11y ===== */
-function openTonPicker(){
-  tonPickerOverlay.classList.add('show');
-  tonPickerOverlay.setAttribute('aria-hidden','false');
-  // небольшая задержка для корректного фокуса после анимации
-  setTimeout(()=>tonAmountInput?.focus(), 10);
-}
-function closeTonPicker(){
-  // сначала убираем фокус, затем скрываем — иначе warning про aria-hidden
-  if (document.activeElement && tonPickerOverlay.contains(document.activeElement)){
-    document.activeElement.blur();
-  }
-  tonPickerOverlay.classList.remove('show');
-  tonPickerOverlay.setAttribute('aria-hidden','true');
-  tonAmountInput.value = '';
-  placeTonBetBtn.disabled = true;
-}
-
 /* === Fair Play UI === */
 const fairBtn      = document.getElementById('fairBtn');
 const fairPanel    = document.getElementById('fairPanel');
 const commitFull   = document.getElementById('commitFull');
-const commitShortEl= document.getElementById('commitShort');
 
 // Имя пользователя из Telegram
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
@@ -499,7 +472,7 @@ function cardHTML(nft, extra='') {
   const statusLabel = withdrawing ? 'Ожидает оплаты' : 'Скоро отправим';
   return `
     <div class="nft-card ${extra} ${(withdrawing||queued)?'opacity-60 pointer-events-none':''}" data-id="${nft.id}">
-      <img src="${nft.img}" alt="${escAttr(nft.name)}" class="nft-img" loading="lazy" decoding="async"
+      <img src="${nft.img}" alt="${nft.name}" class="nft-img" loading="lazy" decoding="async"
            onload="this.classList.add('loaded')" onerror="this.onerror=null;this.src='${nft.img}';">
       ${priceVal ? `<div class="price-chip">${priceStr}&nbsp;TON</div>` : ''}
       ${(withdrawing||queued)?`
@@ -510,7 +483,7 @@ function cardHTML(nft, extra='') {
           </div>
         </div>
       `:''}
-      <div class="title-badge" title="${escAttr(nft.name)}">${escHtml(nft.name)}</div>
+      <div class="title-badge" title="${nft.name}">${nft.name}</div>
     </div>`;
 }
 
@@ -604,12 +577,12 @@ function drawWheel() {
       svg.insertAdjacentHTML(
         'beforeend',
         arc(200, 200, 190, start, end, p.color)
-          .replace('<path ', '<path data-uid="' + String(p.userId) + '" ')
+          .replace('<path ', '<path data-player="' + p.name + '" ')
       );
     } else {
       svg.insertAdjacentHTML(
         'beforeend',
-        `<circle cx="200" cy="200" r="190" fill="${p.color}" data-uid="${String(p.userId)}"></circle>`
+        `<circle cx="200" cy="200" r="190" fill="${p.color}" data-player="${p.name}"></circle>`
       );
     }
 
@@ -630,7 +603,7 @@ function drawWheel() {
             fill="#000"
             text-anchor="middle"
             dominant-baseline="middle">
-        ${escHtml((p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name)}
+        ${(p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name}
       </text>
     `);
 
@@ -648,10 +621,6 @@ fairBtn.onclick = () => {
 function setCommit(hash) {
   if (!hash) return;
   commitFull.textContent  = hash;
-  // короткий хэш в кнопке (для удобства)
-  if (commitShortEl){
-    commitShortEl.textContent = (hash.slice(0,8) + '…');
-  }
 }
 
 
@@ -705,7 +674,7 @@ headerDiv.appendChild(percEl);
     iconsWrapper.className = 'flex flex-wrap items-center gap-2 mt-1';
 
     const sortedNFTs = [...p.nfts].sort((a,b) => priceForNFT(b) - priceForNFT(a));
-    const isExpanded = expandedPlayers.has(String(p.userId));
+    const isExpanded = expandedPlayers.has(p.name);
     const maxToShow  = 24;
 
     // Утилита: создаёт «нарядную» NFT-иконку с hover-ценой
@@ -722,12 +691,6 @@ function makeNFTIcon(nftObj) {
   img.src = nftObj.img;
   img.alt = nftObj.id;
   img.className = 'w-full h-full object-cover';
-  // ускоряем и даём фолбэк на случай сетевых сбоев
-  img.loading = 'lazy';
-  img.decoding = 'async';
-  img.addEventListener('error', () => {
-    img.onerror = null; img.src = nftObj.img;
-  });
   wrapper.appendChild(img);
 
   const priceBadge = document.createElement('div');
@@ -783,7 +746,7 @@ wrapper.addEventListener('click', () => {
           hover:underline
         `;
         hideBtn.addEventListener('click', () => {
-          expandedPlayers.delete(String(p.userId));
+          expandedPlayers.delete(p.name);
           refreshUI();
         });
         iconsWrapper.appendChild(hideBtn);
@@ -803,7 +766,7 @@ wrapper.addEventListener('click', () => {
         hover:underline
       `;
       showAllBtn.addEventListener('click', () => {
-        expandedPlayers.add(String(p.userId));
+        expandedPlayers.add(p.name);
         refreshUI();
       });
       iconsWrapper.appendChild(showAllBtn);
@@ -988,7 +951,7 @@ async function weightedPick(seed, players) {
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
 function highlightWinner(winner){
-  const slice = svg.querySelectorAll(`[data-uid="${String(winner.userId)}"]`);
+  const slice = svg.querySelectorAll(`[data-player="${winner.name}"]`);
   slice.forEach(el => {
     gsap.fromTo(el,
       { filter: 'brightness(1)' },
@@ -1173,10 +1136,17 @@ initSocketEvents = function() {
   attachGiftUpdates();
 };
 /* ======== Открываем TON-пикер ======== */
-depositTONBtn.addEventListener('click', openTonPicker);
+depositTONBtn.addEventListener('click', () => {
+  tonPickerOverlay.classList.add('show');
+  tonAmountInput.value = '';
+  placeTonBetBtn.disabled = true;
+});
 
 /* ======== Закрываем TON-пикер без ставки ======== */
-closeTonPickerBtn.addEventListener('click', closeTonPicker);
+closeTonPickerBtn.addEventListener('click', () => {
+  tonPickerOverlay.classList.remove('show');
+  tonAmountInput.value = '';
+});
 
 /* ======== Проверяем ввод суммы TON ======== */
 tonAmountInput.addEventListener('input', () => {
@@ -1201,8 +1171,9 @@ socket.emit('placeBet', { name: myName, tonAmount: amount });
 tonBalance -= amount;
 document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
 
-// 4) Закрываем модалку корректно (сброс + aria)
-closeTonPicker();
+// 4) Закрываем модалку
+tonPickerOverlay.classList.remove('show');
+tonAmountInput.value = '';
 
 });   // ←← закрываем функцию и addEventListener
 const toggleBtn = document.getElementById('toggleSort');
@@ -1463,21 +1434,3 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
