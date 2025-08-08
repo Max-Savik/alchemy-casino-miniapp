@@ -52,6 +52,7 @@ async function postJSON(url, data, { _retry } = {}){
     method: 'POST',
     headers:{
       'Content-Type':'application/json',
+      ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
     },
     body: JSON.stringify(data),
     credentials: "include" 
@@ -101,7 +102,7 @@ var cumulativeRotation = 0;
 // 1. Подключаемся к бекенду
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 let socket;   
-// JWT больше не используем явно — опираемся на httpOnly cookie "sid"
+// Храним JWT и прокидываем в Authorization, чтобы не зависеть от 3rd-party cookie
 let jwtToken = null;
 
 async function fetchJSON(url, opts={}, { _retry } = {}) {
@@ -109,6 +110,7 @@ async function fetchJSON(url, opts={}, { _retry } = {}) {
     credentials: "include",
     headers: {
       ...(opts.headers||{}),
+      ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
     }
   });
   if (res.status === 401 && !_retry) {
@@ -816,7 +818,7 @@ clearFiltersBtn.addEventListener('click', () => {
 
 async function ensureJwt(forceRefresh = false) {
   const hasSid = document.cookie.split("; ").some(c => c.startsWith("sid="));
-  if (hasSid && !forceRefresh) return;
+  if (hasSid && jwtToken && !forceRefresh) return;
 
   // Логинимся строго по подписанным данным Telegram
   const initDataRaw = window?.Telegram?.WebApp?.initData;
@@ -831,6 +833,13 @@ async function ensureJwt(forceRefresh = false) {
   if (!r.ok) {
     jwtToken = null;
     throw new Error(`login failed ${r.status}`);
+  }
+  // читаем выданный токен и используем как Bearer
+  try {
+    const j = await r.json();
+    if (j?.token) jwtToken = j.token;
+  } catch (_) {
+    // сервер может вернуть пустое тело — не страшно, остаёмся на cookie
   }
 }                            
 
@@ -895,7 +904,11 @@ function buildImgLink(g) {
     console.warn("Gift fetch error", e);
   }                                 
 
-  socket = io(API_ORIGIN, { withCredentials: true });
+  // пробрасываем токен в сокет, чтобы авторизация не зависела от cookie
+  socket = io(API_ORIGIN, {
+    withCredentials: true,
+    auth: jwtToken ? { token: jwtToken } : undefined
+  });
   initSocketEvents();
   refreshBalance();
 })();
@@ -1419,4 +1432,5 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
