@@ -1452,7 +1452,7 @@ async function loadTxHistory({ silent = false } = {}){
      <div class="text-gray-400 text-xs">${dt}</div>
      <div class="text-gray-500 text-[10px]">${label}</div>
    </div>
-   </div>`);
+   </div>`;
     });
     panelTx.innerHTML = html;
   }catch(e){
@@ -1519,6 +1519,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
