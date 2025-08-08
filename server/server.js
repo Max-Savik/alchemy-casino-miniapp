@@ -1038,10 +1038,12 @@ function startSpin() {
      });
 
       /* ───────── начисляем приз и комиссию (TON + NFT) ───────── */
-      const uid = String(winner.userId);
-      if (uid) {
+      const winUid = String(winner.userId);
+      // summary нужен и в блоке переноса подарков ниже — объявляем заранее
+      let summary = null;
+      if (winUid) {
         // Собираем сводку для модалки победителя
-        const summary = {
+        summary = {
           potTon: 0,
           winnerStakeTon: 0,
           netTonWin: 0,
@@ -1087,11 +1089,11 @@ function startSpin() {
             const commissionTon = netTonWin * COMMISSION_RATE;
             const payoutTon     = potTON - commissionTon; // = свои TON + (net-TON − комиссия)
 
-            balances[uid] = (balances[uid] || 0) + payoutTon;
+            balances[winUid] = (balances[winUid] || 0) + payoutTon;
             balances.__service__ = (balances.__service__ || 0) + commissionTon;
             await saveBalances();
 
-            txs.push({ userId: uid, type: "prize", amount: payoutTon, ts: Date.now() });
+            txs.push({ userId: winUid, type: "prize", amount: payoutTon, ts: Date.now() });
             if (commissionTon > 0) {
               txs.push({ userId: "__service__", type: "commission", amount: commissionTon, ts: Date.now() });
             }
@@ -1108,7 +1110,7 @@ function startSpin() {
           const tonRemainder = Math.max(0, totalCommission - tonTaken); // ещё надо покрыть NFT-ами
 
           const payoutTon = winnerStakeTON + (netTonWin - tonTaken); // свои TON + остаток net-TON
-          balances[uid] = (balances[uid] || 0) + payoutTon;
+          balances[winUid] = (balances[winUid] || 0) + payoutTon;
           if (tonTaken > 0) {
             balances.__service__ = (balances.__service__ || 0) + tonTaken;
           }
@@ -1155,15 +1157,16 @@ function startSpin() {
             if (refundCalc < EPS) refundCalc = 0;
             refund = +refundCalc.toFixed(9);
             if (refund > 0) {
-              balances[uid] = (balances[uid] || 0) + refund;
-              txs.push({ userId: uid, type: "commission_refund", amount: refund, ts: Date.now() });
+              balances[winUid] = (balances[winUid] || 0) + refund;
+              txs.push({ userId: winUid, type: "commission_refund", amount: refund, ts: Date.now() });
+
             }
           }
           await saveBalances();
 
           // учёт транзакций TON (не пишем «Выигрыш» с нулём)
           if (payoutTon > 1e-9) {
-            txs.push({ userId: uid, type: "prize", amount: payoutTon, ts: Date.now() });
+            txs.push({ userId: winUid, type: "prize", amount: payoutTon, ts: Date.now() });
           }
           if (tonTaken > 0) {
             txs.push({ userId: "__service__", type: "commission", amount: tonTaken, ts: Date.now() });
@@ -1193,7 +1196,6 @@ function startSpin() {
        снимаем со стейка (владельцем уже является победитель).
   ─────────────────────────────────────────────────────────── */
   try {
-    const winUid = String(winner.userId);
     let touched = false;
 
     for (const p of game.players) {
@@ -1236,7 +1238,7 @@ function startSpin() {
           price: g.price, img: g.img, status: "idle"
         });
         // добавим в список полученных для сводки
-        summary.gained.push({ ownedId: g.ownedId, name: g.name, price: Number(g.price||0), img: g.img });
+        if (summary) summary.gained.push({ ownedId: g.ownedId, name: g.name, price: Number(g.price||0), img: g.img });
       }
     }
     if (touched) await saveGifts();
@@ -1581,6 +1583,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
