@@ -595,6 +595,60 @@
       <span class="nav-lbl">Доход</span>
     </button>
   </nav>
+  <!-- ▸▸▸ WIN MODAL ▸▸▸ -->
+<div id="winOverlay"
+     class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+  <div class="w-11/12 max-w-lg p-6 rounded-2xl bg-gray-800/95 ring-1 ring-amber-500/50 shadow-2xl">
+    <div class="flex items-start justify-between mb-3">
+      <h3 class="text-2xl font-semibold text-amber-300">Вы победили! 🎉</h3>
+      <button id="winClose" class="text-3xl leading-none text-gray-400 hover:text-amber-300">&times;</button>
+    </div>
+
+    <!-- Общая сводка -->
+    <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
+      <div class="p-3 rounded-xl bg-gray-700/60">
+        <div class="text-gray-400">Начислено на баланс</div>
+        <div class="mt-1 text-emerald-400 font-semibold">
+          <span id="winPayoutTon">0.00</span> TON
+          <span id="winRefundWrap" class="block text-xs text-emerald-300 mt-1 hidden">в т.ч. возврат: <span id="winRefundTon">0.00</span> TON</span>
+        </div>
+      </div>
+      <div class="p-3 rounded-xl bg-gray-700/60">
+        <div class="text-gray-400">Комиссия сервиса</div>
+        <div class="mt-1 text-rose-400 font-semibold">
+          <span id="winCommTon">0.00</span> TON
+          <span id="winCommNftWrap" class="block text-xs text-rose-300 mt-1 hidden">NFT удержано: <span id="winCommNftCount">0</span> шт. на <span id="winCommNftTon">0.00</span> TON</span>
+        </div>
+      </div>
+      <div class="p-3 rounded-xl bg-gray-700/60">
+        <div class="text-gray-400">TON-банк раунда</div>
+        <div class="mt-1 text-gray-200 font-semibold"><span id="winPotTon">0.00</span> TON</div>
+      </div>
+      <div class="p-3 rounded-xl bg-gray-700/60">
+        <div class="text-gray-400">Ваша TON-ставка</div>
+        <div class="mt-1 text-gray-200 font-semibold"><span id="winOwnTon">0.00</span> TON</div>
+      </div>
+    </div>
+
+    <!-- Полученные NFT -->
+    <div>
+      <div class="text-gray-300 mb-2">Полученные NFT</div>
+      <div id="winGainedGrid" class="grid grid-cols-4 gap-2 max-h-52 overflow-y-auto">
+        <!-- сюда прилетят иконки -->
+      </div>
+      <div id="winNoNft" class="text-gray-500 text-sm hidden">NFT не получено в этом раунде.</div>
+    </div>
+
+    <div class="mt-5 text-right">
+      <button id="winOk"
+              class="px-4 py-2 rounded-lg font-semibold bg-amber-500/90 hover:bg-amber-500 active:bg-amber-600">
+        Понятно
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
+
 
