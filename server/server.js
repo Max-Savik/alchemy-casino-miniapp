@@ -1074,7 +1074,7 @@ function startSpin() {
         // 4) NFT, которые переходят победителю (кандидаты: НЕ ton-токены, не от победителя)
         const prizeNFTCandidates = [];
         for (const p of game.players) {
-          if (String(p.userId) === uid) continue;
+          if (String(p.userId) === winUid) continue;
           for (const n of (p.nfts || [])) {
             if (String(n.id).startsWith("ton-")) continue;
             const g = gifts.find(x => x.ownedId === n.id && String(x.ownerId) === String(p.userId));
@@ -1583,6 +1583,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
