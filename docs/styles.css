@@ -11,6 +11,9 @@
     --alchemy-radius: 1rem;
    --safe-extra: 8px;                                         /* запас */
   --bottom-bar-h: calc(60px + env(safe-area-inset-bottom) + var(--safe-extra));
+  --surface: rgba(22,14,6,.55);
+  --surface-strong: rgba(22,14,6,.72);
+  --text-muted: #c9bca0;
 }
 
 
@@ -60,10 +63,10 @@ body::before {
 
 /* ===== FROSTED-GLASS PANELS ===== */
 .glass {
-    background: rgba(22, 14, 6, .55);
-    backdrop-filter: blur(8px) saturate(120%);
-   padding: 0.6rem 0.8rem;
-
+  background: var(--surface);
+  backdrop-filter: blur(10px) saturate(130%);
+  padding: .8rem 1rem;
+  border: 1px solid rgba(199,164,87,.22);
 }
 
 /* ===== GOLDEN ORNATE FRAME (с радиусом) ===== */
@@ -181,6 +184,12 @@ nav li {
   gap: 0.75rem; 
 }
 
+.alch-btn:disabled{ opacity:.6; cursor:not-allowed; filter:grayscale(.15); }
+.alch-btn.pressed{ transform: translateY(0) scale(.98); filter:brightness(.98); }
+@media (prefers-reduced-motion: reduce){
+  .alch-btn, .alch-btn::before, .alch-btn::after{ animation:none !important; transition:none !important; }
+}
+
 /* hover-эффекты оставляем прежними, их можно чуть подтянуть, если надо */
 .alch-btn:hover {
   transform: translateY(-2px) scale(1.04);
@@ -262,6 +271,9 @@ nav li {
     0 0 20px rgba(214, 176, 77, 0.35),
     0 0 40px rgba(214, 176, 77, 0.2);
 }
+/* легкое внутреннее свечение плоти котла */
+#cauldron{ border-color:#5a3702; box-shadow: inset 0 0 50px rgba(0,0,0,.65), 0 0 28px rgba(255,140,0,.28); }
+
 /* Чтобы GSAP правильно понимал, где центр SVG */
 #wheelSvg {
   transform-box: fill-box;       /* использовать «контейнер» SVG как область трансформации */
@@ -398,7 +410,17 @@ nav li {
 
 .nft-card img{ width:6rem;height:6rem;object-fit:cover;border-radius:0.5rem; } /* w-24 h-24 rounded-lg */
 
-
+/* скелет-лоадер на время подгрузки превью (используем :has) */
+.nft-card:has(.nft-img:not(.loaded))::after{
+  content:'';
+  position:absolute; inset: .5rem;
+  border-radius:.5rem;
+  background: linear-gradient(90deg, #2b3443 0%, #3b4557 20%, #2b3443 40%);
+  background-size:200% 100%;
+  animation: shimmer 1.1s linear infinite;
+  z-index: 1;
+}
+@keyframes shimmer{ to{ background-position:-200% 0; } }
 
 
 /* ── PILLS & BUTTON IN HEADER ─────────────── */
@@ -423,6 +445,19 @@ nav li {
 .wallet-btn:hover{
   transform:translateY(-1px) scale(1.04);
   filter:brightness(1.08);
+}
+
+/* тактильный press-state */
+.wallet-btn:active{ transform:translateY(0) scale(.98); filter:brightness(.98); }
+
+/* подсветка роста баланса */
+.ton-pill.bump{
+  box-shadow:0 0 0 0 rgba(253,230,138,.7);
+  animation: tonPulse .6s ease-out;
+}
+@keyframes tonPulse{
+  0%{ box-shadow:0 0 0 0 rgba(253,230,138,.7); }
+  100%{ box-shadow:0 0 0 18px rgba(253,230,138,0); }
 }
 
 /* чтобы всё влезло даже на 320 px */
@@ -496,11 +531,14 @@ header{overflow:hidden;}
   transition: color .25s;
 }
 
-/* активная вкладка — более яркий (золотой) */
-.bottom-nav .nav-link.active {
-  color: #ffda87;
+.bottom-nav .nav-link.active{
+  color:#1b1405;
+  background:linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%);
+  border-radius: 999px;
+  padding:.28rem .8rem;
+  box-shadow:0 2px 10px rgba(0,0,0,.35), 0 0 6px 2px rgba(249,212,104,.35);
 }
-
+.bottom-nav .nav-link:active{ transform: translateY(1px); }
 /* ===================================
    Иконка внутри кнопки (SVG) .nav-ico
    =================================== */
@@ -682,8 +720,8 @@ input[type=range]::-webkit-slider-runnable-track {
 
 
 #nftPickerOverlay .filter-panel{
-  background: linear-gradient(to bottom, rgba(17,24,39,.95), rgba(17,24,39,.85));
-  border: 1px solid rgba(252,211,77,.30);
+  background: linear-gradient(to bottom, rgba(17,24,39,.95), rgba(17,24,39,.88));
+  border: 1px solid rgba(252,211,77,.36);
   box-shadow: 0 10px 40px rgba(0,0,0,.6);
   border-radius: 16px;
 }
@@ -793,6 +831,15 @@ input[type=range]::-moz-range-thumb {
 #placeBet:hover{ filter:brightness(1.07); }
 #placeBet:disabled{ filter:grayscale(.5) opacity:.6; }
 
+/* компактнее заголовки внутри стеклянных карточек */
+.glass h2, .glass h3{ letter-spacing:.01em; color:#FDE68A; }
+
+/* снизим «вскипание» пара на медленных устройствах */
+@media (prefers-reduced-motion: reduce){
+  #steam, .bubble{ animation: none !important; }
+  #wheelSvg{ transition: none !important; }
+}
+
 /* Кнопочки «Показать все / Скрыть» рядом с иконками */
 #players .show-all, #players .hide-all{
   font-size:11.5px; padding:2px 6px; border-radius:9999px;
@@ -815,4 +862,5 @@ input[type=range]::-moz-range-thumb {
   box-shadow:0 6px 18px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
 }
 #placeTonBet:hover{ filter:brightness(1.07); }
+
 
