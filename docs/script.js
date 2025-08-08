@@ -229,8 +229,16 @@ let players   = [];
 let totalTON  = 0;
 let phase     = "waiting";              // waiting | countdown | spinning
 
-// Храним развернутых игроков (по имени) для истории NFT 
+// Храним развернутых игроков (по userId) для истории NFT 
 const expandedPlayers = new Set();
+
+/* ---------- маленькие утилиты безопасности ---------- */
+function escHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escAttr(s){ // для атрибутов
+  return escHtml(s).replace(/`/g,'&#96;');
+}
 
 /* ================= TON BALANCE ================= */
 let tonBalance = 0;
@@ -472,7 +480,7 @@ function cardHTML(nft, extra='') {
   const statusLabel = withdrawing ? 'Ожидает оплаты' : 'Скоро отправим';
   return `
     <div class="nft-card ${extra} ${(withdrawing||queued)?'opacity-60 pointer-events-none':''}" data-id="${nft.id}">
-      <img src="${nft.img}" alt="${nft.name}" class="nft-img" loading="lazy" decoding="async"
+      <img src="${nft.img}" alt="${escAttr(nft.name)}" class="nft-img" loading="lazy" decoding="async"
            onload="this.classList.add('loaded')" onerror="this.onerror=null;this.src='${nft.img}';">
       ${priceVal ? `<div class="price-chip">${priceStr}&nbsp;TON</div>` : ''}
       ${(withdrawing||queued)?`
@@ -483,7 +491,7 @@ function cardHTML(nft, extra='') {
           </div>
         </div>
       `:''}
-      <div class="title-badge" title="${nft.name}">${nft.name}</div>
+      <div class="title-badge" title="${escAttr(nft.name)}">${escHtml(nft.name)}</div>
     </div>`;
 }
 
@@ -577,12 +585,12 @@ function drawWheel() {
       svg.insertAdjacentHTML(
         'beforeend',
         arc(200, 200, 190, start, end, p.color)
-          .replace('<path ', '<path data-player="' + p.name + '" ')
+          .replace('<path ', '<path data-uid="' + String(p.userId) + '" ')
       );
     } else {
       svg.insertAdjacentHTML(
         'beforeend',
-        `<circle cx="200" cy="200" r="190" fill="${p.color}" data-player="${p.name}"></circle>`
+        `<circle cx="200" cy="200" r="190" fill="${p.color}" data-uid="${String(p.userId)}"></circle>`
       );
     }
 
@@ -603,7 +611,7 @@ function drawWheel() {
             fill="#000"
             text-anchor="middle"
             dominant-baseline="middle">
-        ${(p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name}
+        ${escHtml((p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name)}
       </text>
     `);
 
@@ -674,7 +682,7 @@ headerDiv.appendChild(percEl);
     iconsWrapper.className = 'flex flex-wrap items-center gap-2 mt-1';
 
     const sortedNFTs = [...p.nfts].sort((a,b) => priceForNFT(b) - priceForNFT(a));
-    const isExpanded = expandedPlayers.has(p.name);
+    const isExpanded = expandedPlayers.has(String(p.userId));
     const maxToShow  = 24;
 
     // Утилита: создаёт «нарядную» NFT-иконку с hover-ценой
@@ -746,7 +754,7 @@ wrapper.addEventListener('click', () => {
           hover:underline
         `;
         hideBtn.addEventListener('click', () => {
-          expandedPlayers.delete(p.name);
+          expandedPlayers.delete(String(p.userId));
           refreshUI();
         });
         iconsWrapper.appendChild(hideBtn);
@@ -766,7 +774,7 @@ wrapper.addEventListener('click', () => {
         hover:underline
       `;
       showAllBtn.addEventListener('click', () => {
-        expandedPlayers.add(p.name);
+        expandedPlayers.add(String(p.userId));
         refreshUI();
       });
       iconsWrapper.appendChild(showAllBtn);
@@ -951,7 +959,7 @@ async function weightedPick(seed, players) {
 
 // ==================== АНИМАЦИИ & УТИЛИТЫ ====================
 function highlightWinner(winner){
-  const slice = svg.querySelectorAll(`[data-player="${winner.name}"]`);
+  const slice = svg.querySelectorAll(`[data-uid="${String(winner.userId)}"]`);
   slice.forEach(el => {
     gsap.fromTo(el,
       { filter: 'brightness(1)' },
@@ -1434,6 +1442,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
