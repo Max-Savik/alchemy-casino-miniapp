@@ -379,11 +379,13 @@ function modelKeyFromGift(g) {
 }
 
 function priceForNFT(nft){
-  // единственный источник — floor по модели
-  const ck = colKey(nft.name);
-  const mk = modelKeyFromGift(nft);
+  // 1) серверная цена (уже model→collection→fallback)
+  if (Number(nft?.price) > 0) return Number(nft.price);
+  // 2) фолбэк: локальный model-floor (если подгружен)
+  const ck = colKey(nft?.name);
+  const mk = modelKeyFromGift(nft || {});
   const mf = modelFloor(ck, mk);
-  return mf;
+  return Number(mf) || 0;
 }
 
 
@@ -404,15 +406,15 @@ async function ensureGiftPricesClient() {
       const ck = colKey(g.name);
       const mk = modelKeyFromGift(g);
       const mf = modelFloor(ck, mk);
-      if (g.price !== mf) {
-      g.price = mf;          // даже если 0 – это именно то, что нужно
-      touched = true;
-   }
+      if (!(Number(g.price) > 0) && g.price !== mf) {
+        g.price = mf;         // допускаем 0 как "нет оценки"
+        touched = true;
+      }
     }
 
     if (touched) {
       // пересчитаем ограничители и перерисуем
-      const maxPrice = Math.max(0, ...inventory.map(x => Number(x.price) || 0));
+      const maxPrice = Math.max(0, ...inventory.map(x => priceForNFT(x)));
       const slider = document.getElementById('priceRange');
       const label  = document.getElementById('priceValue');
       if (Number.isFinite(maxPrice) && slider) {
@@ -838,13 +840,13 @@ function buildImgLink(g) {
       console.warn("Unexpected /wallet/gifts payload:", giftArr);
       throw new Error("bad gifts payload");
     }
-    // Очищаем возможные локальные остатки и берём только реальные NFT
     inventory.length = 0;
     inventory.push(
       ...giftArr.map(g => ({
         id    : g.ownedId,
         name  : g.name,
-        price : 0,                     // оценку проставим ПОСЛЕ model-floors
+        gid   : g.gid,                 // ← НУЖНО для правильного modelKey
+        price : Number(g.price || 0),  // ← Берём готовую цену с бэка
         img   : buildImgLink(g),
         staked: false,
         status: g.status || 'idle'
@@ -1086,7 +1088,8 @@ function attachGiftUpdates() {
     const rec = {
       id: g.ownedId,
       name: g.name,
-      price: Number(g.price || 0), // мог прийти 0 — добьём ниже
+      gid: g.gid,
+      price: Number(g.price || 0), // если 0 — добьём ниже ensureGiftPricesClient()
       img: g.img || buildImgLink(g), staked: false, status: g.status || 'idle'
     };
     if (i >= 0) inventory[i] = rec; else inventory.push(rec);
@@ -1404,6 +1407,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
