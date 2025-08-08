@@ -604,8 +604,6 @@ const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 app.use(apiLimiter);  
 
-app.get("/favicon.ico", (_req, res) => res.status(204).end());
-
 // ─────────── Thermos floors proxy (cache) ───────────
 const THERMOS_PROXY = "https://proxy.thermos.gifts/api/v1";
 const FLOORS_TTL_MS = 5 * 60_000; // 5 минут
@@ -746,53 +744,51 @@ app.get("/market/model-floors", async (req,res)=>{
   }
 });
 // === LOGIN ===  (вызывается телеграм-клиентом один раз)
-/* === Telegram WebApp auth verify ===
-   Проверяем подпись Telegram. Допускаем только initData, никаких raw userId. */
-const INITDATA_TTL_SEC = Number(process.env.INITDATA_TTL_SEC || 24*60*60); // 24h по умолчанию
-function verifyTelegramInitData(initDataRaw = "") {
-  if (!initDataRaw || typeof initDataRaw !== "string") {
-    throw new Error("initData required");
+/* helper: вытаскиваем user.id из initData                                 *
+ * initData — это query-string вида                                       *
+ *   "query_id=...&user=%7B%22id%22%3A123%2C...%7D&hash=..."              */
+function userIdFromInitData(str = "") {
+  try {
+    const params = new URLSearchParams(str);
+    const userJson = params.get("user");
+    if (!userJson) return "";
+    const userObj = JSON.parse(userJson);
+    return userObj?.id ? String(userObj.id) : "";
+  } catch {
+    return "";
   }
-  const params = new URLSearchParams(initDataRaw);
-  const hash = params.get("hash");
-  if (!hash) throw new Error("hash missing");
-  // Строим data_check_string
-  const pairs = [];
-  for (const [k, v] of params.entries()) {
-    if (k === "hash") continue;
-    pairs.push(`${k}=${v}`);
-  }
-  pairs.sort();
-  const dataCheckString = pairs.join("\n");
-  // Секрет — SHA256(bot_token)
-  const secret = crypto.createHash("sha256").update(BOT_TOKEN).digest();
-  const calc = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
-  if (calc !== hash) throw new Error("bad initData hash");
-  // Проверка устаревания (10 минут по умолчанию)
-  const authDate = Number(params.get("auth_date") || 0);
-  if (!authDate || Math.abs(Date.now() / 1000 - authDate) > INITDATA_TTL_SEC) {
-    throw new Error("initData expired");
-  }
-  const userJson = params.get("user");
-  if (!userJson) throw new Error("user payload missing");
-  const userObj = JSON.parse(userJson);
-  const uid = String(userObj?.id || "");
-  if (!/^\d+$/.test(uid)) throw new Error("bad user id");
-  return uid;
 }
 
 app.post("/auth/login", (req, res) => {
-  // Принимаем ТОЛЬКО initData (JSON поле или text/plain)
-  let initDataRaw = "";
-  if (typeof req.body === "string") initDataRaw = req.body;
-  else if (req.body?.initData) initDataRaw = String(req.body.initData);
-  if (!initDataRaw) return res.status(400).json({ error: "initData required" });
-  let uid;
-  try {
-    uid = verifyTelegramInitData(initDataRaw);
-  } catch (e) {
-    return res.status(401).json({ error: String(e.message || e) });
+  /*  Принимаем userId в ПЯТИ возможных вариантах:
+        ① JSON            → { "userId": 123 }
+        ② form-urlencoded → userId=123
+        ③ text/plain      → "123"
+        ④ initData (JSON) → { "initData": "query_id=...&user=%7B...%7D&..." }
+        ⑤ initData (text) → "query_id=...&user=%7B...%7D&..."               */
+
+  let uid = "";
+
+  // raw-text body
+  if (typeof req.body === "string") {
+    uid = /^\d+$/.test(req.body.trim())
+      ? req.body.trim()               // вариант ③
+      : userIdFromInitData(req.body); // вариант ⑤
   }
+
+  // JSON / form body
+  if (!uid && req.body) {
+    if (req.body.userId !== undefined) {
+      uid = String(req.body.userId).trim();           // вариант ① / ②
+    } else if (req.body.initData) {
+      uid = userIdFromInitData(String(req.body.initData)); // вариант ④
+    }
+  }
+
+  // fallback: ?userId=123 в query-string
+  if (!uid && req.query.userId) uid = String(req.query.userId).trim();
+
+  if (!/^\d+$/.test(uid)) return res.status(400).json({ error: "bad userId" });
 
   const token = jwt.sign({ uid }, JWT_SECRET, {
     expiresIn: JWT_LIFE,
@@ -1476,5 +1472,3 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
-
-
