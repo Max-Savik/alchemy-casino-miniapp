@@ -233,20 +233,12 @@ let phase     = "waiting";              // waiting | countdown | spinning
 const expandedPlayers = new Set();
 
 /* ================= TON BALANCE ================= */
-let tonBalance = null;
+let tonBalance = 0;
 async function refreshBalance(){
   try{
     const { balance=0 } = await fetchJSON(`${API_ORIGIN}/wallet/balance`);
-    const prev = tonBalance;
-    tonBalance = balance;
-    const el = document.getElementById('tonBalance');
-    el.textContent = tonBalance.toFixed(2);
-    // подсветка, если баланс вырос
-    if (prev !== null && tonBalance > prev){
-      const pill = document.getElementById('balanceBox');
-      pill.classList.add('bump');
-      setTimeout(()=>pill.classList.remove('bump'), 600);
-    }
+    tonBalance=balance;
+    document.getElementById('tonBalance').textContent=tonBalance.toFixed(2);
   }catch(e){ console.warn('Balance fetch error',e); }
 }
 
@@ -1442,15 +1434,3 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
-
-/* тактильный press-state для золотых кнопок */
-document.addEventListener('pointerdown', e=>{
-  const btn = e.target.closest('.alch-btn, .wallet-btn');
-  if (btn) btn.classList.add('pressed');
-});
-['pointerup','pointercancel','pointerleave'].forEach(ev=>{
-  document.addEventListener(ev, e=>{
-    const btn = e.target.closest('.alch-btn, .wallet-btn');
-    if (btn) btn.classList.remove('pressed');
-  }, true);
-});
