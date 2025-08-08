@@ -373,12 +373,17 @@ function modelFromName(n=""){ return n.split("-")[0].trim(); }
 
 /* ===== Helpers: model price ===== */
 function modelLabelFromGift(g) {
-  // UniqueGiftModel(name='Choco Top', …) → 'Choco Top'
-  const r = String(g?.gid || "").match(/name=['"]([^'"]+)['"]/i);
+  // gid может приходить как:
+  //  • строка repr: "UniqueGiftModel(name='Choco Top', ...)"
+  //  • просто название модели: "Choco Top"
+  const raw = String(g?.gid || "");
+  const r = raw.match(/name=['"]([^'"]+)['"]/i);
   if (r) return r[1];
-  // fallback: всё до первого дефиса в gift.name
+  if (raw) return raw;                                    // ← главный фикс
+  // крайний фолбэк: берём «коллекцию» из имени (до дефиса)
   return (g?.name || "").split("-")[0].trim();
 }
+
 function modelKeyFromGift(g) {
   return normalizeKey(modelLabelFromGift(g));
 }
@@ -1429,6 +1434,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
