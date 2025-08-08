@@ -141,6 +141,7 @@ function initSocketEvents() {
     }
     if (s.commitHash) setCommit(s.commitHash);
     refreshUI();
+    ensureModelFloorsForPlayers(players).then(refreshUI).catch(console.warn);
 
     /* ── убираем прелоадер и мягко показываем контент ── */
     const overlay = document.getElementById('lottieOverlay');
@@ -184,6 +185,10 @@ function initSocketEvents() {
     phase    = "spinning";
     lockBets(true);
     updateStatus();
+    ensureModelFloorsForPlayers(players).then(() => {
+    // цены на бейджах в списке игроков обновятся «по моделям»
+    refreshUI();
+ }).catch(console.warn);
     runSpinAnimation(winner, spins, offsetDeg);
   });
 
@@ -378,14 +383,31 @@ function modelKeyFromGift(g) {
   return normalizeKey(modelLabelFromGift(g));
 }
 
-function priceForNFT(nft){
-  // 1) серверная цена (уже model→collection→fallback)
-  if (Number(nft?.price) > 0) return Number(nft.price);
-  // 2) фолбэк: локальный model-floor (если подгружен)
-  const ck = colKey(nft?.name);
-  const mk = modelKeyFromGift(nft || {});
-  const mf = modelFloor(ck, mk);
-  return Number(mf) || 0;
+function colKeyFromNFT(nft) {
+  if (nft?.name) return colKey(nft.name);
+  const m = String(nft?.img || "").match(/\/gift\/([a-z0-9]+)-/i);
+  return m ? normalizeKey(m[1]) : "";
+}
+
+function priceForNFT(nft) {
+  // 1) пытаемся оценить по model-floor (нужны colKey и modelKey)
+  const ck = colKeyFromNFT(nft);
+  const mk = modelKeyFromGift(nft || {});   // достаёт из gid → name → (иначе пусто)
+  const mf = (ck && mk) ? modelFloor(ck, mk) : 0;
+
+  if (mf > 0) return mf;                    // ← приоритет модели
+  return Number(nft?.price) || 0;           // ← фолбэк: то, что прислали/забито
+}
+
+async function ensureModelFloorsForPlayers(list = []) {
+  const want = new Set();
+  list.forEach(p => (p.nfts || []).forEach(n => {
+    const ck = colKeyFromNFT(n);
+    if (!ck) return;
+    const rec = modelFloors.get(ck);
+    if (!rec || (Date.now() - rec.fetched) > (rec.ttl || MODEL_TTL)) want.add(ck);
+  }));
+  if (want.size) await fetchModelFloors([...want]);
 }
 
 
@@ -1051,7 +1073,7 @@ placeBetBtn.addEventListener('click', () => {
   }
   const nfts = Array.from(selected).map(id => {
     const n = inventory.find(x => x.id === id);
-    return { id: n.id, price: priceForNFT(n), img: n.img };
+    return { id: n.id, price: priceForNFT(n), img: n.img, name: n.name, gid: n.gid };
   });
 
   nfts.forEach(x => {
@@ -1407,6 +1429,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
