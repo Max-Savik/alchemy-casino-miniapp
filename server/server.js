@@ -1140,8 +1140,10 @@ function startSpin() {
           }
           await saveBalances();
 
-          // учёт транзакций TON
-          txs.push({ userId: uid, type: "prize", amount: payoutTon, ts: Date.now() });
+          // учёт транзакций TON (не пишем «Выигрыш» с нулём)
+          if (payoutTon > 1e-9) {
+            txs.push({ userId: uid, type: "prize", amount: payoutTon, ts: Date.now() });
+          }
           if (tonTaken > 0) {
             txs.push({ userId: "__service__", type: "commission", amount: tonTaken, ts: Date.now() });
           }
@@ -1546,5 +1548,6 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
