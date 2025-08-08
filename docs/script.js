@@ -277,10 +277,29 @@ const tonAmountInput = document.getElementById('tonAmount');
 const placeTonBetBtn = document.getElementById('placeTonBet');
 const depositTONBtn = document.getElementById('depositTON');
 
+/* ===== helpers: open/close TON picker with proper a11y ===== */
+function openTonPicker(){
+  tonPickerOverlay.classList.add('show');
+  tonPickerOverlay.setAttribute('aria-hidden','false');
+  // небольшая задержка для корректного фокуса после анимации
+  setTimeout(()=>tonAmountInput?.focus(), 10);
+}
+function closeTonPicker(){
+  // сначала убираем фокус, затем скрываем — иначе warning про aria-hidden
+  if (document.activeElement && tonPickerOverlay.contains(document.activeElement)){
+    document.activeElement.blur();
+  }
+  tonPickerOverlay.classList.remove('show');
+  tonPickerOverlay.setAttribute('aria-hidden','true');
+  tonAmountInput.value = '';
+  placeTonBetBtn.disabled = true;
+}
+
 /* === Fair Play UI === */
 const fairBtn      = document.getElementById('fairBtn');
 const fairPanel    = document.getElementById('fairPanel');
 const commitFull   = document.getElementById('commitFull');
+const commitShortEl= document.getElementById('commitShort');
 
 // Имя пользователя из Telegram
 const tgUser = window?.Telegram?.WebApp?.initDataUnsafe?.user || {};
@@ -629,6 +648,10 @@ fairBtn.onclick = () => {
 function setCommit(hash) {
   if (!hash) return;
   commitFull.textContent  = hash;
+  // короткий хэш в кнопке (для удобства)
+  if (commitShortEl){
+    commitShortEl.textContent = (hash.slice(0,8) + '…');
+  }
 }
 
 
@@ -699,6 +722,12 @@ function makeNFTIcon(nftObj) {
   img.src = nftObj.img;
   img.alt = nftObj.id;
   img.className = 'w-full h-full object-cover';
+  // ускоряем и даём фолбэк на случай сетевых сбоев
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.addEventListener('error', () => {
+    img.onerror = null; img.src = nftObj.img;
+  });
   wrapper.appendChild(img);
 
   const priceBadge = document.createElement('div');
@@ -1144,17 +1173,10 @@ initSocketEvents = function() {
   attachGiftUpdates();
 };
 /* ======== Открываем TON-пикер ======== */
-depositTONBtn.addEventListener('click', () => {
-  tonPickerOverlay.classList.add('show');
-  tonAmountInput.value = '';
-  placeTonBetBtn.disabled = true;
-});
+depositTONBtn.addEventListener('click', openTonPicker);
 
 /* ======== Закрываем TON-пикер без ставки ======== */
-closeTonPickerBtn.addEventListener('click', () => {
-  tonPickerOverlay.classList.remove('show');
-  tonAmountInput.value = '';
-});
+closeTonPickerBtn.addEventListener('click', closeTonPicker);
 
 /* ======== Проверяем ввод суммы TON ======== */
 tonAmountInput.addEventListener('input', () => {
@@ -1179,9 +1201,8 @@ socket.emit('placeBet', { name: myName, tonAmount: amount });
 tonBalance -= amount;
 document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
 
-// 4) Закрываем модалку
-tonPickerOverlay.classList.remove('show');
-tonAmountInput.value = '';
+// 4) Закрываем модалку корректно (сброс + aria)
+closeTonPicker();
 
 });   // ←← закрываем функцию и addEventListener
 const toggleBtn = document.getElementById('toggleSort');
@@ -1442,6 +1463,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
