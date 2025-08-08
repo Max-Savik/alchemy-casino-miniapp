@@ -604,6 +604,8 @@ const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 app.use(apiLimiter);  
 
+app.get("/favicon.ico", (_req, res) => res.status(204).end());
+
 // ─────────── Thermos floors proxy (cache) ───────────
 const THERMOS_PROXY = "https://proxy.thermos.gifts/api/v1";
 const FLOORS_TTL_MS = 5 * 60_000; // 5 минут
@@ -746,6 +748,7 @@ app.get("/market/model-floors", async (req,res)=>{
 // === LOGIN ===  (вызывается телеграм-клиентом один раз)
 /* === Telegram WebApp auth verify ===
    Проверяем подпись Telegram. Допускаем только initData, никаких raw userId. */
+const INITDATA_TTL_SEC = Number(process.env.INITDATA_TTL_SEC || 24*60*60); // 24h по умолчанию
 function verifyTelegramInitData(initDataRaw = "") {
   if (!initDataRaw || typeof initDataRaw !== "string") {
     throw new Error("initData required");
@@ -767,7 +770,7 @@ function verifyTelegramInitData(initDataRaw = "") {
   if (calc !== hash) throw new Error("bad initData hash");
   // Проверка устаревания (10 минут по умолчанию)
   const authDate = Number(params.get("auth_date") || 0);
-  if (!authDate || Math.abs(Date.now() / 1000 - authDate) > 600) {
+  if (!authDate || Math.abs(Date.now() / 1000 - authDate) > INITDATA_TTL_SEC) {
     throw new Error("initData expired");
   }
   const userJson = params.get("user");
@@ -1473,4 +1476,5 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
