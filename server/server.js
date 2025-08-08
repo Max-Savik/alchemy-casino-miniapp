@@ -1037,56 +1037,118 @@ function startSpin() {
       seed: game.seed            // теперь раскрываем сид
      });
 
-      /* ───────── начисляем приз (только TON) ───────── */
+      /* ───────── начисляем приз и комиссию (TON + NFT) ───────── */
       const uid = String(winner.userId);
       if (uid) {
-        /* 1) Общий TON-банк текущего раунда */
+        // 1) Общий TON-банк раунда
         const potTON = game.players.reduce(
-          (sum, p) =>
-            sum +
-            p.nfts
-              .filter(n => n.id.startsWith("ton-"))
-              .reduce((s, n) => s + n.price, 0),
+          (sum, p) => sum + p.nfts.filter(n => n.id.startsWith("ton-")).reduce((s, n) => s + n.price, 0),
           0
         );
+        // 2) Личный TON победителя
+        const winnerStakeTON = winner.nfts
+          .filter(n => n.id.startsWith("ton-"))
+          .reduce((s, n) => s + n.price, 0);
+        // 3) Чужой TON, выигранный победителем (net-win по тону)
+        const netTonWin = Math.max(0, potTON - winnerStakeTON);
 
-        if (potTON > 0) {
-          /* 2) TON, внесённый победителем лично */
-          const winnerStake = winner.nfts
-            .filter(n => n.id.startsWith("ton-"))
-            .reduce((s, n) => s + n.price, 0);
+        // 4) NFT, которые переходят победителю (кандидаты: НЕ ton-токены, не от победителя)
+        const prizeNFTCandidates = [];
+        for (const p of game.players) {
+          if (String(p.userId) === uid) continue;
+          for (const n of (p.nfts || [])) {
+            if (String(n.id).startsWith("ton-")) continue;
+            const g = gifts.find(x => x.ownedId === n.id && String(x.ownerId) === String(p.userId));
+            if (g) prizeNFTCandidates.push({ gift: g, price: Number(n.price || g.price || 0) });
+          }
+        }
+        const totalPrizeNFTValue = prizeNFTCandidates.reduce((s, it) => s + (Number(it.price) || 0), 0);
 
-          /* 3) TON других игроков – только с него берём комиссию */
-          const othersStake = potTON - winnerStake;
+        // 5) Если приз состоит только из TON → старая логика (5% от net-TON, без учёта своих TON)
+        if (totalPrizeNFTValue <= 0) {
+          if (potTON > 0) {
+            const commissionTon = netTonWin * COMMISSION_RATE;
+            const payoutTon     = potTON - commissionTon; // = свои TON + (net-TON − комиссия)
 
-          const commission = othersStake * COMMISSION_RATE;   // 0, если играл один
-          const payout     = potTON - commission;            // сумма, уходящая победителю
+            balances[uid] = (balances[uid] || 0) + payoutTon;
+            balances.__service__ = (balances.__service__ || 0) + commissionTon;
+            await saveBalances();
 
-          /* 4) Увеличиваем баланс победителя */
-          balances[uid] = (balances[uid] || 0) + payout;
+            txs.push({ userId: uid, type: "prize", amount: payoutTon, ts: Date.now() });
+            if (commissionTon > 0) {
+              txs.push({ userId: "__service__", type: "commission", amount: commissionTon, ts: Date.now() });
+            }
+            await saveTx();
+          }
+        } else {
+          // 6) Смешанный приз (TON + NFT): комиссия = 5% от (net-TON + NFT-стоимость)
+          const totalCommission = (netTonWin + totalPrizeNFTValue) * COMMISSION_RATE;
+          // 6a) Сначала удерживаем из net-TON (не трогаем свои TON)
+          const tonTaken = Math.min(totalCommission, netTonWin);
+          const tonRemainder = Math.max(0, totalCommission - tonTaken); // ещё надо покрыть NFT-ами
 
-          /* 5) Накапливаем комиссию на спец-счёте '__service__'
-                (можно выводить админ-роутом точно так же, как пользователи) */
-          balances.__service__ = (balances.__service__ || 0) + commission;
+          const payoutTon = winnerStakeTON + (netTonWin - tonTaken); // свои TON + остаток net-TON
+          balances[uid] = (balances[uid] || 0) + payoutTon;
+          if (tonTaken > 0) {
+            balances.__service__ = (balances.__service__ || 0) + tonTaken;
+          }
+
+          // 6b) Если нужно — удерживаем NFT на сумму не меньше остатка комиссии (лучшая подгонка)
+          let withheld = [];
+          let withheldSum = 0;
+          if (tonRemainder > 0.0000001 && prizeNFTCandidates.length) {
+            // попытка точного/почти точного покрытия: одиночка → пары → жадно по возрастанию
+            const items = [...prizeNFTCandidates];
+            // одиночка
+            let best = null;
+            for (const it of items) {
+              if (it.price >= tonRemainder && (!best || it.price < best.price)) best = it;
+            }
+            if (best && Math.abs(best.price - tonRemainder) < 1e-9) {
+              withheld = [best];
+            } else {
+              // пары (если массив не слишком большой)
+              if (!best && items.length <= 50) {
+                let over = Infinity, pair = null;
+                for (let i = 0; i < items.length; i++) {
+                  for (let j = i + 1; j < items.length; j++) {
+                    const s = items[i].price + items[j].price;
+                    if (s >= tonRemainder && s < over) { over = s; pair = [items[i], items[j]]; }
+                  }
+                }
+                if (pair) withheld = pair;
+              }
+              // жадно снизу, если ещё не подобрали
+              if (!withheld.length) {
+                items.sort((a, b) => a.price - b.price);
+                let sum = 0, pick = [];
+                for (const it of items) { pick.push(it); sum += it.price; if (sum >= tonRemainder) break; }
+                withheld = pick;
+              }
+            }
+            withheldSum = withheld.reduce((s, it) => s + (Number(it.price) || 0), 0);
+            // если перебрали — вернём разницу в TON на баланс победителя
+            const refund = Math.max(0, withheldSum - tonRemainder);
+            if (refund > 0) {
+              balances[uid] = (balances[uid] || 0) + refund;
+              txs.push({ userId: uid, type: "commission_refund", amount: refund, ts: Date.now() });
+            }
+          }
           await saveBalances();
 
-          /* записываем prize-транзакцию */
-          txs.push({
-            userId : uid,
-            type   : "prize",
-            amount : payout,
-            ts     : Date.now()
-          });
-          /* отдельная запись о комиссии (пригодится для учёта) */
-          if (commission > 0) {
-            txs.push({
-              userId : "__service__",
-              type   : "commission",
-              amount : commission,
-              ts     : Date.now()
-            });
+          // учёт транзакций TON
+          txs.push({ userId: uid, type: "prize", amount: payoutTon, ts: Date.now() });
+          if (tonTaken > 0) {
+            txs.push({ userId: "__service__", type: "commission", amount: tonTaken, ts: Date.now() });
+          }
+          if (withheldSum > 0) {
+            txs.push({ userId: "__service__", type: "commission_nft", amount: withheldSum, ts: Date.now(),
+                       meta: { count: withheld.length } });
           }
           await saveTx();
+
+          // передадим список удержанных NFT дальше (в блок переноса подарков)
+          winner.__withheldIds = new Set(withheld.map(it => it.gift.ownedId));
         }
       }
   /* ──────────────────────────────────────────────────────────
@@ -1117,17 +1179,25 @@ function startSpin() {
           continue;
         }
 
-        // перенос права собственности
+        // если этот подарок удержан как комиссия — уходит сервису
+        const isWithheld = winner.__withheldIds && winner.__withheldIds.has(g.ownedId);
+        if (isWithheld) {
+          g.ownerId = "__service__";
+          g.staked  = false;
+          g.status  = "idle";
+          touched   = true;
+          // проигравшему сообщаем, что подарок ушёл
+          io.to("u:" + uid).emit("giftUpdate", { ownedId: g.ownedId, status: "sent" });
+          // победителю НИЧЕГО не шлём по этому подарку
+          continue;
+        }
+
+        // обычный перенос победителю
         g.ownerId = winUid;
         g.staked  = false;
         g.status  = "idle";
         touched   = true;
-
-        // уведомляем проигравшего — убрать из инвентаря
-        io.to("u:" + uid).emit("giftUpdate", {
-          ownedId: g.ownedId, status: "sent"
-        });
-        // уведомляем победителя — добавить в инвентарь
+        io.to("u:" + uid).emit("giftUpdate", { ownedId: g.ownedId, status: "sent" });
         io.to("u:" + winUid).emit("giftGain", {
           gid: g.gid, ownedId: g.ownedId, name: g.name,
           price: g.price, img: g.img, status: "idle"
@@ -1472,3 +1542,4 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
