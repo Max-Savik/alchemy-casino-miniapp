@@ -211,6 +211,46 @@ function initSocketEvents() {
       if (!panelTx.classList.contains('hidden')) loadTxHistory({ silent:true });
     }
   });
+  /* 🎉 Персональная сводка победителя */
+  socket.on("winSummary", d => {
+    // d: { payoutTon, tonCommission, commissionNftSum, commissionNftCount, refundTon, gained[], potTon, winnerStakeTon }
+    const fix = n => Number(n||0);
+    elPayoutTon.textContent  = fix(d.payoutTon).toFixed(2);
+    elRefundTon.textContent  = fix(d.refundTon).toFixed(2);
+    elCommTon.textContent    = fix(d.tonCommission).toFixed(2);
+    elCommNftTon.textContent = fix(d.commissionNftSum).toFixed(2);
+    elCommNftCount.textContent = fix(d.commissionNftCount);
+    elPotTon.textContent     = fix(d.potTon).toFixed(2);
+    elOwnTon.textContent     = fix(d.winnerStakeTon).toFixed(2);
+
+    // Показ/скрытие подпунктов
+    elRefundWrap.classList.toggle('hidden', !(fix(d.refundTon) > 0));
+    elCommNftWrap.classList.toggle('hidden', !(fix(d.commissionNftSum) > 0));
+
+    // NFT миниатюры
+    elGainedGrid.innerHTML = '';
+    const gained = Array.isArray(d.gained) ? d.gained : [];
+    if (gained.length) {
+      gained.forEach(nft => {
+        const div = document.createElement('div');
+        div.className = 'relative w-16 h-16 rounded-md overflow-hidden ring-1 ring-gray-600';
+        div.title = `${nft.name} — ${(fix(nft.price)).toFixed(2)} TON`;
+        div.innerHTML = `
+          <img src="${nft.img}" alt="${nft.name}" class="w-full h-full object-cover" />
+          <div class="absolute bottom-0 left-0 right-0 text-[10px] text-amber-200 bg-gray-900/75 text-center px-1">
+            ${(fix(nft.price)).toFixed(2)}
+          </div>`;
+        elGainedGrid.appendChild(div);
+      });
+      elNoNft.classList.add('hidden');
+    } else {
+      elNoNft.classList.remove('hidden');
+    }
+
+    // Показать модалку
+    winOverlay.classList.remove('hidden');
+    winOverlay.classList.add('flex');
+  });
 }
 const inventory = [];
 // Состояние фильтров
@@ -256,6 +296,22 @@ const closePickerBtn = document.getElementById('closePicker');
 const placeBetBtn    = document.getElementById('placeBet');
 const nftPicker      = document.getElementById('nftPicker');
 const historyBtn     = document.getElementById('historyBtn');
+
+/* Win modal */
+const winOverlay     = document.getElementById('winOverlay');
+const winCloseBtn    = document.getElementById('winClose');
+const winOkBtn       = document.getElementById('winOk');
+const elPayoutTon    = document.getElementById('winPayoutTon');
+const elRefundWrap   = document.getElementById('winRefundWrap');
+const elRefundTon    = document.getElementById('winRefundTon');
+const elCommTon      = document.getElementById('winCommTon');
+const elCommNftWrap  = document.getElementById('winCommNftWrap');
+const elCommNftCount = document.getElementById('winCommNftCount');
+const elCommNftTon   = document.getElementById('winCommNftTon');
+const elPotTon       = document.getElementById('winPotTon');
+const elOwnTon       = document.getElementById('winOwnTon');
+const elGainedGrid   = document.getElementById('winGainedGrid');
+const elNoNft        = document.getElementById('winNoNft');
 
 const gameSection    = document.getElementById('gameSection');
 const marketSection  = document.getElementById('marketSection');
@@ -1411,6 +1467,14 @@ historyBtn.addEventListener('click', () => {
   window.location.href = 'history.html';
 });
 
+// Закрытие модалки победы
+function closeWinModal(){
+  winOverlay.classList.add('hidden');
+  winOverlay.classList.remove('flex');
+}
+if (winCloseBtn) winCloseBtn.addEventListener('click', closeWinModal);
+if (winOkBtn)    winOkBtn.addEventListener('click', closeWinModal);
+
 // ======================= BUBBLES/STEAM =======================
 const cauldron = document.getElementById('cauldron');
 function spawnBubble(){
@@ -1455,5 +1519,6 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
