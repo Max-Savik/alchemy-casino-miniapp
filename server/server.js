@@ -302,7 +302,7 @@ wallet.get("/gifts", async (req, res) => {
       .map(g => {
         const key       = normalizeKey(g.name || "");
         const colName   = keyToName[key];            // «DeskCalendar», «Plush Pepe» …
-        const modelKey  = normalizeKey((g.name || "").split("-")[0]);
+        const modelKey  = normalizeKey(modelLabelFromGiftObj(g));
 
         /* ── приоритет: floor по модели → floor по коллекции ── */
         let modelFloorTon = 0;
@@ -611,6 +611,15 @@ const MODEL_FLOORS_TTL_MS = 5 * 60_000; // 5 минут для моделей
 
 function normalizeKey(s=""){
   return String(s).toLowerCase().replace(/[^a-z]+/g,"");
+}
+
+// Извлекаем «человеческое» имя модели из g.gid или, если его нет, из g.name
+function modelLabelFromGiftObj(g = {}) {
+  const raw = String(g?.gid || "");
+  const m = raw.match(/name=['"]([^'"]+)['"]/i);
+  if (m) return m[1];
+  if (raw) return raw;                                    // ← главный фикс
+  return (String(g?.name || "").split("-")[0] || "").trim();
 }
 
 let thermosFloorsCache = { fetchedAt: 0, collections: {} }; // { key: { name, floorTon } }
@@ -1463,6 +1472,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
