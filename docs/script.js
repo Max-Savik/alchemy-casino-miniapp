@@ -52,7 +52,7 @@ async function postJSON(url, data, { _retry } = {}){
     method: 'POST',
     headers:{
       'Content-Type':'application/json',
-      ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+      ...(jwtToken && { 'Authorization': 'Bearer '+jwtToken })
     },
     body: JSON.stringify(data),
     credentials: "include" 
@@ -102,15 +102,15 @@ var cumulativeRotation = 0;
 // 1. Подключаемся к бекенду
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 let socket;   
-// Храним JWT и прокидываем в Authorization, чтобы не зависеть от 3rd-party cookie
-let jwtToken = null;
+// JWT, сохранённый локально, если кука не работает
+let jwtToken = localStorage.getItem("jwt") || null;
 
 async function fetchJSON(url, opts={}, { _retry } = {}) {
   const res = await fetch(url, {
     credentials: "include",
     headers: {
       ...(opts.headers||{}),
-      ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+      ...(jwtToken ? { 'Authorization': 'Bearer '+jwtToken } : {})
     }
   });
   if (res.status === 401 && !_retry) {
@@ -818,7 +818,8 @@ clearFiltersBtn.addEventListener('click', () => {
 
 async function ensureJwt(forceRefresh = false) {
   const hasSid = document.cookie.split("; ").some(c => c.startsWith("sid="));
-  if (hasSid && jwtToken && !forceRefresh) return;
+  if (hasSid && !forceRefresh) return;
+  if (!forceRefresh && jwtToken) return;
 
   // Логинимся строго по подписанным данным Telegram
   const initDataRaw = window?.Telegram?.WebApp?.initData;
@@ -831,16 +832,14 @@ async function ensureJwt(forceRefresh = false) {
     body        : JSON.stringify({ initData: initDataRaw })
   });
   if (!r.ok) {
+    // чистим локальный мусор и падаем
+    localStorage.removeItem("jwt");
     jwtToken = null;
     throw new Error(`login failed ${r.status}`);
   }
-  // читаем выданный токен и используем как Bearer
-  try {
-    const j = await r.json();
-    if (j?.token) jwtToken = j.token;
-  } catch (_) {
-    // сервер может вернуть пустое тело — не страшно, остаёмся на cookie
-  }
+  const j = await r.json();
+  jwtToken = j.token || null;
+  if (jwtToken) localStorage.setItem("jwt", jwtToken);
 }                            
 
 /* === Картинка подарка — ровно как в профиле === */
@@ -904,10 +903,13 @@ function buildImgLink(g) {
     console.warn("Gift fetch error", e);
   }                                 
 
-  // пробрасываем токен в сокет, чтобы авторизация не зависела от cookie
+  const token = (document.cookie.split("; ")
+      .find(c => c.startsWith("sid=")) || "")
+      .split("=")[1] || jwtToken;
+
   socket = io(API_ORIGIN, {
-    withCredentials: true,
-    auth: jwtToken ? { token: jwtToken } : undefined
+    auth: { token },
+    withCredentials: true
   });
   initSocketEvents();
   refreshBalance();
@@ -1432,5 +1434,3 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
-
-
