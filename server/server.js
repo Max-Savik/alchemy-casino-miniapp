@@ -603,7 +603,6 @@ app.use(express.json());
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 app.use(apiLimiter);  
-app.disable('x-powered-by');
 
 // ─────────── Thermos floors proxy (cache) ───────────
 const THERMOS_PROXY = "https://proxy.thermos.gifts/api/v1";
@@ -745,7 +744,7 @@ app.get("/market/model-floors", async (req,res)=>{
   }
 });
 // === LOGIN ===  (вызывается телеграм-клиентом один раз)
-/* helper: вытаскиваем user.id из initData + проверяем подпись            *
+/* helper: вытаскиваем user.id из initData                                 *
  * initData — это query-string вида                                       *
  *   "query_id=...&user=%7B%22id%22%3A123%2C...%7D&hash=..."              */
 function userIdFromInitData(str = "") {
@@ -760,52 +759,35 @@ function userIdFromInitData(str = "") {
   }
 }
 
-function isValidTelegramInitData(str=""){
-  try{
-    const params = new URLSearchParams(str);
-    const hash = params.get("hash");
-    if (!hash) return false;
-    params.delete("hash");
-    // Сортируем по ключу и собираем data_check_string
-    const dataCheck = [...params.entries()]
-      .sort(([a],[b]) => a.localeCompare(b))
-      .map(([k,v]) => `${k}=${v}`)
-      .join('\n');
-    // secret_key = sha256(BOT_TOKEN)
-    const secret = crypto.createHash('sha256').update(BOT_TOKEN).digest();
-    const check  = crypto.createHmac('sha256', secret).update(dataCheck).digest('hex');
-    const a = Buffer.from(check, 'hex');
-    const b = Buffer.from(hash, 'hex');
-    return a.length===b.length && crypto.timingSafeEqual(a,b);
-  }catch{ return false; }
-}
-
-function sanitizeUserLabel(s){
-  const raw = String(s || "").trim();
-  // no control chars, cut dangerous symbols, limit length
-  return raw.replace(/[^\p{L}\p{N}\s._\-@]/gu, '').slice(0, 32) || 'Guest';
-}
-
-
 app.post("/auth/login", (req, res) => {
-  // ✅ Теперь логин ТОЛЬКО по подписанному Telegram initData
-  // (опциональный лаз для дев-окружения)
-  const devPass = process.env.ALLOW_DEV_INSECURE_LOGIN === '1';
+  /*  Принимаем userId в ПЯТИ возможных вариантах:
+        ① JSON            → { "userId": 123 }
+        ② form-urlencoded → userId=123
+        ③ text/plain      → "123"
+        ④ initData (JSON) → { "initData": "query_id=...&user=%7B...%7D&..." }
+        ⑤ initData (text) → "query_id=...&user=%7B...%7D&..."               */
 
-  let initDataRaw = "";
+  let uid = "";
+
+  // raw-text body
   if (typeof req.body === "string") {
-    initDataRaw = req.body.trim();
-  } else if (req.body?.initData) {
-    initDataRaw = String(req.body.initData);
-  } else if (typeof req.body === 'object' && Object.keys(req.body).length===0 && req.query?.initData){
-    initDataRaw = String(req.query.initData);
+    uid = /^\d+$/.test(req.body.trim())
+      ? req.body.trim()               // вариант ③
+      : userIdFromInitData(req.body); // вариант ⑤
   }
 
-  if (!initDataRaw || !isValidTelegramInitData(initDataRaw)) {
-    return res.status(400).json({ error: "bad initData" });
+  // JSON / form body
+  if (!uid && req.body) {
+    if (req.body.userId !== undefined) {
+      uid = String(req.body.userId).trim();           // вариант ① / ②
+    } else if (req.body.initData) {
+      uid = userIdFromInitData(String(req.body.initData)); // вариант ④
+    }
   }
 
-  const uid = userIdFromInitData(initDataRaw);
+  // fallback: ?userId=123 в query-string
+  if (!uid && req.query.userId) uid = String(req.query.userId).trim();
+
   if (!/^\d+$/.test(uid)) return res.status(400).json({ error: "bad userId" });
 
   const token = jwt.sign({ uid }, JWT_SECRET, {
@@ -1183,7 +1165,6 @@ history.push({
 function adminAuth(req, res, next) {
   const token = req.get('X-Admin-Token');
   if (token !== ADMIN_TOKEN) return res.sendStatus(403);
-  if (req.get('origin')) return res.sendStatus(403);
   next();
 }
 /* ───── Admin router (вынесен) ───── */
@@ -1259,58 +1240,19 @@ socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
       price: tonAmount
     });
   }
-  // 1) Дедуп по id и жёсткий пересчёт цены на сервере --------------
-  const seen = new Set();
-  const reqIds = [];
-  for (const it of Array.isArray(nfts) ? nfts : []) {
-    const id = String(it.id || "");
-    if (!id || seen.has(id)) continue;
-    seen.add(id);
-    reqIds.push(id);
-  }
-  // Сначала гарантируем свежие кэши для нужных коллекций
-  const floors = await ensureFloorsFresh();
-  const keyToName = {};
-  const wantNames = new Set();
-  for (const id of reqIds) {
-    const g = gifts.find(x => x.ownedId === id && x.ownerId === userId && !x.staked);
-    if (!g) continue;
-    const key = normalizeKey(g.name || "");
-    const col = floors.collections[key];
-    if (col?.name) { keyToName[key]=col.name; wantNames.add(col.name); }
-  }
-  if (wantNames.size) await ensureModelFloorsForCollections([...wantNames]);
-
-  function calcGiftPriceTonServer(g){
-    const key = normalizeKey(g.name || "");
-    const col = floors.collections[key];
-    let price = Number(g.price || 0) || 0;
-    if (col?.name) {
-      const mk = normalizeKey(modelLabelFromGiftObj(g));
-      const models = thermosModelFloors.byCollection[col.name]?.models || {};
-      const modelFloorTon = Number(models[mk]?.floorTon || 0);
-      const collFloorTon  = Number(col.floorTon || 0);
-      const floorTon      = modelFloorTon > 0 ? modelFloorTon : collFloorTon;
-      if (!(price > 0)) price = floorTon;
-    }
-    return Number(price || 0);
-  }
-
-  const nftsServer = [];
-  for (const id of reqIds) {
-    const g = gifts.find(x => x.ownedId === id && x.ownerId === userId && !x.staked);
-    if (!g) continue;
-    const priceTon = calcGiftPriceTonServer(g);
-    g.staked = true; // блокируем повторный стейк
-    nftsServer.push({ id: g.ownedId, img: g.img, price: priceTon, name: g.name, gid: g.gid });
-  }
+  // 1) Берём подарки из серверного хранилища ---------------------
+  nfts = nfts.map(obj => {
+    const g = gifts.find(x => x.ownedId === obj.id && x.ownerId === userId && !x.staked);
+    if (g) { g.staked = true; }           // помечаем занятыми
+    return obj;
+  });
   await saveGifts();
 
   let player = game.players.find(p => p.userId === userId);
   if (!player) {
     player = {
       userId,
-      name: sanitizeUserLabel(name),
+      name,
       value: 0,
       color: palette[game.players.length % palette.length],
       nfts: []
@@ -1318,15 +1260,11 @@ socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
     game.players.push(player);
   }
   // итоговая стоимость ставки (NFT-ы уже содержат TON-токен, если он был)
-  const betValue = nftsServer.reduce((s, x) => s + Number(x.price||0), 0);
-  if (betValue <= 0 && tonAmount <= 0){
-    // ничего не поставили — не двигаем раунд
-    return;
-  }
+  const betValue = nfts.reduce((s, x) => s + x.price, 0);
 
   player.value  += betValue;
   game.totalTON += betValue;
-  nftsServer.forEach(x => player.nfts.push(x));
+  nfts.forEach(x => player.nfts.push(x));
 
   io.emit("state", game);
   maybeStartCountdown();
@@ -1534,8 +1472,3 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
-
-
-
-
-
