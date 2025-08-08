@@ -158,6 +158,20 @@
   font-family:'JetBrains Mono','Courier New',monospace;
   font-variant-numeric:tabular-nums;
 }
+/* ===== TON Picker visibility (fix clicks & a11y) ===== */
+#tonPickerOverlay{
+  /* дублируем сюда стартовое состояние tailwind-классов,
+     чтобы можно было переопределить специфичным селектором ниже */
+  opacity: 0;
+  pointer-events: none;
+}
+#tonPickerOverlay.show{
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+#tonPickerOverlay.show [role="dialog"]{
+  transform: scale(1) !important; /* плавно из scale-95 */
+}
 </style>
 
 </head>
@@ -583,6 +597,7 @@
   </nav>
 </body>
 </html>
+
 
 
 
