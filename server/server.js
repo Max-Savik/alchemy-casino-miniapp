@@ -1128,7 +1128,11 @@ function startSpin() {
             }
             withheldSum = withheld.reduce((s, it) => s + (Number(it.price) || 0), 0);
             // если перебрали — вернём разницу в TON на баланс победителя
-            const refund = Math.max(0, withheldSum - tonRemainder);
+           // кламп с эпсилон, чтобы не уйти в отрицательное из-за флоатов
+            const EPS = 1e-9;
+            let refund = withheldSum - tonRemainder;
+            if (refund < EPS) refund = 0;
+            refund = +refund.toFixed(9);
             if (refund > 0) {
               balances[uid] = (balances[uid] || 0) + refund;
               txs.push({ userId: uid, type: "commission_refund", amount: refund, ts: Date.now() });
@@ -1542,4 +1546,5 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
