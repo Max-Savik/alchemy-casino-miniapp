@@ -179,13 +179,53 @@ export default function createAdminRouter(opts) {
   // ────────────────────────────────────────────────────────────────
 
   /* 13) GET /admin/commission
-         👉  { balance, totalCollected }                        */
+         Возвращает детальную статистику:
+         {
+           balanceTon, pendingWd: {count, amount},
+           lifetime: { ton:{collected, refunds, net}, nft:{collected, count}, giftFee:{collected, refunds, net}, totalTonEq },
+           d1: {...}, d7: {...}, d30: {...}
+         }
+  */
   router.get("/commission", (_req, res) => {
-    const bal  = balances.__service__ || 0;
-    const total = txs
-      .filter(t => t.type === "commission")
-      .reduce((s, t) => s + t.amount, 0);
-    res.json({ balance: bal, totalCollected: total });
+    const now = Date.now();
+    const ms1d = 86_400_000, ms7d = 7*ms1d, ms30d = 30*ms1d;
+
+    const sum = (types, since=0) =>
+      txs.filter(t => types.includes(t.type) && (!since || (t.ts||0) >= since))
+         .reduce((s,t)=>s + Number(t.amount||0), 0);
+    const cnt = (types, since=0) =>
+      txs.filter(t => types.includes(t.type) && (!since || (t.ts||0) >= since)).length;
+
+    const build = (since=0) => {
+      const tonCollected   = sum(["commission"], since);
+      const tonRefunds     = sum(["commission_refund"], since);
+      const tonNet         = tonCollected - tonRefunds;
+      const nftCollected   = sum(["commission_nft"], since);
+      const nftCount       = cnt(["commission_nft"], since);
+      const giftCollected  = sum(["gift_withdraw_income"], since);
+      const giftRefunds    = sum(["gift_withdraw_refund"], since);
+      const giftNet        = giftCollected - giftRefunds;
+      const totalTonEq     = tonNet + nftCollected + giftNet;
+      return {
+        ton:   { collected: +tonCollected.toFixed(9), refunds: +tonRefunds.toFixed(9), net: +tonNet.toFixed(9) },
+        nft:   { collected: +nftCollected.toFixed(9), count: nftCount },
+        giftFee: { collected: +giftCollected.toFixed(9), refunds: +giftRefunds.toFixed(9), net: +giftNet.toFixed(9) },
+        totalTonEq: +totalTonEq.toFixed(9)
+      };
+    };
+
+    const balanceTon = +(balances.__service__ || 0);
+    const pending = (withdrawals||[]).filter(w => w.userId==="__service__" && w.status==="pending");
+    const pendingSum = pending.reduce((s,w)=>s + Number(w.amount||0), 0);
+
+    res.json({
+      balanceTon,
+      pendingWd: { count: pending.length, amount: +pendingSum.toFixed(9) },
+      lifetime: build(0),
+      d1 : build(now - ms1d),
+      d7 : build(now - ms7d),
+      d30: build(now - ms30d),
+    });
   });
 
   /* 14) POST /admin/commission/withdraw        body: { amount, address }
