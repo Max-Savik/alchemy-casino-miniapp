@@ -863,10 +863,12 @@ app.post("/internal/transfer/complete", adminAuth, async (req,res)=>{
   const total = (job.ownedIds||[]).length;
   const failCnt = failed.length;
   if (failCnt>0) {
-    const refund = GIFT_WITHDRAW_TON_FEE * failCnt;
-    balances[uid] = (balances[uid]||0) + refund;
+    // игроку +TON, сервису −TON
+    balances[uid]         = (balances[uid]||0) + refund;
+    balances.__service__  = (balances.__service__||0) - refund;
     await saveBalances();
-    txs.push({ userId: uid, type:"gift_withdraw_refund", amount: refund, ts: Date.now(), meta:{ jobId, failed: failCnt }});
+    txs.push({ userId: uid,          type:"gift_withdraw_refund",      amount: refund, ts: Date.now(), meta:{ jobId, failed: failCnt }});
+    txs.push({ userId: "__service__", type:"gift_withdraw_refund_out", amount: refund, ts: Date.now(), meta:{ jobId, to: uid, failed: failCnt }});
     await saveTx();
   }
 
@@ -1157,8 +1159,12 @@ function startSpin() {
             if (refundCalc < EPS) refundCalc = 0;
             refund = +refundCalc.toFixed(9);
             if (refund > 0) {
-              balances[winUid] = (balances[winUid] || 0) + refund;
-              txs.push({ userId: winUid, type: "commission_refund", amount: refund, ts: Date.now() });
+              // победителю +TON, сервису −TON
+              balances[winUid]      = (balances[winUid] || 0) + refund;
+              balances.__service__  = (balances.__service__ || 0) - refund;
+              await saveBalances();
+              txs.push({ userId: winUid,         type: "commission_refund",      amount: refund, ts: Date.now() });
+              txs.push({ userId: "__service__",  type: "commission_refund_out",  amount: refund, ts: Date.now(), meta:{ to: winUid } });
 
             }
           }
@@ -1583,6 +1589,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
