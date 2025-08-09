@@ -334,6 +334,79 @@ export default function createAdminRouter(opts) {
     if (moved.length) await saveGifts();
     res.json({ ok: true, movedCount: moved.length, moved, skipped });
   });
+  /* 17) POST /admin/commission/reset
+         Обнуление «инфы о комиссии» для чистого старта:
+         body: { dropTx=true, zeroBalance=true, dropServiceWithdrawals=false }
+         - удаляет из txs все записи типов, участвующих в /admin/commission
+         - обнуляет balances.__service__
+         - опционально удаляет все withdrawals от "__service__"
+         Создаёт бэкапы снапшотов в папке history (рядом с history.json). */
+  router.post("/commission/reset", express.json(), async (req, res) => {
+    const { dropTx = true, zeroBalance = true, dropServiceWithdrawals = false } = req.body || {};
+    const dir = path.join(path.dirname(HISTORY_FILE));
+    const ts  = new Date().toISOString().replace(/[:.]/g, "-");
+
+    // Бэкапы текущего состояния
+    const backups = {};
+    try {
+      backups.balances = `balances.reset-${ts}.json`;
+      await fs.writeFile(path.join(dir, backups.balances), JSON.stringify(balances, null, 2));
+    } catch {}
+    try {
+      backups.transactions = `transactions.reset-${ts}.json`;
+      await fs.writeFile(path.join(dir, backups.transactions), JSON.stringify(txs, null, 2));
+    } catch {}
+    try {
+      backups.withdrawals = `withdrawals.reset-${ts}.json`;
+      await fs.writeFile(path.join(dir, backups.withdrawals), JSON.stringify(withdrawals, null, 2));
+    } catch {}
+
+    // 1) вычищаем комиссионные записи из транзакций
+    let removedTx = 0;
+    if (dropTx) {
+      const COMM_TYPES = new Set([
+        "commission",               // TON-комиссия (зачисления сервису)
+        "commission_refund",       // рефанды комиссии победителю (TON)
+        "commission_refund_out",   // сервис → рефанд комиссии
+        "commission_nft",          // комиссия удержана NFT-ами (TON-эквивалент)
+        "gift_withdraw_income",    // доход сервиса за вывод подарков (TON)
+        "gift_withdraw_refund"     // рефанд комиссии за вывод подарков игроку
+      ]);
+      const before = txs.length;
+      const keep   = txs.filter(t => !COMM_TYPES.has(String(t.type || "")));
+      removedTx    = before - keep.length;
+      txs.length = 0; txs.push(...keep);
+      await saveTx();
+    }
+
+    // 2) обнуляем комиссионный баланс сервиса
+    let newServiceBalance = balances.__service__ || 0;
+    if (zeroBalance) {
+      balances.__service__ = 0;
+      await saveBalances();
+      newServiceBalance = 0;
+    }
+
+    // 3) (опционально) удаляем все pending/историю выводов сервиса
+    let removedWd = 0;
+    if (dropServiceWithdrawals) {
+      const before = withdrawals.length;
+      const keep   = withdrawals.filter(w => w.userId !== "__service__");
+      removedWd    = before - keep.length;
+      if (removedWd > 0) {
+        withdrawals.length = 0; withdrawals.push(...keep);
+        await saveWithdrawals();
+      }
+    }
+
+    return res.json({
+      ok: true,
+      backups,
+      removedTx,
+      removedWd,
+      newServiceBalance
+    });
+  });
 
   return router;
  }
