@@ -863,13 +863,18 @@ app.post("/internal/transfer/complete", adminAuth, async (req,res)=>{
   const total = (job.ownedIds||[]).length;
   const failCnt = failed.length;
   if (failCnt>0) {
-    // игроку +TON, сервису −TON
-    balances[uid]         = (balances[uid]||0) + refund;
-    balances.__service__  = (balances.__service__||0) - refund;
-    await saveBalances();
-    txs.push({ userId: uid,          type:"gift_withdraw_refund",      amount: refund, ts: Date.now(), meta:{ jobId, failed: failCnt }});
-    txs.push({ userId: "__service__", type:"gift_withdraw_refund_out", amount: refund, ts: Date.now(), meta:{ jobId, to: uid, failed: failCnt }});
-    await saveTx();
+    // Вернуть комиссию за неотправленные подарки
+    const feePerGift = Number(GIFT_WITHDRAW_TON_FEE) || 0;
+    const refund = +(feePerGift * failCnt).toFixed(9);
+    if (refund > 0) {
+      // игроку +TON, сервису −TON
+      balances[uid]        = (balances[uid]||0) + refund;
+      balances.__service__ = (balances.__service__||0) - refund;
+      await saveBalances();
+      txs.push({ userId: uid,          type:"gift_withdraw_refund",      amount: refund, ts: Date.now(), meta:{ jobId, failed: failCnt }});
+      txs.push({ userId: "__service__", type:"gift_withdraw_refund_out", amount: refund, ts: Date.now(), meta:{ jobId, to: uid, failed: failCnt }});
+      await saveTx();
+    }
   }
 
   job.status = ok && failed.length===0 ? 'done' : (failed.length===total ? 'fail' : 'partial');
@@ -1422,16 +1427,17 @@ let lastLt = 0n;                         // сдвигаемся только в
 
 async function pollDeposits() {
   try {
-    let ltCursor;                       // постранично вперёд
+    // курсор пагинации Toncenter должен включать И lt, И hash
+    let cursor = null;                  // { lt, hash }
     while (true) {
-      const page = await tonApi("getTransactions", ltCursor
-        ? { address: DEPOSIT_ADDR, limit: DEPOSIT_LIMIT, lt: ltCursor }
+      const page = await tonApi("getTransactions", cursor
+        ? { address: DEPOSIT_ADDR, limit: DEPOSIT_LIMIT, lt: cursor.lt, hash: cursor.hash }
         : { address: DEPOSIT_ADDR, limit: DEPOSIT_LIMIT }
       );
 
       for (const tx of page) {
         const lt = BigInt(tx.transaction_id.lt);
-        if (lt <= lastLt) { ltCursor = null; break; }   // дошли до старых
+        if (lt <= lastLt) { cursor = null; break; }   // дошли до старых
 
         const valueTon = Number(tx.in_msg.value) / 1e9;
         // ⛔ Отбрасываем всё, что меньше минимального депозита
@@ -1461,11 +1467,19 @@ async function pollDeposits() {
         lastLt = lt;
       }
 
-      if (ltCursor === null || page.length < DEPOSIT_LIMIT) break;
-      ltCursor = page.at(-1).transaction_id.lt;         // следующая страница
+      if (cursor === null || page.length < DEPOSIT_LIMIT) break;
+      const tail = page.at(-1)?.transaction_id;
+      if (!tail) break;
+      cursor = { lt: tail.lt, hash: tail.hash };        // следующая страница
     }
   } catch (e) {
-    console.error("pollDeposits:", e.message);
+    const msg = String(e?.message || e);
+    if (msg.includes("LITE_SERVER_UNKNOWN")) {
+      // Некорректный курсор в ноде → сбрасываемся на «последние» в следующий цикл
+      console.warn("pollDeposits: cursor invalid, will reset to latest on next poll");
+    } else {
+      console.error("pollDeposits:", msg);
+    }
   } finally {
     setTimeout(pollDeposits, 15_000);   // каждые 15 с
   }
@@ -1589,6 +1603,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
