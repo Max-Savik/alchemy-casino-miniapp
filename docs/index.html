@@ -707,35 +707,33 @@
 
   // ▸▸▸ Шаринг победы: форматированный текст + ссылка на @themis_gifts_bot
   function readText(elId){ return (document.getElementById(elId)?.textContent || '0.00').trim(); }
-  function buildShareText({ payout, pot }){
-    // Телеграм-шаринг через t.me/share/url не принимает parse_mode,
-    // поэтому делаем аккуратные переносы и эмодзи.
+  function buildShareText({ payout }){
+    // @themis_gifts_bot в Телеграме кликабельно само по себе,
+    // так что «голая» ссылка не нужна.
     return [
       '🏆 Победа в Themis',
       '',
       `Итог: +${payout} TON`,
-      `Банк раунда: ${pot} TON`,
       '',
-      'Залетай и попробуй затащить:',
-      'https://t.me/themis_gifts_bot'
+      'Залетай и попробуй затащить в @themis_gifts_bot'
     ].join('\n');
   }
   async function shareWin(){
     const payout = readText('winPayoutTon');
-    const pot    = readText('winPotTon');
-    const text   = buildShareText({ payout, pot });
-    const url    = 'https://t.me/themis_gifts_bot';
+    const text   = buildShareText({ payout });
 
     // 1) пробуем нативный Web Share (с текстом и ссылкой)
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Themis — победа', text, url });
+        // Не передаём url, чтобы не появлялась «голая» ссылка —
+        // кликабельное @themis_gifts_bot останется в тексте
+        await navigator.share({ title: 'Themis — победа', text });
         return;
       }
     } catch(e){ /* no-op */ }
 
     // 2) fallback — Telegram share с текстом + ссылкой
-    const tgUrl = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
+    const tgUrl = 'https://t.me/share/url?text=' + encodeURIComponent(text);
     if (window.Telegram?.WebApp?.openTelegramLink){
       window.Telegram.WebApp.openTelegramLink(tgUrl);
     } else {
@@ -746,5 +744,6 @@
 })();
 </script>
 </html>
+
 
 
