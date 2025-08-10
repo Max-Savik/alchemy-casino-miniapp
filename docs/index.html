@@ -15,9 +15,6 @@
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tonweb@0.0.64/dist/tonweb.min.js"></script>
 
-  <!-- конфетти -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
   <link
     href="https://fonts.googleapis.com/css2?family=Forum&family=Cinzel:wght@600;800&family=Uncial+Antiqua&display=swap"
     rel="stylesheet" />
@@ -699,8 +696,6 @@
     </div>
   </div>
 </div>
-  <!-- холст для конфетти поверх всего -->
-  <canvas id="confettiCanvas" class="fixed inset-0 z-[70] pointer-events-none hidden"></canvas>
 </body>
 
 <script>
@@ -709,82 +704,11 @@
   const btnOk   = document.getElementById('winOk');
   const btnX    = document.getElementById('winClose');
   const btnShare= document.getElementById('winShare');
-  const canvas  = document.getElementById('confettiCanvas');
-
-  // ===== Confetti: центр по модалке + лёгкая серия без лагов =====
-  const confettiColors = ['#FDE68A','#F59E0B','#FFD700','#FFF1B5'];
-  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
-  const fire = window.confetti
-    ? window.confetti.create(canvas, { resize: true, useWorker: true })
-    : null;
-  let rainTimer = null;
-
-  function getModalOrigin(){
-    const card = overlay.querySelector('.max-w-lg') || overlay;
-    const r = card.getBoundingClientRect();
-    return {
-      x: (r.left + r.width/2) / window.innerWidth,
-      y: Math.max(0, (r.top + 10) / window.innerHeight)
-    };
-  }
-  function startConfetti(){
-    if (!fire) return;
-    canvas.classList.remove('hidden');
-    const o = getModalOrigin();
-    const base = { origin: o, colors: confettiColors, gravity: 1.0 };
-    // 3 коротких «залпа», выровненных по центру модалки
-    fire({ ...base, particleCount: reduceMotion ? 60 : 120, spread: 75, startVelocity: 55, scalar: 1.0 });
-    setTimeout(() => fire({ ...base, particleCount: reduceMotion ? 40 : 80,  spread: 65, startVelocity: 45, scalar: 0.95, drift: -0.4 }), 180);
-    setTimeout(() => fire({ ...base, particleCount: reduceMotion ? 40 : 80,  spread: 65, startVelocity: 45, scalar: 0.95, drift:  0.4 }), 360);
-    // короткий «золотой дождь» сверху, но очень экономный
-    if (!reduceMotion){
-      let t = 0;
-      rainTimer = setInterval(() => {
-        t += 120;
-        fire({
-          particleCount: 12,
-          spread: 85,
-          ticks: 200,
-          gravity: 1.15,
-          scalar: 0.8,
-          colors: confettiColors,
-          origin: { x: o.x, y: 0 }  // падает сверху над модалкой
-        });
-        if (t >= 1600) stopConfetti();
-      }, 120);
-    }
-  }
-  function stopConfetti(){
-    rainTimer && clearInterval(rainTimer);
-    rainTimer = null;
-    canvas.classList.add('hidden');
-  }
-
-  function onOpenWinOverlay(){
-    // чтобы не дублировать при повторном открытии
-    if (overlay.dataset.fxDone === '1') return;
-    overlay.dataset.fxDone = '1';
-    startConfetti();
-  }
-  function onCloseWinOverlay(){
-    overlay.dataset.fxDone = '';
-    stopConfetti();
-  }
-
-  // ловим изменения класса hidden у модалки (когда её показывают)
-  const mo = new MutationObserver(() => {
-    const visible = !overlay.classList.contains('hidden');
-    if (visible) onOpenWinOverlay();
-  });
-  mo.observe(overlay, { attributes: true, attributeFilter: ['class'] });
-
-  btnOk?.addEventListener('click', onCloseWinOverlay);
-  btnX?.addEventListener('click', onCloseWinOverlay);
 
   // ▸▸▸ Шаринг победы: генерим постер + диплинк на @themis_gifts_bot
   function readText(elId){ return (document.getElementById(elId)?.textContent || '0.00').trim(); }
   function buildShareText(payout, pot){
-    return `Я затащил раунд в Themis: +${payout} TON из банка ${pot} TON 🔥`;
+    return `Выигрыш в Themis: +${payout} TON 💎\nЗаходи: https://t.me/themis_gifts_bot`;
   }
   async function generateWinPoster({ payout, pot }){
     const W = 1200, H = 630;
@@ -829,22 +753,22 @@
     const payout = readText('winPayoutTon');
     const pot    = readText('winPotTon');
     const text   = buildShareText(payout, pot);
-    const url    = 'https://t.me/themis_gifts_bot?startapp=jackpot'; // поменяй payload при необходимости
+    const url    = 'https://t.me/themis_gifts_bot';
 
-    // пробуем с постером (если поддерживается)
+    // 1) пробуем нативный Web Share с файлом (Телеграм примет картинку в сообщении)
     try {
       const file = await generateWinPoster({ payout, pot });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], text, title: 'Themis — победа!' });
         return;
       }
-      // fallback: постер в буфер обмена (где возможно)
+      // 2) кладём постер в буфер (на ряде устройств вставится сразу в Telegram)
       if (navigator.clipboard && window.ClipboardItem) {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': file })]);
       }
     } catch(e){ /* no-op */ }
 
-    // окончательный fallback — Telegram share с текстом + диплинком
+    // 3) окончательный fallback — Telegram share с текстом + ссылкой
     const tgUrl = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
     if (window.Telegram?.WebApp?.openTelegramLink){
       window.Telegram.WebApp.openTelegramLink(tgUrl);
@@ -856,3 +780,4 @@
 })();
 </script>
 </html>
+
