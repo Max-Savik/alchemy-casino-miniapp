@@ -172,6 +172,13 @@
 #tonPickerOverlay.show [role="dialog"]{
   transform: scale(1) !important; /* плавно из scale-95 */
 }
+/* стабильная высота оверлеев на мобильных при появлении клавы */
+@supports (height: 100svh) {
+  #tonPickerOverlay,
+  #nftPickerOverlay {
+    min-height: 100svh;
+  }
+}
 </style>
 
 </head>
@@ -679,6 +686,7 @@
 
 </body>
 </html>
+
 
 
 
