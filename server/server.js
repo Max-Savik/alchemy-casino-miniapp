@@ -102,36 +102,18 @@ function normalizeGift(g = {}) {
     ownerId: String(g?.ownerId ?? "").trim(),
   };
 }
-// Ключ уникальности самого токена: нормализованный name (или name из gid)
-function giftKey(g = {}) {
-  const nm = String(g?.name || "").trim();
-  if (nm) return nm.toLowerCase();
-  const m = String(g?.gid || "").match(/name=['"]([^'"]+)['"]/i);
-  if (m) return m[1].trim().toLowerCase();
-  // крайний случай: fallback на ownedId, чтобы не терять запись
-  return `owned:${String(g?.ownedId || "").trim().toLowerCase()}`;
+function dedupeAndNormalizeGifts(arr = []) {
+  const seen = new Set();
+  const out  = [];
+  for (const raw of arr) {
+    const g = normalizeGift(raw);
+    if (g.ownedId && !seen.has(g.ownedId)) {
+      seen.add(g.ownedId);
+      out.push(g);
+    }
+  }
+  return out;
 }
-function choosePreferredGift(a = {}, b = {}) {
-  // приоритет занятых/в процессе
-  const hot = (x) =>
-    !!x.staked ||
-    ["queued_transfer", "pending_withdraw"].includes(String(x.status || "idle"));
-  if (hot(b) && !hot(a)) return b;
-  if (hot(a) && !hot(b)) return a;
-  const ta = Number(a.ts || 0), tb = Number(b.ts || 0);
-  return tb >= ta ? b : a; // более «свежая» побеждает
-}
- function dedupeAndNormalizeGifts(arr = []) {
-   // Дедуп строго по ownedId. Больше никакой "уникальности по имени/модели".
-   const byOwned = new Map();
-   for (const raw of arr || []) {
-     const g = normalizeGift(raw);
-     if (!g.ownedId) continue;
-     const prev = byOwned.get(g.ownedId);
-     byOwned.set(g.ownedId, prev ? choosePreferredGift(prev, g) : g);
-   }
-   return [...byOwned.values()];
- }
    
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
@@ -266,15 +248,10 @@ async function saveWithdrawals() {
 // ---------- GIFTS ----------
 async function loadGifts() {
   try {
-    const raw  = JSON.parse(await fs.readFile(GIFTS_FILE, "utf8"));
+    const raw = JSON.parse(await fs.readFile(GIFTS_FILE, "utf8"));
     const norm = dedupeAndNormalizeGifts(Array.isArray(raw) ? raw : []);
     gifts.length = 0;                  // сохраняем ссылку
     gifts.push(...norm);
-    // если что-то подчистили — сразу перезапишем файл (self-heal)
-    if ((Array.isArray(raw) ? raw.length : 0) !== norm.length) {
-      await saveGifts().catch(()=>{});
-      console.warn(`[gifts] repaired: ${ (Array.isArray(raw)?raw.length:0) - norm.length } duplicates removed`);
-    }
   } catch (e) {
     if (e.code !== "ENOENT") console.error(e);
     gifts.length = 0;        // очищаем, но не пересоздаём
@@ -860,13 +837,7 @@ app.post("/internal/receiveGift", adminAuth, async (req, res) => {
   const normOwnedId = String(ownedId).trim();
   const normOwnerId = String(ownerId).trim();
   if (!normOwnedId || !normOwnerId) return res.status(400).json({ error: "bad gift" });
-  // Защита от дубля: и по ownedId, и по самому токену (name/gid)
-  if (gifts.some(g => String(g.ownedId) === normOwnedId)) return res.json({ ok: true });
-  const k = giftKey({ name, gid, ownedId: normOwnedId });
-  if (gifts.some(g => giftKey(g) === k)) {
-    console.warn(`[receiveGift] duplicate token ignored: ${k}`);
-    return res.json({ ok: true });
-  }
+  if (gifts.some(g => String(g.ownedId) === normOwnedId)) return res.json({ ok: true }); // дубль
   const autoImg = img || (()=>{
       const core = name.toLowerCase().replace(/[^a-z0-9]+/g,"");
       const num  = (String(normOwnedId).match(/\d+/)||[gid])[0];
@@ -1660,16 +1631,4 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
-
-
-
-
-
-
-
-
-
-
-
-
 
