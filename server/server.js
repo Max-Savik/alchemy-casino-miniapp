@@ -288,7 +288,6 @@ async function loadGifts() {
       await saveGifts().catch(()=>{});
       console.warn(`[gifts] repaired: ${ (Array.isArray(raw)?raw.length:0) - norm.length } duplicates removed`);
     }
-    gifts.push(...norm);
   } catch (e) {
     if (e.code !== "ENOENT") console.error(e);
     gifts.length = 0;        // очищаем, но не пересоздаём
@@ -1674,6 +1673,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
