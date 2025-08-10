@@ -327,6 +327,30 @@ const tonAmountInput = document.getElementById('tonAmount');
 const placeTonBetBtn = document.getElementById('placeTonBet');
 const depositTONBtn = document.getElementById('depositTON');
 
+/* === Modal scroll lock (чтобы страница не «ехала» при клавиатуре) === */
+let __scrollY = 0;
+let __openModals = 0;
+function lockScroll() {
+  if (__openModals++ > 0) return;                  // уже залочено
+  __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.body.style.position = 'fixed';
+  document.body.style.top      = `-${__scrollY}px`;
+  document.body.style.left     = '0';
+  document.body.style.right    = '0';
+  document.body.style.width    = '100%';
+  document.body.style.overflow = 'hidden';
+}
+function unlockScroll() {
+  if (--__openModals > 0) return;                  // остаются открытые модалки
+  document.body.style.position = '';
+  document.body.style.top      = '';
+  document.body.style.left     = '';
+  document.body.style.right    = '';
+  document.body.style.width    = '';
+  document.body.style.overflow = '';
+  window.scrollTo(0, __scrollY);
+}
+
 /* === Fair Play UI === */
 const fairBtn      = document.getElementById('fairBtn');
 const fairPanel    = document.getElementById('fairPanel');
@@ -1084,6 +1108,7 @@ depositNFTBtn.addEventListener('click', () => {
   placeBetBtn.disabled = true;
 
   // показать модалку и включить fade только на первое отображение
+  lockScroll();
   pickerOverlay.classList.remove('hidden');
   pickerOverlay.classList.add('with-fade');
 
@@ -1095,6 +1120,7 @@ depositNFTBtn.addEventListener('click', () => {
 
 // Закрываем окно без ставки
 closePickerBtn.addEventListener('click', () => {
+  unlockScroll();
   pickerOverlay.classList.add('hidden');
   selected.clear();
   renderPicker();
@@ -1149,6 +1175,7 @@ placeBetBtn.addEventListener('click', () => {
   selected.clear();
   renderPicker();
   pickerOverlay.classList.add('hidden');
+  unlockScroll();
   socket.emit("placeBet", { name: myName, nfts });
 });
 
@@ -1197,6 +1224,7 @@ initSocketEvents = function() {
 };
 /* ======== Открываем TON-пикер ======== */
 depositTONBtn.addEventListener('click', () => {
+  lockScroll();
   tonPickerOverlay.classList.add('show');
   tonAmountInput.value = '';
   placeTonBetBtn.disabled = true;
@@ -1206,13 +1234,36 @@ depositTONBtn.addEventListener('click', () => {
 closeTonPickerBtn.addEventListener('click', () => {
   tonPickerOverlay.classList.remove('show');
   tonAmountInput.value = '';
+  unlockScroll();
 });
 
 /* ======== Проверяем ввод суммы TON ======== */
-tonAmountInput.addEventListener('input', () => {
+function updateTonButtonState(){
   const val = parseFloat(tonAmountInput.value);
   placeTonBetBtn.disabled = !(val > 0);
+}
+function setTonAmount(v){
+  if (!Number.isFinite(v)) v = 0;
+  // clamp: 0.01…tonBalance, два знака после запятой
+  v = Math.max(0.01, Math.min(tonBalance, Math.round(v * 100) / 100));
+  tonAmountInput.value = v.toFixed(2);
+  updateTonButtonState();
+}
+tonAmountInput.addEventListener('input', updateTonButtonState);
+
+// Быстрые шаги: +1 / +5 / +10 / MAX
+const tonStepBtns = document.querySelectorAll('.ton-step');
+const tonMaxBtn   = document.getElementById('tonMax');
+tonStepBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const delta = parseFloat(btn.dataset.delta || '0') || 0;
+    const cur   = parseFloat(tonAmountInput.value || '0') || 0;
+    setTonAmount(cur + delta);
+  });
 });
+if (tonMaxBtn){
+  tonMaxBtn.addEventListener('click', () => setTonAmount(tonBalance));
+}
 
 placeTonBetBtn.addEventListener('click', async () => {
   const amount = parseFloat(tonAmountInput.value);
@@ -1234,6 +1285,7 @@ document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
 // 4) Закрываем модалку
 tonPickerOverlay.classList.remove('show');
 tonAmountInput.value = '';
+unlockScroll();
 
 });   // ←← закрываем функцию и addEventListener
 const toggleBtn = document.getElementById('toggleSort');
@@ -1520,6 +1572,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
