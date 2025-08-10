@@ -36,15 +36,33 @@ async function ensureJwt() {
   localStorage.setItem("jwt", jwtToken);
 }
 
-async function refreshBalance() {
-  const r = await fetch(`${API_ORIGIN}/wallet/balance`, {
+async function fetchJSON(url, opts = {}, retry = true) {
+  const r = await fetch(url, {
     credentials: "include",
-    headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
+    ...opts,
+    headers: {
+      ...(opts.headers || {}),
+      ...(jwtToken ? { Authorization: "Bearer " + jwtToken } : {})
+    }
   });
-  if (r.ok) {
-    tonBalance = (await r.json()).balance || 0;
-    $("#tonBalance").textContent = tonBalance.toFixed(2);
+  if (r.status === 401 && retry) {
+    // токен/кука устарели → перелогин
+    jwtToken = null;
+    localStorage.removeItem("jwt");
+    await ensureJwt();
+    return fetchJSON(url, opts, false);
   }
+  if (!r.ok) {
+    const msg = await r.text().catch(()=>`${r.status}`);
+    throw new Error(msg || `HTTP ${r.status}`);
+  }
+  return r.json();
+}
+
+async function refreshBalance() {
+  const j = await fetchJSON(`${API_ORIGIN}/wallet/balance`);
+  tonBalance = j.balance || 0;
+  $("#tonBalance").textContent = tonBalance.toFixed(2);
 }
 
 /* === MODEL HELPERS === */
@@ -131,11 +149,7 @@ async function loadModelFloorsFor(colKeys=[]){
 async function loadGifts() {
   dataReady = false;
   showGridSkeleton(12);
-  const r = await fetch(`${API_ORIGIN}/wallet/gifts`, {
-    credentials: "include",
-    headers: jwtToken ? { Authorization: "Bearer "+jwtToken } : {}
-  });
-  const arr = await r.json();
+  const arr = await fetchJSON(`${API_ORIGIN}/wallet/gifts`);
 // 1) первичная сборка базовых полей (без оценки)
 //    ⚠️ model = КОЛЛЕКЦИЯ (как раньше)
 gifts = arr.map(g => ({
@@ -525,15 +539,11 @@ $("#profileGrid").addEventListener("click", e => {
 
 /* helper – postJSON with auth */
 function postJSON(path, data) {
-  return fetch(API_ORIGIN + path, {
-    method : "POST",
-    credentials:"include",
-    headers: {
-      "Content-Type":"application/json",
-      ...(jwtToken && { Authorization:"Bearer "+jwtToken })
-    },
+  return fetchJSON(API_ORIGIN + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
-  }).then(r => r.ok ? r.json() : r.text().then(msg=>Promise.reject(new Error(msg))));
+  });
 }
 
 /* === INIT === */
