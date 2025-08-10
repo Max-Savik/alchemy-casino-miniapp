@@ -327,28 +327,17 @@ const tonAmountInput = document.getElementById('tonAmount');
 const placeTonBetBtn = document.getElementById('placeTonBet');
 const depositTONBtn = document.getElementById('depositTON');
 
-/* === Modal scroll lock (чтобы страница не «ехала» при клавиатуре) === */
-let __scrollY = 0;
+/* === Modal scroll lock (soft, без дерганий) === */
 let __openModals = 0;
 function lockScroll() {
-  if (__openModals++ > 0) return;                  // уже залочено
-  __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-  document.body.style.position = 'fixed';
-  document.body.style.top      = `-${__scrollY}px`;
-  document.body.style.left     = '0';
-  document.body.style.right    = '0';
-  document.body.style.width    = '100%';
-  document.body.style.overflow = 'hidden';
+  if (__openModals++ > 0) return;
+  document.documentElement.classList.add('modal-open');
+  document.body.classList.add('modal-open');
 }
 function unlockScroll() {
-  if (--__openModals > 0) return;                  // остаются открытые модалки
-  document.body.style.position = '';
-  document.body.style.top      = '';
-  document.body.style.left     = '';
-  document.body.style.right    = '';
-  document.body.style.width    = '';
-  document.body.style.overflow = '';
-  window.scrollTo(0, __scrollY);
+  if (--__openModals > 0) return;
+  document.documentElement.classList.remove('modal-open');
+  document.body.classList.remove('modal-open');
 }
 
 /* === Fair Play UI === */
@@ -1572,6 +1561,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
