@@ -353,6 +353,12 @@ body{
      фиксируем то же самое и здесь */
   font-family:'Inter','Segoe UI',sans-serif;
 }
+  /* Мягкая блокировка скролла без position:fixed */
+html.modal-open, body.modal-open {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
   </style>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
