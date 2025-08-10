@@ -223,9 +223,11 @@ function initSocketEvents() {
     elPotTon.textContent     = fix(d.potTon).toFixed(2);
     elOwnTon.textContent     = fix(d.winnerStakeTon).toFixed(2);
 
-    // Показ/скрытие подпунктов
+    // Показ/скрытие строк сводки
     elRefundWrap.classList.toggle('hidden', !(fix(d.refundTon) > 0));
     elCommNftWrap.classList.toggle('hidden', !(fix(d.commissionNftSum) > 0));
+    const elCommTonRow = document.getElementById('winCommTonRow');
+    if (elCommTonRow) elCommTonRow.classList.toggle('hidden', !(fix(d.tonCommission) > 0));
 
     // NFT миниатюры
     elGainedGrid.innerHTML = '';
@@ -233,13 +235,12 @@ function initSocketEvents() {
     if (gained.length) {
       gained.forEach(nft => {
         const div = document.createElement('div');
-        div.className = 'relative w-16 h-16 rounded-md overflow-hidden ring-1 ring-gray-600';
+        div.className = 'relative w-20 h-20 rounded-md overflow-hidden ring-1 ring-gray-600';
         div.title = `${nft.name} — ${(fix(nft.price)).toFixed(2)} TON`;
         div.innerHTML = `
           <img src="${nft.img}" alt="${nft.name}" class="w-full h-full object-cover" />
-          <div class="absolute bottom-0 left-0 right-0 text-[10px] text-amber-200 bg-gray-900/75 text-center px-1">
-            ${(fix(nft.price)).toFixed(2)}
-          </div>`;
+          <div class="price-chip">${(fix(nft.price)).toFixed(2)}&nbsp;TON</div>
+        `;
         elGainedGrid.appendChild(div);
       });
       elNoNft.classList.add('hidden');
@@ -1519,6 +1520,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
