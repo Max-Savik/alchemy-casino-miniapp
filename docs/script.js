@@ -229,24 +229,48 @@ function initSocketEvents() {
     const elCommTonRow = document.getElementById('winCommTonRow');
     if (elCommTonRow) elCommTonRow.classList.toggle('hidden', !(fix(d.tonCommission) > 0));
 
-    // NFT миниатюры
-    elGainedGrid.innerHTML = '';
-    const gained = Array.isArray(d.gained) ? d.gained : [];
-    if (gained.length) {
-      gained.forEach(nft => {
+    // NFT миниатюры (с нормализацией img/цены прямо сейчас)
+    (async () => {
+      elGainedGrid.innerHTML = '';
+      const gained = Array.isArray(d.gained) ? d.gained : [];
+      if (!gained.length) { elNoNft.classList.remove('hidden'); return; }
+
+      // гарантируем, что есть model-floors для коллекций из выигрыша
+      const needCols = new Set(gained.map(n =>
+        colKeyFromNFT({ name: n.name, img: n.img })));
+      const toFetch = [...needCols].filter(ck => {
+        const rec = modelFloors.get(ck);
+        return !rec || (Date.now() - rec.fetched) > (rec.ttl || MODEL_TTL);
+      });
+      if (toFetch.length) {
+        try { await fetchModelFloors(toFetch); } catch(e) { console.warn(e); }
+      }
+
+      gained.forEach(nft0 => {
+        const nft = { ...nft0 };
+        // Картинка: если пустая/битая — формируем fallback URL
+        nft.img = nft.img || buildImgLink({ name: nft.name, ownedId: nft.ownedId, gid: nft.gid });
+        // Цена: пробуем модель → коллекцию → то, что прислал сервер
+        let price = Number(nft.price || 0);
+        if (!(price > 0)) {
+          const ck = colKeyFromNFT({ name: nft.name, img: nft.img });
+          const mk = modelKeyFromGift({ gid: nft.gid, name: nft.name });
+          const mf = modelFloor(ck, mk);
+          price = mf || 0;
+        }
+
         const div = document.createElement('div');
         div.className = 'relative w-20 h-20 rounded-md overflow-hidden ring-1 ring-gray-600';
-        div.title = `${nft.name} — ${(fix(nft.price)).toFixed(2)} TON`;
+        div.title = `${nft.name} — ${price.toFixed(2)} TON`;
         div.innerHTML = `
-          <img src="${nft.img}" alt="${nft.name}" class="w-full h-full object-cover" />
-          <div class="price-chip">${(fix(nft.price)).toFixed(2)}&nbsp;TON</div>
+          <img src="${nft.img}" alt="${nft.name}" class="w-full h-full object-cover"
+               onerror="this.onerror=null; this.src='${buildImgLink({ name: nft.name, ownedId: nft.ownedId, gid: nft.gid })}'" />
+          ${price ? `<div class="price-chip">${price.toFixed(2)}&nbsp;TON</div>` : ``}
         `;
         elGainedGrid.appendChild(div);
       });
       elNoNft.classList.add('hidden');
-    } else {
-      elNoNft.classList.remove('hidden');
-    }
+    })();
 
     // Показать модалку
     winOverlay.classList.remove('hidden');
@@ -546,7 +570,9 @@ function cardHTML(nft, extra='') {
   return `
     <div class="nft-card ${extra} ${(withdrawing||queued)?'opacity-60 pointer-events-none':''}" data-id="${nft.id}">
       <img src="${nft.img}" alt="${nft.name}" class="nft-img" loading="lazy" decoding="async"
-           onload="this.classList.add('loaded')" onerror="this.onerror=null;this.src='${nft.img}';">
+           data-fallback="${buildImgLink(nft)}"
+           onload="this.classList.add('loaded')"
+           onerror="this.onerror=null; this.src=this.dataset.fallback;">
       ${priceVal ? `<div class="price-chip">${priceStr}&nbsp;TON</div>` : ''}
       ${(withdrawing||queued)?`
         <div class="status-overlay">
@@ -917,15 +943,15 @@ async function ensureJwt(forceRefresh = false) {
 
 /* === Картинка подарка — ровно как в профиле === */
 function buildImgLink(g) {
-  // ① letters-only из названия («DeskCalendar-190442» → deskcalendar)
-  const letters = (g.name || '')
+  // ① буквы из названия («DeskCalendar-190442» → deskcalendar)
+  const letters = String(g?.name || '')
     .toLowerCase()
     .replace(/[^a-z]+/g, '');
-  // ② цифры: сначала из названия, затем из ownedId, затем gid
-  const num =
-    (g.name?.match(/\d+/) ||
-     g.ownedId?.match(/\d+/) ||
-     [g.gid || '0'])[0];
+  // ② ID: из name → ownedId → ВЫТАЩИТЬ ЦИФРЫ ИЗ gid
+  const nameNum   = String(g?.name || '').match(/\d+/)?.[0];
+  const ownedNum  = String(g?.ownedId || '').match(/\d+/)?.[0];
+  const gidNum    = String(g?.gid || '').match(/\d+/)?.[0]; 
+  const num = nameNum || ownedNum || gidNum || '0';
   return `https://nft.fragment.com/gift/${letters}-${num}.medium.jpg`;
 }
 
@@ -1184,24 +1210,35 @@ function attachGiftUpdates() {
     // Перерисуем пикер, чтобы скрыть/обновить карточки
     renderPicker();
   });
-  socket.on('giftGain', (g) => {
+  socket.on('giftGain', async (g) => {
     if (!g || !g.ownedId) return;
     // если вдруг уже есть — обновим; иначе добавим
     const i = inventory.findIndex(x => x.id === g.ownedId);
-    const rec = {
+    const recBase = {
       id: g.ownedId,
       name: g.name,
       gid: g.gid,
-      price: Number(g.price || 0), // если 0 — добьём ниже ensureGiftPricesClient()
-      img: g.img || buildImgLink(g), staked: false, status: g.status || 'idle'
+      img: g.img || buildImgLink(g),
+      price: Number(g.price || 0),
+      staked: false,
+      status: g.status || 'idle'
     };
-    if (i >= 0) inventory[i] = rec; else inventory.push(rec);
-    // Если цены нет — подтянем по floor
-    if (!(Number(rec.price) > 0)) {
-      ensureGiftPricesClient();
-    } else {
-      renderPicker();
+    // если цена не пришла — попробуем оценить по кэшу model-floors мгновенно
+    let price = Number(recBase.price || 0);
+    if (!(price > 0)) {
+      const ck = colKeyFromNFT({ name: recBase.name, img: recBase.img });
+      const mk = modelKeyFromGift({ gid: recBase.gid, name: recBase.name });
+      let mf = modelFloor(ck, mk);
+      // если кэша нет — докачаем только нужную коллекцию
+      if (!mf) {
+        try { await fetchModelFloors([ck]); } catch(e) {}
+        mf = modelFloor(ck, mk);
+      }
+      price = mf || 0;
     }
+    const rec = { ...recBase, price };
+    if (i >= 0) inventory[i] = rec; else inventory.push(rec);
+    renderPicker();
   });
 }
 
@@ -1561,6 +1598,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
