@@ -179,6 +179,15 @@
     min-height: 100svh;
   }
 }
+
+/* === WIN MODAL: адаптивная сетка миниатюр, чтобы не наезжали === */
+#winGainedGrid{
+  /* перебиваем tailwind-класс grid-cols-5 */
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important;
+  align-content: start;
+}
+/* на всякий случай — бейдж цены всегда поверх картинки */
+#winGainedGrid .price-chip{ z-index: 25; }
 </style>
 
 </head>
@@ -744,6 +753,7 @@
 })();
 </script>
 </html>
+
 
 
 
