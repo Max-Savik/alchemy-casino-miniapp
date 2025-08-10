@@ -121,30 +121,17 @@ function choosePreferredGift(a = {}, b = {}) {
   const ta = Number(a.ts || 0), tb = Number(b.ts || 0);
   return tb >= ta ? b : a; // более «свежая» побеждает
 }
-function dedupeAndNormalizeGifts(arr = []) {
-  const byKey = new Map();    // giftKey → запись
-  const ownedSeen = new Map(); // ownedId → запись (чтобы не держать два разных по ownedId)
-  for (const raw of arr) {
-    const g = normalizeGift(raw);
-    if (!g.ownedId) continue;
-    // коллизии по ownedId: оставляем более приоритетную
-    const prevByOwned = ownedSeen.get(g.ownedId);
-    if (prevByOwned) {
-      const keep = choosePreferredGift(prevByOwned, g);
-      ownedSeen.set(g.ownedId, keep);
-      // и одновременно заменим в byKey, если там лежит старый
-      const k = giftKey(keep);
-      const prevByKey = byKey.get(k);
-      byKey.set(k, prevByKey ? choosePreferredGift(prevByKey, keep) : keep);
-      continue;
-    }
-    ownedSeen.set(g.ownedId, g);
-    const k = giftKey(g);
-    const prev = byKey.get(k);
-    byKey.set(k, prev ? choosePreferredGift(prev, g) : g);
-  }
-  return [...byKey.values()];
-}
+ function dedupeAndNormalizeGifts(arr = []) {
+   // Дедуп строго по ownedId. Больше никакой "уникальности по имени/модели".
+   const byOwned = new Map();
+   for (const raw of arr || []) {
+     const g = normalizeGift(raw);
+     if (!g.ownedId) continue;
+     const prev = byOwned.get(g.ownedId);
+     byOwned.set(g.ownedId, prev ? choosePreferredGift(prev, g) : g);
+   }
+   return [...byOwned.values()];
+ }
    
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
@@ -1673,6 +1660,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
