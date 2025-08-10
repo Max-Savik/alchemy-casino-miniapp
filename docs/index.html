@@ -705,70 +705,36 @@
   const btnX    = document.getElementById('winClose');
   const btnShare= document.getElementById('winShare');
 
-  // ▸▸▸ Шаринг победы: генерим постер + диплинк на @themis_gifts_bot
+  // ▸▸▸ Шаринг победы: форматированный текст + ссылка на @themis_gifts_bot
   function readText(elId){ return (document.getElementById(elId)?.textContent || '0.00').trim(); }
-  function buildShareText(payout, pot){
-    return `Выигрыш в Themis: +${payout} TON 💎\nЗаходи: https://t.me/themis_gifts_bot`;
-  }
-  async function generateWinPoster({ payout, pot }){
-    const W = 1200, H = 630;
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    const ctx = c.getContext('2d');
-    // фон: чёрно-золотой градиент
-    const g = ctx.createLinearGradient(0,0,W,H);
-    g.addColorStop(0,'#0b0f16'); g.addColorStop(1,'#1e1b0c');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    // мягкий «блик»
-    const glow = ctx.createRadialGradient(W*0.2,H*0.1,10,W*0.2,H*0.1,W*0.9);
-    glow.addColorStop(0,'rgba(251,191,36,0.25)');
-    glow.addColorStop(1,'rgba(251,191,36,0.0)');
-    ctx.fillStyle = glow; ctx.fillRect(0,0,W,H);
-    // рамка
-    ctx.strokeStyle = 'rgba(251,191,36,.85)'; ctx.lineWidth = 8; ctx.strokeRect(16,16,W-32,H-32);
-    // заголовок
-    ctx.fillStyle = '#FDE68A';
-    ctx.font = '700 72px Cinzel, serif';
-    ctx.fillText('THEMIS WIN', 60, 140);
-    // сумма
-    ctx.fillStyle = '#FBBF24';
-    ctx.font = '800 110px Cinzel, serif';
-    ctx.fillText(`+${payout} TON`, 60, 300);
-    // банк
-    ctx.fillStyle = '#D1D5DB';
-    ctx.font = '600 40px Inter, system-ui';
-    ctx.fillText(`Банк раунда: ${pot} TON`, 60, 370);
-    // подпись бота
-    ctx.fillStyle = '#FDE68A';
-    ctx.font = '700 44px Inter, system-ui';
-    ctx.fillText('@themis_gifts_bot', 60, 460);
-    // маленький символ-логотип
-    ctx.fillStyle = '#FBBF24';
-    ctx.font = '900 64px "Uncial Antiqua", Cinzel, serif';
-    ctx.fillText('☿', W-110, 110);
-    const blob = await new Promise(r => c.toBlob(r, 'image/png', 0.92));
-    return new File([blob], 'themis-win.png', { type: 'image/png' });
+  function buildShareText({ payout, pot }){
+    // Телеграм-шаринг через t.me/share/url не принимает parse_mode,
+    // поэтому делаем аккуратные переносы и эмодзи.
+    return [
+      '🏆 Победа в Themis',
+      '',
+      `Итог: +${payout} TON`,
+      `Банк раунда: ${pot} TON`,
+      '',
+      'Залетай и попробуй затащить:',
+      'https://t.me/themis_gifts_bot'
+    ].join('\n');
   }
   async function shareWin(){
     const payout = readText('winPayoutTon');
     const pot    = readText('winPotTon');
-    const text   = buildShareText(payout, pot);
+    const text   = buildShareText({ payout, pot });
     const url    = 'https://t.me/themis_gifts_bot';
 
-    // 1) пробуем нативный Web Share с файлом (Телеграм примет картинку в сообщении)
+    // 1) пробуем нативный Web Share (с текстом и ссылкой)
     try {
-      const file = await generateWinPoster({ payout, pot });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], text, title: 'Themis — победа!' });
+      if (navigator.share) {
+        await navigator.share({ title: 'Themis — победа', text, url });
         return;
-      }
-      // 2) кладём постер в буфер (на ряде устройств вставится сразу в Telegram)
-      if (navigator.clipboard && window.ClipboardItem) {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': file })]);
       }
     } catch(e){ /* no-op */ }
 
-    // 3) окончательный fallback — Telegram share с текстом + ссылкой
+    // 2) fallback — Telegram share с текстом + ссылкой
     const tgUrl = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
     if (window.Telegram?.WebApp?.openTelegramLink){
       window.Telegram.WebApp.openTelegramLink(tgUrl);
@@ -780,4 +746,5 @@
 })();
 </script>
 </html>
+
 
