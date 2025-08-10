@@ -313,7 +313,7 @@ wallet.get("/gifts", async (req, res) => {
         const collFloorTon = Number(map[key]?.floorTon || 0);
         const floorTon     = modelFloorTon > 0 ? modelFloorTon : collFloorTon;
 
-        const priceTon = Number(g.price || 0) > 0 ? Number(g.price) : floorTon;
+        const priceTon = floorTon > 0 ? floorTon : 0;
         return {
           gid     : g.gid,
           ownedId : g.ownedId,
@@ -1603,6 +1603,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
