@@ -604,36 +604,50 @@
       <button id="winClose" class="text-3xl leading-none text-gray-400 hover:text-amber-300">&times;</button>
     </div>
 
-    <!-- Общая сводка -->
-    <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
-      <div class="p-3 rounded-xl bg-gray-700/60">
+    <!-- Итоги раунда (простая читаемая сводка) -->
+    <div class="space-y-2 mb-4 text-sm">
+      <!-- Начисление -->
+      <div class="flex items-center justify-between p-3 rounded-xl bg-gray-700/60">
         <div class="text-gray-400">Начислено на баланс</div>
-        <div class="mt-1 text-emerald-400 font-semibold">
-          <span id="winPayoutTon">0.00</span> TON
-          <span id="winRefundWrap" class="block text-xs text-emerald-300 mt-1 hidden">в т.ч. возврат: <span id="winRefundTon">0.00</span> TON</span>
+        <div class="text-emerald-400 font-semibold"><span id="winPayoutTon">0.00</span>&nbsp;TON</div>
+      </div>
+      <!-- Возврат (показываем отдельно, без «в т.ч.») -->
+      <div id="winRefundWrap" class="flex items-center justify-between p-3 rounded-xl bg-gray-700/60 hidden">
+        <div class="text-gray-400">Возврат за точность комиссии</div>
+        <div class="text-emerald-300 font-semibold">+<span id="winRefundTon">0.00</span>&nbsp;TON</div>
+      </div>
+      <!-- Комиссия TON -->
+      <div id="winCommTonRow" class="flex items-center justify-between p-3 rounded-xl bg-gray-700/60">
+        <div class="text-gray-400">Комиссия сервиса (TON)</div>
+        <div class="text-rose-400 font-semibold">−<span id="winCommTon">0.00</span>&nbsp;TON</div>
+      </div>
+      <!-- Комиссия сервисом (NFT) -->
+      <div id="winCommNftWrap" class="flex items-center justify-between p-3 rounded-xl bg-gray-700/60 hidden">
+        <div class="text-gray-400">Комиссия сервисом (NFT)</div>
+        <div class="text-rose-300 font-semibold">
+          <span id="winCommNftCount">0</span>&nbsp;шт. ≈ <span id="winCommNftTon">0.00</span>&nbsp;TON
         </div>
       </div>
-      <div class="p-3 rounded-xl bg-gray-700/60">
-        <div class="text-gray-400">Комиссия сервиса</div>
-        <div class="mt-1 text-rose-400 font-semibold">
-          <span id="winCommTon">0.00</span> TON
-          <span id="winCommNftWrap" class="block text-xs text-rose-300 mt-1 hidden">NFT удержано: <span id="winCommNftCount">0</span> шт. на <span id="winCommNftTon">0.00</span> TON</span>
+      <!-- Тех. сводка по банку -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="p-3 rounded-xl bg-gray-700/60">
+          <div class="text-gray-400">TON-банк раунда</div>
+          <div class="mt-1 text-gray-200 font-semibold"><span id="winPotTon">0.00</span>&nbsp;TON</div>
+        </div>
+        <div class="p-3 rounded-xl bg-gray-700/60">
+          <div class="text-gray-400">Ваша TON-ставка</div>
+          <div class="mt-1 text-gray-200 font-semibold"><span id="winOwnTon">0.00</span>&nbsp;TON</div>
         </div>
       </div>
-      <div class="p-3 rounded-xl bg-gray-700/60">
-        <div class="text-gray-400">TON-банк раунда</div>
-        <div class="mt-1 text-gray-200 font-semibold"><span id="winPotTon">0.00</span> TON</div>
-      </div>
-      <div class="p-3 rounded-xl bg-gray-700/60">
-        <div class="text-gray-400">Ваша TON-ставка</div>
-        <div class="mt-1 text-gray-200 font-semibold"><span id="winOwnTon">0.00</span> TON</div>
+      <div class="text-xs text-gray-500">
+        Комиссия взимается сервисом. Если стоимость забранных как комиссия NFT больше нужной — разницу возвращаем на ваш баланс в TON.
       </div>
     </div>
 
     <!-- Полученные NFT -->
     <div>
       <div class="text-gray-300 mb-2">Полученные NFT</div>
-      <div id="winGainedGrid" class="grid grid-cols-4 gap-2 max-h-52 overflow-y-auto">
+      <div id="winGainedGrid" class="grid grid-cols-5 gap-2 max-h-56 overflow-y-auto">
         <!-- сюда прилетят иконки -->
       </div>
       <div id="winNoNft" class="text-gray-500 text-sm hidden">NFT не получено в этом раунде.</div>
@@ -650,6 +664,7 @@
 
 </body>
 </html>
+
 
 
 
