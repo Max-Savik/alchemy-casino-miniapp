@@ -94,6 +94,27 @@ const FLOORS_FILE   = path.join(DATA_DIR, "thermos_floors.json");   // кеш Th
 const MODEL_FLOORS_FILE = path.join(DATA_DIR, "thermos_model_floors.json"); // кеш моделей внутри коллекций
 const GIFT_XFER_FILE= path.join(DATA_DIR, "gift_transfers.json");
 
+/* ─── Helpers: нормализация и дедуп подарков ─── */
+function normalizeGift(g = {}) {
+  return {
+    ...g,
+    ownedId: String(g?.ownedId ?? "").trim(),
+    ownerId: String(g?.ownerId ?? "").trim(),
+  };
+}
+function dedupeAndNormalizeGifts(arr = []) {
+  const seen = new Set();
+  const out  = [];
+  for (const raw of arr) {
+    const g = normalizeGift(raw);
+    if (g.ownedId && !seen.has(g.ownedId)) {
+      seen.add(g.ownedId);
+      out.push(g);
+    }
+  }
+  return out;
+}
+   
 /* === 25 Stars за вывод подарка === */
 const STARS_PRICE      = 25;               // фикс цена
 const BOT_TOKEN        = process.env.APP_BOT_TOKEN; 
@@ -227,9 +248,10 @@ async function saveWithdrawals() {
 // ---------- GIFTS ----------
 async function loadGifts() {
   try {
-    const data = JSON.parse(await fs.readFile(GIFTS_FILE, "utf8"));
-    gifts.length = 0;        // сохраняем ссылку
-    gifts.push(...data);
+    const raw = JSON.parse(await fs.readFile(GIFTS_FILE, "utf8"));
+    const norm = dedupeAndNormalizeGifts(Array.isArray(raw) ? raw : []);
+    gifts.length = 0;                  // сохраняем ссылку
+    gifts.push(...norm);
   } catch (e) {
     if (e.code !== "ENOENT") console.error(e);
     gifts.length = 0;        // очищаем, но не пересоздаём
@@ -808,16 +830,22 @@ app.use("/wallet", wallet);
 // === INTERNAL: получить новый подарок ===
 app.post("/internal/receiveGift", adminAuth, async (req, res) => {
   const { gid, ownedId, name, price, img, ownerId } = req.body || {};
-  if (!gid || !ownedId || !ownerId) return res.status(400).json({ error: "bad gift" });
-  if (gifts.some(g => g.ownedId === ownedId)) return res.json({ ok: true }); // дубль
+  if (!gid || ownedId === undefined || ownerId === undefined)
+    return res.status(400).json({ error: "bad gift" });
+
+  // 🔒 Приводим идентификаторы к строке и проверяем дубль по строковому ID
+  const normOwnedId = String(ownedId).trim();
+  const normOwnerId = String(ownerId).trim();
+  if (!normOwnedId || !normOwnerId) return res.status(400).json({ error: "bad gift" });
+  if (gifts.some(g => String(g.ownedId) === normOwnedId)) return res.json({ ok: true }); // дубль
   const autoImg = img || (()=>{
       const core = name.toLowerCase().replace(/[^a-z0-9]+/g,"");
-      const num  = (ownedId.match(/\d+/)||[gid])[0];
+      const num  = (String(normOwnedId).match(/\d+/)||[gid])[0];
       return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
   })();
 
-  gifts.push({ gid, ownedId, name, price, img:autoImg, ownerId,
-               staked:false, status:"idle" });
+  gifts.push({ gid, ownedId: normOwnedId, name, price, img: autoImg, ownerId: normOwnerId,
+               staked: false, status: "idle" });
   await saveGifts();
   res.json({ ok: true });
 });
@@ -1603,6 +1631,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
