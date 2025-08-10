@@ -323,6 +323,11 @@ export default function createAdminRouter(opts) {
       if (!g) { skipped.push({ id, reason: "not found or owner mismatch" }); continue; }
       if (g.staked) { skipped.push({ id, reason: "staked" }); continue; }
       const st = g.status || "idle";
+      // 🚧 Страховка от дублей у получателя (в норме невозможно)
+      if (gifts.some(x => String(x.ownedId) === id && String(x.ownerId) === toUid)) {
+        skipped.push({ id, reason: "already owned by target" });
+        continue;
+      }
       if (st === "sent" || st === "queued_transfer" || st === "pending_withdraw") {
         skipped.push({ id, reason: `status ${st}` }); continue;
       }
