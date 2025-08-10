@@ -711,33 +711,64 @@
   const btnShare= document.getElementById('winShare');
   const canvas  = document.getElementById('confettiCanvas');
 
-  // конфетти инстанс
-  const shoot = window.confetti
+  // ===== Confetti: центр по модалке + лёгкая серия без лагов =====
+  const confettiColors = ['#FDE68A','#F59E0B','#FFD700','#FFF1B5'];
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+  const fire = window.confetti
     ? window.confetti.create(canvas, { resize: true, useWorker: true })
     : null;
+  let rainTimer = null;
 
-  function startConfetti(ms = 2500){
-    if (!shoot) return;
+  function getModalOrigin(){
+    const card = overlay.querySelector('.max-w-lg') || overlay;
+    const r = card.getBoundingClientRect();
+    return {
+      x: (r.left + r.width/2) / window.innerWidth,
+      y: Math.max(0, (r.top + 10) / window.innerHeight)
+    };
+  }
+  function startConfetti(){
+    if (!fire) return;
     canvas.classList.remove('hidden');
-    const end = Date.now() + ms;
-    (function frame(){
-      // левый и правый "залпы"
-      shoot({ particleCount: 5, angle: 60,  spread: 55, origin: { x: 0 }, startVelocity: 45, scalar: 0.9 });
-      shoot({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, startVelocity: 45, scalar: 0.9 });
-      if (Date.now() < end) requestAnimationFrame(frame);
-      else setTimeout(() => canvas.classList.add('hidden'), 300);
-    })();
+    const o = getModalOrigin();
+    const base = { origin: o, colors: confettiColors, gravity: 1.0 };
+    // 3 коротких «залпа», выровненных по центру модалки
+    fire({ ...base, particleCount: reduceMotion ? 60 : 120, spread: 75, startVelocity: 55, scalar: 1.0 });
+    setTimeout(() => fire({ ...base, particleCount: reduceMotion ? 40 : 80,  spread: 65, startVelocity: 45, scalar: 0.95, drift: -0.4 }), 180);
+    setTimeout(() => fire({ ...base, particleCount: reduceMotion ? 40 : 80,  spread: 65, startVelocity: 45, scalar: 0.95, drift:  0.4 }), 360);
+    // короткий «золотой дождь» сверху, но очень экономный
+    if (!reduceMotion){
+      let t = 0;
+      rainTimer = setInterval(() => {
+        t += 120;
+        fire({
+          particleCount: 12,
+          spread: 85,
+          ticks: 200,
+          gravity: 1.15,
+          scalar: 0.8,
+          colors: confettiColors,
+          origin: { x: o.x, y: 0 }  // падает сверху над модалкой
+        });
+        if (t >= 1600) stopConfetti();
+      }, 120);
+    }
+  }
+  function stopConfetti(){
+    rainTimer && clearInterval(rainTimer);
+    rainTimer = null;
+    canvas.classList.add('hidden');
   }
 
   function onOpenWinOverlay(){
     // чтобы не дублировать при повторном открытии
     if (overlay.dataset.fxDone === '1') return;
     overlay.dataset.fxDone = '1';
-    startConfetti(2800);
+    startConfetti();
   }
   function onCloseWinOverlay(){
     overlay.dataset.fxDone = '';
-    canvas.classList.add('hidden');
+    stopConfetti();
   }
 
   // ловим изменения класса hidden у модалки (когда её показывают)
@@ -750,21 +781,71 @@
   btnOk?.addEventListener('click', onCloseWinOverlay);
   btnX?.addEventListener('click', onCloseWinOverlay);
 
-  // ▸▸▸ Шаринг победы
+  // ▸▸▸ Шаринг победы: генерим постер + диплинк на @themis_gifts_bot
   function readText(elId){ return (document.getElementById(elId)?.textContent || '0.00').trim(); }
-  function buildShareText(){
-    const payout = readText('winPayoutTon');
-    const pot    = readText('winPotTon');
-    return `Затащил(а) раунд в Themis: +${payout} TON из банка ${pot} TON 🎉`;
+  function buildShareText(payout, pot){
+    return `Я затащил раунд в Themis: +${payout} TON из банка ${pot} TON 🔥`;
+  }
+  async function generateWinPoster({ payout, pot }){
+    const W = 1200, H = 630;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    // фон: чёрно-золотой градиент
+    const g = ctx.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,'#0b0f16'); g.addColorStop(1,'#1e1b0c');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    // мягкий «блик»
+    const glow = ctx.createRadialGradient(W*0.2,H*0.1,10,W*0.2,H*0.1,W*0.9);
+    glow.addColorStop(0,'rgba(251,191,36,0.25)');
+    glow.addColorStop(1,'rgba(251,191,36,0.0)');
+    ctx.fillStyle = glow; ctx.fillRect(0,0,W,H);
+    // рамка
+    ctx.strokeStyle = 'rgba(251,191,36,.85)'; ctx.lineWidth = 8; ctx.strokeRect(16,16,W-32,H-32);
+    // заголовок
+    ctx.fillStyle = '#FDE68A';
+    ctx.font = '700 72px Cinzel, serif';
+    ctx.fillText('THEMIS WIN', 60, 140);
+    // сумма
+    ctx.fillStyle = '#FBBF24';
+    ctx.font = '800 110px Cinzel, serif';
+    ctx.fillText(`+${payout} TON`, 60, 300);
+    // банк
+    ctx.fillStyle = '#D1D5DB';
+    ctx.font = '600 40px Inter, system-ui';
+    ctx.fillText(`Банк раунда: ${pot} TON`, 60, 370);
+    // подпись бота
+    ctx.fillStyle = '#FDE68A';
+    ctx.font = '700 44px Inter, system-ui';
+    ctx.fillText('@themis_gifts_bot', 60, 460);
+    // маленький символ-логотип
+    ctx.fillStyle = '#FBBF24';
+    ctx.font = '900 64px "Uncial Antiqua", Cinzel, serif';
+    ctx.fillText('☿', W-110, 110);
+    const blob = await new Promise(r => c.toBlob(r, 'image/png', 0.92));
+    return new File([blob], 'themis-win.png', { type: 'image/png' });
   }
   async function shareWin(){
-    const text = buildShareText();
-    // 1) нативный Web Share API
-    if (navigator.share){
-      try { await navigator.share({ text }); return; } catch(e){ /* fallthrough */ }
-    }
-    // 2) Telegram share-линк (внутри WebApp откроется нативно)
-    const tgUrl = 'https://t.me/share/url?text=' + encodeURIComponent(text);
+    const payout = readText('winPayoutTon');
+    const pot    = readText('winPotTon');
+    const text   = buildShareText(payout, pot);
+    const url    = 'https://t.me/themis_gifts_bot?startapp=jackpot'; // поменяй payload при необходимости
+
+    // пробуем с постером (если поддерживается)
+    try {
+      const file = await generateWinPoster({ payout, pot });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text, title: 'Themis — победа!' });
+        return;
+      }
+      // fallback: постер в буфер обмена (где возможно)
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': file })]);
+      }
+    } catch(e){ /* no-op */ }
+
+    // окончательный fallback — Telegram share с текстом + диплинком
+    const tgUrl = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
     if (window.Telegram?.WebApp?.openTelegramLink){
       window.Telegram.WebApp.openTelegramLink(tgUrl);
     } else {
@@ -775,11 +856,3 @@
 })();
 </script>
 </html>
-
-
-
-
-
-
-
-
