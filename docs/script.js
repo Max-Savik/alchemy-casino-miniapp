@@ -260,7 +260,8 @@ function initSocketEvents() {
         }
 
         const div = document.createElement('div');
-        div.className = 'relative w-20 h-20 rounded-md overflow-hidden ring-1 ring-gray-600';
+        /* Плитка растягивается по ширине колонки и остаётся квадратной */
+        div.className = 'relative w-full aspect-square min-w-[80px] rounded-md overflow-hidden ring-1 ring-gray-600';
         div.title = `${nft.name} — ${price.toFixed(2)} TON`;
         div.innerHTML = `
           <img src="${nft.img}" alt="${nft.name}" class="w-full h-full object-cover"
@@ -1598,6 +1599,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
