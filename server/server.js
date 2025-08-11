@@ -45,6 +45,7 @@ if (!HOT_PRIV_KEY) throw new Error("HOT_PRIV_KEY not set");
 const MIN_DEPOSIT           = Number(process.env.MIN_DEPOSIT          || 0.1); // ≥0.1 TON
 const MIN_WITHDRAW          = Number(process.env.MIN_WITHDRAW         || 0.5); // ≥0.5 TON
 const WITHDRAW_RATE_LIMIT   = Number(process.env.WITHDRAW_RATE_LIMIT  || 2);   // ≤2 вывода/мин/UID
+const MIN_TON_BET           = Number(process.env.MIN_TON_BET          || 0.1); // ≥0.1 TON для ставки
 
 /* ───── COMMISSION ───────────────────────────────────────────────
    Процент сервиса, удерживаемый ТОЛЬКО с TON-ставок других игроков,
@@ -1364,6 +1365,11 @@ socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
   // 0) базовая валидация
   tonAmount = Number(tonAmount) || 0;
   if (tonAmount < 0) tonAmount = 0;          // защита от отрицательных
+  // минималка для TON-ставки
+  if (tonAmount > 0 && tonAmount < MIN_TON_BET) {
+    socket.emit("err", `min ton bet ${MIN_TON_BET}`);
+    return;
+  }
 
   /* 1) проверяем и списываем TON-баланс */
   if (tonAmount > 0) {
@@ -1631,4 +1637,5 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
