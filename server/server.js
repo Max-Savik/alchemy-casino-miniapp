@@ -641,8 +641,17 @@ function modelLabelFromGiftObj(g = {}) {
   const raw = String(g?.gid || "");
   const m = raw.match(/name=['"]([^'"]+)['"]/i);
   if (m) return m[1];
-  if (raw) return raw;                                    // ← главный фикс
+  if (raw) return raw;
   return (String(g?.name || "").split("-")[0] || "").trim();
+}
+
+/* Универсальный билдер ссылки на картинку подарка (для обогащения ставок) */
+function buildGiftImg(g = {}) {
+  const core = String(g?.name || "").toLowerCase().replace(/[^a-z0-9]+/g,"");
+  const fromOwned = String(g?.ownedId || "").match(/\d+/)?.[0];
+  const fromGid   = String(g?.gid || "").match(/\d+/)?.[0];
+  const num = fromOwned || fromGid || "0";
+  return `https://nft.fragment.com/gift/${core}-${num}.medium.jpg`;
 }
 
 let thermosFloorsCache = { fetchedAt: 0, collections: {} }; // { key: { name, floorTon } }
@@ -1407,11 +1416,21 @@ socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
       price: tonAmount
     });
   }
-  // 1) Берём подарки из серверного хранилища ---------------------
+  // 1) Берём подарки из серверного хранилища и ОБОГАЩАЕМ данными (img/name/gid/price) --------
   nfts = nfts.map(obj => {
     const g = gifts.find(x => x.ownedId === obj.id && x.ownerId === userId && !x.staked);
-    if (g) { g.staked = true; }           // помечаем занятыми
-    return obj;
+    if (!g) return obj;
+    g.staked = true;                      // помечаем занятыми
+    return {
+      id: obj.id,
+      // приоритет цены: присланная → серверная → 0
+      price: Number(obj.price ?? g.price ?? 0),
+      // всегда гарантируем картинку
+      img: obj.img || g.img || buildGiftImg(g),
+      // дополняем недостающие поля
+      name: obj.name || g.name,
+      gid : obj.gid  || g.gid
+    };
   });
   await saveGifts();
 
@@ -1648,6 +1667,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
