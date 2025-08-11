@@ -127,6 +127,8 @@ async function fetchJSON(url, opts={}, { _retry } = {}) {
 function initSocketEvents() {
   /* ---------- состояние игры ---------- */
   socket.on("state", s => {
+    // гарантируем картинки у входящих ставок (особенно чужих)
+    s.players?.forEach(p => (p.nfts||[]).forEach(ensureNftMedia));
     players  = s.players;
     totalTON = s.totalTON;
     phase    = s.phase;
@@ -177,6 +179,7 @@ function initSocketEvents() {
   let lastSpin = { players: [], seed: null };
 
   socket.on("spinStart", ({ players: list, winner, spins, seed, offsetDeg, commitHash }) => {
+    list?.forEach(p => (p.nfts||[]).forEach(ensureNftMedia));
     lastSpin.players = list.map(p => ({ name: p.name, value: p.value }));
     lastSpin.seed    = seed;
     lastSpin.serverWinner = winner.name;
@@ -248,8 +251,8 @@ function initSocketEvents() {
 
       gained.forEach(nft0 => {
         const nft = { ...nft0 };
-        // Картинка: если пустая/битая — формируем fallback URL
-        nft.img = nft.img || buildImgLink({ name: nft.name, ownedId: nft.ownedId, gid: nft.gid });
+        // Сразу гарантируем валидный src
+        nft.img = giftImg(nft);
         // Цена: пробуем модель → коллекцию → то, что прислал сервер
         let price = Number(nft.price || 0);
         if (!(price > 0)) {
@@ -264,7 +267,7 @@ function initSocketEvents() {
         div.className = 'relative w-full aspect-square min-w-[80px] rounded-md overflow-hidden ring-1 ring-gray-600';
         div.title = `${nft.name} — ${price.toFixed(2)} TON`;
         div.innerHTML = `
-          <img src="${nft.img}" alt="${nft.name}" class="w-full h-full object-cover"
+          <img src="${giftImg(nft)}" alt="${nft.name}" class="w-full h-full object-cover"
                onerror="this.onerror=null; this.src='${buildImgLink({ name: nft.name, ownedId: nft.ownedId, gid: nft.gid })}'" />
           ${price ? `<div class="price-chip">${price.toFixed(2)}&nbsp;TON</div>` : ``}
         `;
@@ -432,6 +435,13 @@ function arc(cx,cy,r,start,end,color){
 // ========================== РЕНДЕР-ХЕЛПЕРЫ ==========================
 // 0. Новая переменная для порядка сортировки
 let sortAsc = true;
+
+// Гидратор медиа: гарантируем валидный src у NFT (даже если сервер его не прислал)
+function ensureNftMedia(n){
+  if (!n) return n;
+  if (!n.img) n.img = giftImg(n);
+  return n;
+}
 let txRefreshTimer = null;
 let txFetchInFlight = false;
 let txLastSignature = "";
@@ -577,6 +587,7 @@ async function ensureGiftPricesClient() {
  * @param {boolean} addBtn – добавлять ли кнопку «Вывести»
  */
 function cardHTML(nft, extra='') {
+  ensureNftMedia(nft);
   const priceVal = priceForNFT(nft);
   const priceStr = priceVal.toFixed(2);
   const withdrawing = nft.status === 'pending_withdraw';
@@ -584,7 +595,7 @@ function cardHTML(nft, extra='') {
   const statusLabel = withdrawing ? 'Ожидает оплаты' : 'Скоро отправим';
   return `
     <div class="nft-card ${extra} ${(withdrawing||queued)?'opacity-60 pointer-events-none':''}" data-id="${nft.id}">
-      <img src="${nft.img}" alt="${nft.name}" class="nft-img" loading="lazy" decoding="async"
+      <img src="${giftImg(nft)}" alt="${nft.name}" class="nft-img" loading="lazy" decoding="async"
            data-fallback="${buildImgLink(nft)}"
            onload="this.classList.add('loaded')"
            onerror="this.onerror=null; this.src=this.dataset.fallback;">
@@ -805,11 +816,7 @@ function makeNFTIcon(nftObj) {
   img.src = giftImg(nftObj);
   img.alt = nftObj.id;
   img.className = 'w-full h-full object-cover';
-  // надёжный фолбэк, если присланное изображение битое/пустое
-  img.onerror = function(){
-    this.onerror = null;
-    this.src = giftImg(nftObj);
-  };
+  img.onerror = null;
   wrapper.appendChild(img);
 
   const priceBadge = document.createElement('div');
@@ -1263,6 +1270,7 @@ function attachGiftUpdates() {
       price = mf || 0;
     }
     const rec = { ...recBase, price };
+    rec.img = giftImg(rec);
     if (i >= 0) inventory[i] = rec; else inventory.push(rec);
     renderPicker();
   });
@@ -1627,6 +1635,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
