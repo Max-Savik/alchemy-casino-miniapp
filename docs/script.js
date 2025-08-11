@@ -802,9 +802,14 @@ function makeNFTIcon(nftObj) {
   wrapper.style.cursor = 'pointer';
 
   const img = document.createElement('img');
-  img.src = nftObj.img;
+  img.src = giftImg(nftObj);
   img.alt = nftObj.id;
   img.className = 'w-full h-full object-cover';
+  // надёжный фолбэк, если присланное изображение битое/пустое
+  img.onerror = function(){
+    this.onerror = null;
+    this.src = giftImg(nftObj);
+  };
   wrapper.appendChild(img);
 
   const priceBadge = document.createElement('div');
@@ -970,6 +975,12 @@ function buildImgLink(g) {
   return `https://nft.fragment.com/gift/${letters}-${num}.medium.jpg`;
 }
 
+/* Безопасный src для NFT: берём присланный img либо строим fallback по name/ownedId/gid */
+function giftImg(n){
+  if (!n) return '';
+  return n.img || buildImgLink({ name: n.name, ownedId: n.id ?? n.ownedId, gid: n.gid });
+}
+    
 /* ── запускаем авторизацию и сокет ── */
 (async () => {
   await ensureJwt();
@@ -1194,7 +1205,7 @@ placeBetBtn.addEventListener('click', () => {
   }
   const nfts = Array.from(selected).map(id => {
     const n = inventory.find(x => x.id === id);
-    return { id: n.id, price: priceForNFT(n), img: n.img, name: n.name, gid: n.gid };
+    return { id: n.id, price: priceForNFT(n), img: giftImg(n), name: n.name, gid: n.gid };
   });
 
   nfts.forEach(x => {
@@ -1616,6 +1627,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
