@@ -352,6 +352,20 @@ const tonAmountInput = document.getElementById('tonAmount');
 const placeTonBetBtn = document.getElementById('placeTonBet');
 const depositTONBtn = document.getElementById('depositTON');
 
+/* === Min TON bet (синхронизируем с сервером; дефолт 0.1 TON) === */
+let TON_MIN_BET = 0.1;
+(async () => {
+  try {
+    const cfg = await fetchJSON(`${API_ORIGIN}/client-config`);
+    if (cfg && typeof cfg.TON_MIN_BET === 'number' && cfg.TON_MIN_BET > 0) {
+      TON_MIN_BET = Number(cfg.TON_MIN_BET);
+      // обновим кнопку, если модалка открыта и идёт ввод
+      if (typeof updateTonButtonState === 'function') updateTonButtonState();
+    }
+  } catch (_) { /* оставляем значение по умолчанию */ }
+})();
+
+
 /* === Modal scroll lock (soft, без дерганий) === */
 let __openModals = 0;
 function lockScroll() {
@@ -1602,6 +1616,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
