@@ -1267,12 +1267,12 @@ closeTonPickerBtn.addEventListener('click', () => {
 /* ======== Проверяем ввод суммы TON ======== */
 function updateTonButtonState(){
   const val = parseFloat(tonAmountInput.value);
-  placeTonBetBtn.disabled = !(val > 0);
+  placeTonBetBtn.disabled = !(val >= TON_MIN_BET);
 }
 function setTonAmount(v){
   if (!Number.isFinite(v)) v = 0;
-  // clamp: 0.01…tonBalance, два знака после запятой
-  v = Math.max(0.01, Math.min(tonBalance, Math.round(v * 100) / 100));
+  // clamp: 0.1…tonBalance, два знака после запятой
+  v = Math.max(TON_MIN_BET, Math.min(tonBalance, Math.round(v * 100) / 100));
   tonAmountInput.value = v.toFixed(2);
   updateTonButtonState();
 }
@@ -1294,7 +1294,10 @@ if (tonMaxBtn){
 
 placeTonBetBtn.addEventListener('click', async () => {
   const amount = parseFloat(tonAmountInput.value);
-  if (!(amount>0)) return;
+  if (!(amount >= TON_MIN_BET)) {
+    alert(`Минимальная ставка ${TON_MIN_BET} TON`);
+    return;
+  }
 
   // 1) Проверяем баланс
   if (tonBalance < amount){
@@ -1599,6 +1602,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
