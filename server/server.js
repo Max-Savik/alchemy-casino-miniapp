@@ -766,6 +766,17 @@ app.get("/market/model-floors", async (req,res)=>{
     res.status(500).json({ error: String(e.message||e) });
   }
 });
+
+// ───────── Client config (для фронта) ─────────
+// Возвращаем безопасные лимиты, чтобы UI знал реальные значения
+app.get("/client-config", (_req, res) => {
+  res.json({
+    TON_MIN_BET : MIN_TON_BET,
+    MIN_DEPOSIT : MIN_DEPOSIT,
+    MIN_WITHDRAW: MIN_WITHDRAW
+  });
+});
+
 // === LOGIN ===  (вызывается телеграм-клиентом один раз)
 /* helper: вытаскиваем user.id из initData                                 *
  * initData — это query-string вида                                       *
@@ -1637,5 +1648,6 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
