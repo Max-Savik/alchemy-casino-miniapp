@@ -210,6 +210,24 @@
 /* страховка для усечения в флексах/абсолюте */
 .nft-card .title-badge{ min-width: 0; }
 
+/* Текст на карточках в модалке выбора NFT — перенос + 2 строки */
+#nftPickerOverlay .nft-card .title-badge{
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;   /* максимум 2 строки */
+  line-clamp: 2;
+
+  /* ломаем очень длинные токены */
+  overflow-wrap: anywhere;
+
+  /* чуть компактнее шрифт + аккуратные отступы, как в окне победы */
+  font-size: 11px;
+  padding: 4px 6px 6px;
+}
+
+  
 </style>
 
 </head>
@@ -775,6 +793,7 @@
 })();
 </script>
 </html>
+
 
 
 
