@@ -188,6 +188,28 @@
 }
 /* на всякий случай — бейдж цены всегда поверх картинки */
 #winGainedGrid .price-chip{ z-index: 25; }
+
+  /* ТЕКСТ НА КАРТОЧКАХ В ОКНЕ ПОБЕДЫ — безопасно влезает */
+#winOverlay .nft-card .title-badge{
+  /* разрешаем перенос и многострочную обрезку */
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;        /* максимум 2 строки */
+  line-clamp: 2;
+
+  /* ломаем очень длинные токены/дефисы */
+  overflow-wrap: anywhere;
+
+  /* чуть компактнее шрифт, чтобы не ехало на маленьких тайлах */
+  font-size: 11px;
+  padding: 4px 6px 6px;
+}
+
+/* страховка для усечения в флексах/абсолюте */
+.nft-card .title-badge{ min-width: 0; }
+
 </style>
 
 </head>
@@ -753,6 +775,7 @@
 })();
 </script>
 </html>
+
 
 
 
