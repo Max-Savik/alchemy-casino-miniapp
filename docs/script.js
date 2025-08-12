@@ -232,13 +232,13 @@ function initSocketEvents() {
     const elCommTonRow = document.getElementById('winCommTonRow');
     if (elCommTonRow) elCommTonRow.classList.toggle('hidden', !(fix(d.tonCommission) > 0));
 
-    // NFT миниатюры (с нормализацией img/цены прямо сейчас)
+    // NFT миниатюры — теми же карточками, что и в профиле (.nft-card)
     (async () => {
       elGainedGrid.innerHTML = '';
       const gained = Array.isArray(d.gained) ? d.gained : [];
       if (!gained.length) { elNoNft.classList.remove('hidden'); return; }
 
-      // гарантируем, что есть model-floors для коллекций из выигрыша
+      // гарантируем наличие model-floors для оценок
       const needCols = new Set(gained.map(n =>
         colKeyFromNFT({ name: n.name, img: n.img })));
       const toFetch = [...needCols].filter(ck => {
@@ -249,30 +249,32 @@ function initSocketEvents() {
         try { await fetchModelFloors(toFetch); } catch(e) { console.warn(e); }
       }
 
-      gained.forEach(nft0 => {
-        const nft = { ...nft0 };
-        // Сразу гарантируем валидный src
-        nft.img = giftImg(nft);
-        // Цена: пробуем модель → коллекцию → то, что прислал сервер
-        let price = Number(nft.price || 0);
+      // Сборка HTML одним куском (быстрее и без «миганий»)
+      let html = '';
+      for (const nft0 of gained) {
+        const base = { ...nft0 };
+        // безопасный img
+        base.img = giftImg(base);
+        // оценка: модель → коллекция → присланная цена
+        let price = Number(base.price || 0);
         if (!(price > 0)) {
-          const ck = colKeyFromNFT({ name: nft.name, img: nft.img });
-          const mk = modelKeyFromGift({ gid: nft.gid, name: nft.name });
+          const ck = colKeyFromNFT({ name: base.name, img: base.img });
+          const mk = modelKeyFromGift({ gid: base.gid, name: base.name });
           const mf = modelFloor(ck, mk);
           price = mf || 0;
         }
-
-        const div = document.createElement('div');
-        /* Плитка растягивается по ширине колонки и остаётся квадратной */
-        div.className = 'relative w-full aspect-square min-w-[80px] rounded-md overflow-hidden ring-1 ring-gray-600';
-        div.title = `${nft.name} — ${price.toFixed(2)} TON`;
-        div.innerHTML = `
-          <img src="${giftImg(nft)}" alt="${nft.name}" class="w-full h-full object-cover"
-               onerror="this.onerror=null; this.src='${buildImgLink({ name: nft.name, ownedId: nft.ownedId, gid: nft.gid })}'" />
-          ${price ? `<div class="price-chip">${price.toFixed(2)}&nbsp;TON</div>` : ``}
-        `;
-        elGainedGrid.appendChild(div);
-      });
+        // приводим структуру к ожидаемой cardHTML
+        const cardData = {
+          id    : base.ownedId || base.id || String(base.gid || ''),
+          name  : base.name,
+          gid   : base.gid,
+          img   : base.img,
+          price : price,
+          status: 'idle'
+        };
+        html += cardHTML(cardData);
+      }
+      elGainedGrid.innerHTML = html;
       elNoNft.classList.add('hidden');
     })();
 
@@ -1659,6 +1661,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
