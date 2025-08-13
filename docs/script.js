@@ -1395,7 +1395,9 @@ navGame.addEventListener('click', () => {
 navMarket.addEventListener('click', () => location.href = 'market.html');
 
 
-navEarn.addEventListener('click', () => {
+navEarn.addEventListener('click', (e) => {
+  if (navEarn.hasAttribute('onclick')) return; // переход обрабатывается inline-обработчиком
+  e.preventDefault();
   location.hash = '#earn';
   show('earn');
 });
@@ -1661,6 +1663,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
