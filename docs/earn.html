@@ -12,10 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tonweb@0.0.64/dist/tonweb.min.js"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Lottie -->
-<script defer src="https://cdn.jsdelivr.net/npm/lottie-web@5.9.6/build/player/lottie.min.js"></script>
-
-
   <link href="https://fonts.googleapis.com/css2?family=Forum&family=Cinzel:wght@600;800&family=Uncial+Antiqua&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
@@ -34,10 +30,6 @@
 </head>
 
 <body class="min-h-screen flex flex-col">
-<!-- Lottie overlay -->
-<div id="lottieOverlay" class="fixed inset-0 z-50 flex items-center justify-center">
-  <div id="lottieContainer" class="w-48 h-48"></div>
-</div>
 
   <!-- HEADER -->
   <header class="glass sticky top-0 z-50 shadow-lg border-b border-amber-600/30">
@@ -56,7 +48,7 @@
   </header>
 
   <!-- MAIN -->
-<main id="mainContent" class="opacity-0 transition-opacity duration-500 ease-out">
+  <main class="flex-grow container mx-auto px-4 lg:px-8 py-6">
     <div class="max-w-4xl mx-auto space-y-6">
 
       <!-- Hero -->
@@ -145,56 +137,6 @@
       <span class="nav-lbl">Доход</span>
     </button>
   </nav>
-  <script>
-  // ——— Показ того же прелоадера, что в игре ———
-  (async function showPreloader() {
-    const overlay  = document.getElementById('lottieOverlay');
-    const lottieEl = document.getElementById('lottieContainer');
-
-    try {
-      const res  = await fetch('https://nft.fragment.com/gift/bondedring-403.lottie.json');
-      const data = await res.json();
-
-      // убираем фоновые слои (как в игре)
-      data.layers = (data.layers || []).filter(layer =>
-        layer.nm !== 'Background' && layer.nm !== 'Color Icon'
-      );
-
-      lottie.loadAnimation({
-        container: lottieEl,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        animationData: data
-      });
-    } catch (e) {
-      console.warn('Lottie load error:', e);
-    }
-  })();
-
-  // ——— Функция скрытия прелоадера и мягкого показа ———
-  function finishLoadingEarn() {
-    const overlay = document.getElementById('lottieOverlay');
-    overlay?.remove();
-
-    const main = document.getElementById('mainContent');
-    requestAnimationFrame(() => {
-      main.classList.replace('opacity-0', 'opacity-100');
-    });
-  }
-
-  // Вариант по умолчанию: убираем прелоадер когда страница загрузилась.
-  // Если на earn есть асинхронные данные — вызови finishLoadingEarn() ПОСЛЕ их подгрузки.
-  window.addEventListener('load', () => {
-    finishLoadingEarn();
-  });
-
-  // На всякий случай фолбэк (если что-то повиснет)
-  setTimeout(() => {
-    const stillThere = document.getElementById('lottieOverlay');
-    if (stillThere) finishLoadingEarn();
-  }, 8000);
-</script>
 
   <!-- логика страницы -->
   <script src="earn.js" defer></script>
