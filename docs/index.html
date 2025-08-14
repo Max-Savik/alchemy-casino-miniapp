@@ -27,6 +27,7 @@
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
+  :root{ --tg-topbar:0px; }
   /* ===== NFT CARD STYLES (как в профиле) ===== */
   .nft-card{
     position:relative;
@@ -226,13 +227,49 @@
   font-size: 11px;
   padding: 4px 6px 6px;
 }
-
+/* ===== Telegram top bar spacer + banner ===== */
+header.sticky{ top:var(--tg-topbar) !important; }
+.tg-top-area{
+  position:fixed;
+  top:0; left:0; right:0;
+  height:var(--tg-topbar);
+  z-index:65;                 /* выше нашего header, ниже модалок */
+  pointer-events:none;        /* кликается только сам баннер */
+  display:none;               /* включаем скриптом только в Telegram */
+}
+#topPromoBanner{
+  position:absolute; left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:auto;
+  max-width:min(70vw,420px);
+  padding:.35rem .8rem;
+  font:600 13px/1.2 'Inter','Manrope',sans-serif;
+  color:#1b1405; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  background:linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%);
+  border-radius:999px;
+  border:1px solid rgba(252,211,77,.45);
+  box-shadow:0 4px 14px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
+}
+@supports (padding: max(0px)) {
+  /* немного учитываем вырезы (iOS/Android) */
+  .tg-top-area{ height:calc(var(--tg-topbar) + env(safe-area-inset-top)); }
+  header.sticky{ top:calc(var(--tg-topbar) + env(safe-area-inset-top)) !important; }
+}
+@media (max-width:360px){
+  #topPromoBanner{ max-width:58vw; font-size:12px; padding:.32rem .6rem; }
+}
   
 </style>
 
 </head>
 
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
+  <!-- ===== Телеграм-топ-зона с баннером (между кнопками TG) ===== -->
+  <div id="tgTopArea" class="tg-top-area">
+    <a id="topPromoBanner" href="https://t.me/themis_gifts_bot" target="_blank" rel="noopener">
+      🔥 Реклама • Присоединяйся к Themis
+    </a>
+  </div>
     <div id="lottieOverlay"
        class="fixed inset-0 z-50 flex items-center justify-center">
     <div id="lottieContainer"
@@ -792,7 +829,42 @@
   btnShare?.addEventListener('click', shareWin);
 })();
 </script>
+<!-- ===== Telegram top bar sizing & banner behavior ===== -->
+<script>
+(function(){
+  const WebApp = window.Telegram && Telegram.WebApp;
+  const root = document.documentElement;
+  const area = document.getElementById('tgTopArea');
+  const banner = document.getElementById('topPromoBanner');
+
+  function setTopbarHeight(){
+    // эвристика: у Telegram высота системного хедера ~50 (iOS) / 56 (Android)
+    let h = 0;
+    if (WebApp){
+      const ios = WebApp.platform === 'ios';
+      h = ios ? 50 : 56;
+      area.style.display = 'block';
+    } else {
+      area.style.display = 'none';
+    }
+    root.style.setProperty('--tg-topbar', h + 'px');
+  }
+
+  setTopbarHeight();
+  // событие приходит при смене раскладки/клавы/ориентации
+  WebApp?.onEvent('viewportChanged', setTopbarHeight);
+
+  banner?.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const url = banner.getAttribute('href');
+    if (WebApp?.openLink) WebApp.openLink(url);
+   else if (WebApp?.openTelegramLink && url.startsWith('https://t.me/')) WebApp.openTelegramLink(url);
+    else window.open(url, '_blank');
+  });
+})();
+</script>
 </html>
+
 
 
 
