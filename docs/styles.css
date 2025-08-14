@@ -815,3 +815,72 @@ input[type=range]::-moz-range-thumb {
   box-shadow:0 6px 18px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
 }
 #placeTonBet:hover{ filter:brightness(1.07); }
+
+:root {
+  --tg-topbar: 0px;
+  --tg-top-extra: 12px;
+  --tg-banner-shift: 8px;
+}
+
+/* ===== Telegram top bar spacer + banner ===== */
+header.sticky {
+  top: calc(var(--tg-topbar) + var(--tg-top-extra)) !important;
+}
+.container, main#mainContent {
+  margin-top: calc(var(--tg-topbar) + var(--tg-top-extra));
+}
+.tg-top-area {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: calc(var(--tg-topbar) + var(--tg-top-extra));
+  z-index: 65;
+  pointer-events: none;
+  display: none;
+}
+#topPromoBanner {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + var(--tg-banner-shift));
+  transform: translateX(-50%);
+  pointer-events: auto;
+  max-width: min(70vw, 380px);
+  padding: .46rem 1.05rem;
+  font: 700 14.5px/1.25 'Inter','Manrope',sans-serif;
+  color: #1b1405;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%);
+  border-radius: 999px;
+  border: 1px solid rgba(252,211,77,.45);
+  box-shadow: 0 4px 14px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
+}
+#topPromoBanner .label {
+  min-width: 0; max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
+#topPromoBanner .ico {
+  width: 16px; height: 16px; flex: 0 0 auto;
+}
+
+@supports (padding: max(0px)) {
+  .tg-top-area {
+    height: calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top));
+  }
+  header.sticky {
+    top: calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)) !important;
+  }
+}
+.tg-ios #topPromoBanner {
+  top: calc(42% + var(--tg-banner-shift));
+}
+@media (max-width: 360px) {
+  #topPromoBanner {
+    max-width: 58vw;
+    font-size: 12.5px;
+    padding: .38rem .74rem;
+  }
+}
