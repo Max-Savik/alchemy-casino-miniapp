@@ -267,7 +267,7 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
   .tg-top-area{ height:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)); }
   header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)) !important; }
 }
-.tg-ios #topPromoBanner{ top:calc(71% + var(--tg-banner-shift)); }
+.tg-ios #topPromoBanner{ top:calc(70% + var(--tg-banner-shift)); }
 @media (max-width:360px){
   #topPromoBanner{ max-width:58vw; font-size:12.5px; padding:.38rem .74rem; }
 }
@@ -873,7 +873,7 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
       if (ios){
        const rootEl = document.documentElement;
        rootEl.classList.add('tg-ios');                 // флаг для CSS
-       rootEl.style.setProperty('--tg-top-extra','24px');     // опустить header + game секцию
+       rootEl.style.setProperty('--tg-top-extra','32px');     // опустить header + game секцию
        rootEl.style.setProperty('--tg-banner-shift','18px');  // опустить сам баннер
      }
       h = ios ? 50 : 56;
@@ -903,6 +903,7 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
 })();
 </script>
 </html>
+
 
 
 
