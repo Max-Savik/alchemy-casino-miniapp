@@ -207,7 +207,9 @@
   font-size: 11px;
   padding: 4px 6px 6px;
 }
-
+#gameSection{
+  padding-top: calc(.75rem + var(--tg-top-extra)) !important;
+}
 /* страховка для усечения в флексах/абсолюте */
 .nft-card .title-badge{ min-width: 0; }
 
@@ -242,9 +244,9 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
   top:calc(50% + var(--tg-banner-shift)); /* баннер чуть ниже */
   transform:translateX(-50%);
   pointer-events:auto;
-  max-width:min(58vw,320px);
-  padding:.35rem .8rem;
-  font:600 13px/1.2 'Inter','Manrope',sans-serif;
+  max-width:min(64vw,360px);  /* баннер немного длиннее */
+  padding:.42rem 1rem;        /* и выше */
+  font:700 14px/1.25 'Inter','Manrope',sans-serif;
   color:#1b1405; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   background:linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%);
   border-radius:999px;
@@ -257,7 +259,7 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
   header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)) !important; }
 }
 @media (max-width:360px){
-  #topPromoBanner{ max-width:52vw; font-size:12px; padding:.32rem .6rem; }
+  #topPromoBanner{ max-width:56vw; font-size:12.5px; padding:.36rem .7rem; }
 }
   
 </style>
@@ -267,8 +269,8 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
   <!-- ===== Телеграм-топ-зона с баннером (между кнопками TG) ===== -->
   <div id="tgTopArea" class="tg-top-area">
-    <a id="topPromoBanner" href="https://t.me/themis_gifts_bot" target="_blank" rel="noopener">
-      🔥 Реклама • Themis
+    <a id="topPromoBanner" href="https://t.me/alchemist_nft" target="_blank" rel="noopener">
+      🔥 Реклама • Alchemist News
     </a>
   </div>
     <div id="lottieOverlay"
@@ -858,13 +860,19 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
   banner?.addEventListener('click', (e)=>{
     e.preventDefault();
     const url = banner.getAttribute('href');
-    if (WebApp?.openLink) WebApp.openLink(url);
-   else if (WebApp?.openTelegramLink && url.startsWith('https://t.me/')) WebApp.openTelegramLink(url);
+    // t.me — через openTelegramLink; остальное — обычная ссылка
+    if (WebApp?.openTelegramLink && /^https?:\/\/t\.me\//i.test(url)) {
+      WebApp.openTelegramLink(url);
+    } else if (WebApp?.openLink) {
+      WebApp.openLink(url);
+    } else {
     else window.open(url, '_blank');
+    }
   });
 })();
 </script>
 </html>
+
 
 
 
