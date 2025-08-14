@@ -26,8 +26,9 @@
   <script src="script.js" defer></script>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <script src="banner.js" defer></script>
 <style>
-  :root{ --tg-topbar:0px; --tg-top-extra:12px; --tg-banner-shift:8px; }
   /* ===== NFT CARD STYLES (как в профиле) ===== */
   .nft-card{
     position:relative;
@@ -226,52 +227,7 @@
   /* чуть компактнее шрифт + аккуратные отступы, как в окне победы */
   font-size: 11px;
   padding: 4px 6px 6px;
-}
-/* ===== Telegram top bar spacer + banner ===== */
-header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
-.container, main#mainContent{
-  /* сдвиг всего контента вниз на величину телеграм-хедера,
-     чтобы наш header не наезжал на колесо */
-  margin-top: calc(var(--tg-topbar) + var(--tg-top-extra));
-}
-#gameSection{ padding-top:.75rem !important; }
-.tg-top-area{
-  position:fixed;
-  top:0; left:0; right:0;
-  height:calc(var(--tg-topbar) + var(--tg-top-extra));
-  z-index:65;                 /* выше нашего header, ниже модалок */
-  pointer-events:none;        /* кликается только сам баннер */
-  display:none;               /* включаем скриптом только в Telegram */
-}
-#topPromoBanner{
-  position:absolute; left:50%;
-  top:calc(50% + var(--tg-banner-shift)); /* баннер чуть ниже */
-  transform:translateX(-50%);
-  pointer-events:auto;
-  max-width:min(70vw,380px);  /* баннер еще чуть длиннее */
-  padding:.46rem 1.05rem;     /* и выше */
-  font:700 14.5px/1.25 'Inter','Manrope',sans-serif;
-  color:#1b1405; text-align:center; white-space:nowrap;
-  display:inline-flex; align-items:center; gap:.5rem;   /* иконка + текст */
-  background:linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%);
-  border-radius:999px;
-  border:1px solid rgba(252,211,77,.45);
-  box-shadow:0 4px 14px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
-}
-
-/* ellipsis только на тексте, чтобы иконка не сжималась */
-#topPromoBanner .label{ min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; display:inline-block; }
-#topPromoBanner .ico{ width:16px; height:16px; flex:0 0 auto; }
-@supports (padding: max(0px)) {
-  /* учитываем вырезы (iOS/Android) */
-  .tg-top-area{ height:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)); }
-  header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)) !important; }
-}
-.tg-ios #topPromoBanner{ top:calc(42% + var(--tg-banner-shift)); }
-@media (max-width:360px){
-  #topPromoBanner{ max-width:58vw; font-size:12.5px; padding:.38rem .74rem; }
-}
-  
+} 
 </style>
 
 </head>
@@ -857,52 +813,8 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
   btnShare?.addEventListener('click', shareWin);
 })();
 </script>
-<!-- ===== Telegram top bar sizing & banner behavior ===== -->
-<script>
-(function(){
-  const WebApp = window.Telegram && Telegram.WebApp;
-  const root = document.documentElement;
-  const area = document.getElementById('tgTopArea');
-  const banner = document.getElementById('topPromoBanner');
-
-  function setTopbarHeight(){
-    // эвристика: у Telegram высота системного хедера ~50 (iOS) / 56 (Android)
-    let h = 0;
-    if (WebApp){
-      const ios = WebApp.platform === 'ios';
-      if (ios){
-       const rootEl = document.documentElement;
-       rootEl.classList.add('tg-ios');                 // флаг для CSS
-       rootEl.style.setProperty('--tg-top-extra','40px');     // ещё ниже header + игровая секция
-       rootEl.style.setProperty('--tg-banner-shift','24px');  // лёгкий подъём баннера визуально
-     }
-      h = ios ? 50 : 56;
-      area.style.display = 'block';
-    } else {
-      area.style.display = 'none';
-    }
-    root.style.setProperty('--tg-topbar', h + 'px');
-  }
-
-  setTopbarHeight();
-  // событие приходит при смене раскладки/клавы/ориентации
-  WebApp?.onEvent('viewportChanged', setTopbarHeight);
-
-  banner?.addEventListener('click', (e)=>{
-    e.preventDefault();
-    const url = banner.getAttribute('href');
-    // t.me — через openTelegramLink; остальное — обычная ссылка
-    if (WebApp?.openTelegramLink && /^https?:\/\/t\.me\//i.test(url)) {
-      WebApp.openTelegramLink(url);
-    } else if (WebApp?.openLink) {
-      WebApp.openLink(url);
-    } else {
-      window.open(url, '_blank');
-    }
-  });
-})();
-</script>
 </html>
+
 
 
 
