@@ -251,12 +251,17 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
   max-width:min(70vw,380px);  /* баннер еще чуть длиннее */
   padding:.46rem 1.05rem;     /* и выше */
   font:700 14.5px/1.25 'Inter','Manrope',sans-serif;
-  color:#1b1405; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  color:#1b1405; text-align:center; white-space:nowrap;
+  display:inline-flex; align-items:center; gap:.5rem;   /* иконка + текст */
   background:linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%);
   border-radius:999px;
   border:1px solid rgba(252,211,77,.45);
   box-shadow:0 4px 14px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
 }
+
+/* ellipsis только на тексте, чтобы иконка не сжималась */
+#topPromoBanner .label{ min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; display:inline-block; }
+#topPromoBanner .ico{ width:16px; height:16px; flex:0 0 auto; }
 @supports (padding: max(0px)) {
   /* учитываем вырезы (iOS/Android) */
   .tg-top-area{ height:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)); }
@@ -273,8 +278,17 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
 <body class="flex flex-col min-h-screen bg-gray-950 text-gray-200">
   <!-- ===== Телеграм-топ-зона с баннером (между кнопками TG) ===== -->
   <div id="tgTopArea" class="tg-top-area">
-    <a id="topPromoBanner" href="https://t.me/alchemist_nft" target="_blank" rel="noopener">
-      🔥 Реклама • Alchemist News
+    <a id="topPromoBanner" href="https://t.me/alchemist_nft" target="_blank" rel="noopener"
+       aria-label="Alchemist News — Telegram канал">
+      <!-- SVG «газета» -->
+      <svg class="ico" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7z"/>
+        <path d="M8 11h8"/>
+        <path d="M8 15h8"/>
+        <path d="M4 17a3 3 0 0 0 3 3"/>
+      </svg>
+      <span class="label">🔥 Alchemist News</span>
     </a>
   </div>
     <div id="lottieOverlay"
@@ -882,6 +896,7 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
 })();
 </script>
 </html>
+
 
 
 
