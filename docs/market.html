@@ -11,7 +11,7 @@
 
   <!-- шрифты из основной страницы -->
   <link href="https://fonts.googleapis.com/css2?family=Forum&family=Cinzel:wght@600;800&family=Uncial+Antiqua&display=swap" rel="stylesheet" />
-
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
   <!-- кастомные стили проекта -->
   <link rel="stylesheet" href="styles.css" />
   <!-- Telegram Web App SDK (нужен для корректной работы баннера в TG) -->
@@ -21,6 +21,10 @@
 
   <style>
      .bottom-nav .nav-link.active { color:#ffda87; }
+     #tonBalance{
+       font-family:'JetBrains Mono','Courier New',monospace;
+       font-variant-numeric:tabular-nums;
+     }
   </style>
 
   <!-- логика страницы -->
@@ -51,6 +55,12 @@
       <a class="text-2xl font-extrabold glow-text flex items-center gap-1 flex-none" href="index.html">
         <span class="font-['Uncial Antiqua']">☿</span>Themis
       </a>
+      <div class="flex-grow"></div>
+      <!-- TON баланс как в профиле -->
+      <div id="balanceBox" class="flex items-center gap-1 px-2 py-1 rounded-full ton-pill">
+        <img src="https://s3.coinmarketcap.com/static/img/portraits/6304d4f7dcf54d0fb59743ba.png" alt="TON" class="w-4 h-4">
+        <span id="tonBalance" class="text-sm font-semibold">0.00</span>
+      </div>
     </div>
   </header>
 
