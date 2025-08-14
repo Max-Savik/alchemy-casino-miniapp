@@ -27,7 +27,7 @@
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  :root{ --tg-topbar:0px; }
+  :root{ --tg-topbar:0px; --tg-top-extra:12px; --tg-banner-shift:8px; }
   /* ===== NFT CARD STYLES (как в профиле) ===== */
   .nft-card{
     position:relative;
@@ -228,20 +228,21 @@
   padding: 4px 6px 6px;
 }
 /* ===== Telegram top bar spacer + banner ===== */
-header.sticky{ top:var(--tg-topbar) !important; }
+header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
 .tg-top-area{
   position:fixed;
   top:0; left:0; right:0;
-  height:var(--tg-topbar);
+  height:calc(var(--tg-topbar) + var(--tg-top-extra));
   z-index:65;                 /* выше нашего header, ниже модалок */
   pointer-events:none;        /* кликается только сам баннер */
   display:none;               /* включаем скриптом только в Telegram */
 }
 #topPromoBanner{
-  position:absolute; left:50%; top:50%;
-  transform:translate(-50%,-50%);
+  position:absolute; left:50%;
+  top:calc(50% + var(--tg-banner-shift)); /* баннер чуть ниже */
+  transform:translateX(-50%);
   pointer-events:auto;
-  max-width:min(70vw,420px);
+  max-width:min(58vw,320px);
   padding:.35rem .8rem;
   font:600 13px/1.2 'Inter','Manrope',sans-serif;
   color:#1b1405; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -251,12 +252,12 @@ header.sticky{ top:var(--tg-topbar) !important; }
   box-shadow:0 4px 14px rgba(0,0,0,.45), 0 0 8px rgba(200,160,80,.35);
 }
 @supports (padding: max(0px)) {
-  /* немного учитываем вырезы (iOS/Android) */
-  .tg-top-area{ height:calc(var(--tg-topbar) + env(safe-area-inset-top)); }
-  header.sticky{ top:calc(var(--tg-topbar) + env(safe-area-inset-top)) !important; }
+  /* учитываем вырезы (iOS/Android) */
+  .tg-top-area{ height:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)); }
+  header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)) !important; }
 }
 @media (max-width:360px){
-  #topPromoBanner{ max-width:58vw; font-size:12px; padding:.32rem .6rem; }
+  #topPromoBanner{ max-width:52vw; font-size:12px; padding:.32rem .6rem; }
 }
   
 </style>
@@ -267,7 +268,7 @@ header.sticky{ top:var(--tg-topbar) !important; }
   <!-- ===== Телеграм-топ-зона с баннером (между кнопками TG) ===== -->
   <div id="tgTopArea" class="tg-top-area">
     <a id="topPromoBanner" href="https://t.me/themis_gifts_bot" target="_blank" rel="noopener">
-      🔥 Реклама • Присоединяйся к Themis
+      🔥 Реклама • Themis
     </a>
   </div>
     <div id="lottieOverlay"
@@ -864,6 +865,7 @@ header.sticky{ top:var(--tg-topbar) !important; }
 })();
 </script>
 </html>
+
 
 
 
