@@ -207,9 +207,7 @@
   font-size: 11px;
   padding: 4px 6px 6px;
 }
-#gameSection{
-  padding-top: calc(.75rem + var(--tg-top-extra)) !important;
-}
+
 /* страховка для усечения в флексах/абсолюте */
 .nft-card .title-badge{ min-width: 0; }
 
@@ -231,6 +229,12 @@
 }
 /* ===== Telegram top bar spacer + banner ===== */
 header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
+.container, main#mainContent{
+  /* сдвиг всего контента вниз на величину телеграм-хедера,
+     чтобы наш header не наезжал на колесо */
+  margin-top: calc(var(--tg-topbar) + var(--tg-top-extra));
+}
+#gameSection{ padding-top:.75rem !important; }
 .tg-top-area{
   position:fixed;
   top:0; left:0; right:0;
@@ -244,9 +248,9 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
   top:calc(50% + var(--tg-banner-shift)); /* баннер чуть ниже */
   transform:translateX(-50%);
   pointer-events:auto;
-  max-width:min(64vw,360px);  /* баннер немного длиннее */
-  padding:.42rem 1rem;        /* и выше */
-  font:700 14px/1.25 'Inter','Manrope',sans-serif;
+  max-width:min(70vw,380px);  /* баннер еще чуть длиннее */
+  padding:.46rem 1.05rem;     /* и выше */
+  font:700 14.5px/1.25 'Inter','Manrope',sans-serif;
   color:#1b1405; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   background:linear-gradient(135deg,#fcd56a 0%,#d29b35 40%,#a96e08 100%);
   border-radius:999px;
@@ -259,7 +263,7 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
   header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra) + env(safe-area-inset-top)) !important; }
 }
 @media (max-width:360px){
-  #topPromoBanner{ max-width:56vw; font-size:12.5px; padding:.36rem .7rem; }
+  #topPromoBanner{ max-width:58vw; font-size:12.5px; padding:.38rem .74rem; }
 }
   
 </style>
@@ -532,8 +536,14 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
                placeholder="0.00" />
         <!-- Иконка TON внутри поля -->
         <span class="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">
-          <img src="https://pbs.twimg.com/profile_images/1602985148219260928/VC-Mraev_400x400.jpg"
-               alt="TON" class="w-5 h-5" />
+          <!-- inline TON icon — без внешних запросов и блокировок хранения -->
+          <svg viewBox="0 0 256 256" class="w-5 h-5" aria-hidden="true">
+            <path d="M128 222 26 76a20 20 0 0 1 16-32h172a20 20 0 0 1 16 32L128 222Z"
+                  fill="currentColor" opacity=".2"/>
+            <path d="M128 222 26 76a20 20 0 0 1 16-32h172a20 20 0 0 1 16 32Z"
+                  fill="none" stroke="currentColor" stroke-width="20" stroke-linejoin="round"/>
+            <path d="M128 222V44" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/>
+            </svg>
         </span>
       </div>
     </div>
@@ -866,12 +876,13 @@ header.sticky{ top:calc(var(--tg-topbar) + var(--tg-top-extra)) !important; }
     } else if (WebApp?.openLink) {
       WebApp.openLink(url);
     } else {
-    else window.open(url, '_blank');
+      window.open(url, '_blank');
     }
   });
 })();
 </script>
 </html>
+
 
 
 
