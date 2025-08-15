@@ -215,8 +215,10 @@ function initSocketEvents() {
   });
 
   socket.on("spinEnd", ({ winner, total, seed }) => {
-    lockBets(false);
-    phase = "waiting";
+    // ❗ В этот момент на сервере раунд ещё «закрывается» (пост-обработка).
+    // Держим UI залоченным до нового state из resetRound.
+    phase = "settling";
+    lockBets(true);
     updateStatus();
 
     const record = {
@@ -318,7 +320,7 @@ const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#
 
 let players   = [];
 let totalTON  = 0;
-let phase     = "waiting";              // waiting | countdown | spinning
+let phase     = "waiting";              // waiting | countdown | spinning | settling
 // новый общий дедлайн для приёма ставок (мс epoch) — приходит с сервера
 let betsCloseAt = null;
 // локальная блокировка (истина срабатывает раньше любых попыток UI)
@@ -1223,6 +1225,8 @@ function updateStatus(sec = null){
     }
   } else if (phase === "spinning"){
     statusEl.textContent = "Игра началась!";
+  } else if (phase === "settling"){
+    statusEl.textContent = "Показываем победителя…";
   }
 }
 
@@ -1434,9 +1438,8 @@ placeTonBetBtn.addEventListener('click', async () => {
 // 2) Просто отправляем ставку
 socket.emit('placeBet', { name: myName, tonAmount: amount });
 
-// 3) Оптимистично уменьшаем баланс локально
-tonBalance -= amount;
-document.getElementById('tonBalance').textContent = tonBalance.toFixed(2);
+// 3) Баланс НЕ уменьшаем локально — дождёмся серверной записи и обновим
+setTimeout(() => { try { refreshBalance(); } catch(_) {} }, 250);
 
 // 4) Закрываем модалку
 tonPickerOverlay.classList.remove('show');
@@ -1741,6 +1744,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
