@@ -136,7 +136,8 @@ function initSocketEvents() {
     // моментально залочим, если дедлайн уже прошёл
     const now = Date.now();
     const shouldLock = (phase === 'spinning') || (betsCloseAt && now >= betsCloseAt);
-    if (shouldLock) { betsLocked = true; lockBets(true); }
+    if (shouldLock) { lockBets(true); }
+    else { lockBets(false); }
 
     window.players  = s.players;
     window.totalTON = s.totalTON;
@@ -177,7 +178,6 @@ function initSocketEvents() {
     // локально планируем мягкий локаут за 1с до старта
     const ms = Math.max(0, (betsCloseAt || (endsAt - 1000)) - Date.now());
     setTimeout(() => {
-      betsLocked = true;
       lockBets(true);
       updateStatus();
     }, ms);
@@ -205,7 +205,6 @@ function initSocketEvents() {
     players  = list;
     totalTON = list.reduce((a,b) => a + b.value, 0);
     phase = "spinning";
-    betsLocked = true;
     lockBets(true);
     updateStatus();
     ensureModelFloorsForPlayers(players).then(() => {
@@ -1184,7 +1183,13 @@ function runSpinAnimation(winner, spins, offsetDeg) {
 
 
 function lockBets(lock){
-  // общий локаут: закрываем модалки и отключаем любые действия по ставкам
+  // ЕДИНАЯ точка истины по блокировке ставок
+  betsLocked = !!lock;
+  // при открытии приёма сбрасываем устаревший дедлайн предыдущего раунда
+  if (!lock) {
+    betsCloseAt = null;
+  }
+  // общий локаут: закрываем модалки и переключаем доступность действий
   placeBetBtn.disabled   = true;
   depositNFTBtn.disabled = !!lock;
   depositTONBtn.disabled = !!lock;
@@ -1203,6 +1208,7 @@ function lockBets(lock){
       unlockScroll();
     }
   }
+  updateStatus();
 }
 
 function updateStatus(sec = null){
@@ -1715,7 +1721,6 @@ refreshBalance();
 // Унифицированный приём ошибок от сервера (в т.ч. «bets_closed»)
 socket?.on?.('err', (msg) => {
   if (String(msg || '').includes('bets_closed')) {
-    betsLocked = true;
     lockBets(true);
     updateStatus();
     alert('Приём ставок закрыт');
@@ -1736,6 +1741,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
