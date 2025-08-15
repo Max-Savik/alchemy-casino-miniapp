@@ -129,9 +129,14 @@ function initSocketEvents() {
   socket.on("state", s => {
     // гарантируем картинки у входящих ставок (особенно чужих)
     s.players?.forEach(p => (p.nfts||[]).forEach(ensureNftMedia));
-    players  = s.players;
-    totalTON = s.totalTON;
-    phase    = s.phase;
+    players     = s.players;
+    totalTON    = s.totalTON;
+    phase       = s.phase;
+    betsCloseAt = s.betsCloseAt ?? null;
+    // моментально залочим, если дедлайн уже прошёл
+    const now = Date.now();
+    const shouldLock = (phase === 'spinning') || (betsCloseAt && now >= betsCloseAt);
+    if (shouldLock) { betsLocked = true; lockBets(true); }
 
     window.players  = s.players;
     window.totalTON = s.totalTON;
@@ -165,15 +170,29 @@ function initSocketEvents() {
     }
   });
 
-  socket.on("countdownStart", ({ endsAt, commitHash }) => {
+  socket.on("countdownStart", ({ endsAt, commitHash, betsCloseAt: bca }) => {
     if (commitHash) setCommit(commitHash);
     phase = "countdown";
+    betsCloseAt = bca ?? (endsAt - 1000);
+    // локально планируем мягкий локаут за 1с до старта
+    const ms = Math.max(0, (betsCloseAt || (endsAt - 1000)) - Date.now());
+    setTimeout(() => {
+      betsLocked = true;
+      lockBets(true);
+      updateStatus();
+    }, ms);
     updateStatus(Math.ceil((endsAt - Date.now()) / 1000));
   });
 
   socket.on("countdownTick", ({ remaining }) => {
     phase = "countdown";
-    updateStatus(Math.ceil(remaining / 1000));
+    const sec = Math.ceil(remaining / 1000);
+    // авто-блок на последней секунде
+    if (!betsLocked && betsCloseAt && Date.now() >= betsCloseAt) {
+      betsLocked = true;
+      lockBets(true);
+    }
+    updateStatus(sec);
   });
 
   let lastSpin = { players: [], seed: null };
@@ -185,7 +204,8 @@ function initSocketEvents() {
     lastSpin.serverWinner = winner.name;
     players  = list;
     totalTON = list.reduce((a,b) => a + b.value, 0);
-    phase    = "spinning";
+    phase = "spinning";
+    betsLocked = true;
     lockBets(true);
     updateStatus();
     ensureModelFloorsForPlayers(players).then(() => {
@@ -300,6 +320,10 @@ const palette  = ['#fee440','#d4af37','#8ac926','#1982c4','#ffca3a','#6a4c93','#
 let players   = [];
 let totalTON  = 0;
 let phase     = "waiting";              // waiting | countdown | spinning
+// новый общий дедлайн для приёма ставок (мс epoch) — приходит с сервера
+let betsCloseAt = null;
+// локальная блокировка (истина срабатывает раньше любых попыток UI)
+let betsLocked = false;
 
 // Храним развернутых игроков (по имени) для истории NFT 
 const expandedPlayers = new Set();
@@ -729,7 +753,7 @@ function drawWheel() {
       <text x="${pos.x}" y="${pos.y}"
             transform="rotate(${angle} ${pos.x} ${pos.y})"
             font-size="15"
-            fill="#000"
+            fill="#fff"
             text-anchor="middle"
             dominant-baseline="middle">
         ${(p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name}
@@ -1160,16 +1184,37 @@ function runSpinAnimation(winner, spins, offsetDeg) {
 
 
 function lockBets(lock){
-  placeBetBtn.disabled = lock;
+  // общий локаут: закрываем модалки и отключаем любые действия по ставкам
+  placeBetBtn.disabled   = true;
+  depositNFTBtn.disabled = !!lock;
+  depositTONBtn.disabled = !!lock;
+  if (lock) {
+    // закрыть NFT-пикер
+    if (!pickerOverlay.classList.contains('hidden')) {
+      pickerOverlay.classList.add('hidden');
+      selected.clear();
+      renderPicker();
+      unlockScroll();
+    }
+    // закрыть TON-пикер
+    if (tonPickerOverlay.classList.contains('show')) {
+      tonPickerOverlay.classList.remove('show');
+      tonAmountInput.value = '';
+      unlockScroll();
+    }
+  }
 }
 
 function updateStatus(sec = null){
   if (phase === "waiting"){
     statusEl.textContent = "Ожидание игроков...";
   } else if (phase === "countdown"){
-    statusEl.textContent = sec && sec > 0
-      ? `Таймер: ${sec} сек`
-      : "Раунд начинается!";
+    const closed = betsLocked || (betsCloseAt && Date.now() >= betsCloseAt);
+    if (closed) {
+      statusEl.textContent = sec && sec > 0 ? `Приём ставок закрыт · ${sec} сек` : "Раунд начинается!";
+    } else {
+      statusEl.textContent = sec && sec > 0 ? `Таймер: ${sec} сек` : "Раунд начинается!";
+    }
   } else if (phase === "spinning"){
     statusEl.textContent = "Игра началась!";
   }
@@ -1178,6 +1223,10 @@ function updateStatus(sec = null){
 // =================== PICKER & BET ===================
 // Открываем модальное окно выбора NFT
 depositNFTBtn.addEventListener('click', () => {
+  if (betsLocked || phase === 'spinning' || (betsCloseAt && Date.now() >= betsCloseAt)) {
+    alert('Приём ставок закрыт');
+    return;
+  }
   selected.clear();
   placeBetBtn.disabled = true;
 
@@ -1232,6 +1281,10 @@ nftPicker.addEventListener('click', e => {
 
 // Нажата кнопка «Поставить выбранные»
 placeBetBtn.addEventListener('click', () => {
+  if (betsLocked || phase === 'spinning' || (betsCloseAt && Date.now() >= betsCloseAt)) {
+    alert('Приём ставок закрыт');
+    return;
+  }
   if (selected.size === 0) {
     alert("Выберите хотя бы один NFT");
     return;
@@ -1310,6 +1363,10 @@ initSocketEvents = function() {
 };
 /* ======== Открываем TON-пикер ======== */
 depositTONBtn.addEventListener('click', () => {
+  if (betsLocked || phase === 'spinning' || (betsCloseAt && Date.now() >= betsCloseAt)) {
+    alert('Приём ставок закрыт');
+    return;
+  }
   lockScroll();
   tonPickerOverlay.classList.add('show');
   tonAmountInput.value = '';
@@ -1352,6 +1409,10 @@ if (tonMaxBtn){
 }
 
 placeTonBetBtn.addEventListener('click', async () => {
+  if (betsLocked || phase === 'spinning' || (betsCloseAt && Date.now() >= betsCloseAt)) {
+    alert('Приём ставок закрыт');
+    return;
+  }
   const amount = parseFloat(tonAmountInput.value);
   if (!(amount >= TON_MIN_BET)) {
     alert(`Минимальная ставка ${TON_MIN_BET} TON`);
@@ -1649,7 +1710,19 @@ const initialView =
     : 'game';
 show(initialView);
 refreshUI();
-refreshBalance();  
+refreshBalance();
+
+// Унифицированный приём ошибок от сервера (в т.ч. «bets_closed»)
+socket?.on?.('err', (msg) => {
+  if (String(msg || '').includes('bets_closed')) {
+    betsLocked = true;
+    lockBets(true);
+    updateStatus();
+    alert('Приём ставок закрыт');
+  } else if (msg) {
+    alert(msg);
+  }
+});
 
 // Навешиваем один раз
 const copyBtn = document.getElementById('copyCommit');
@@ -1663,6 +1736,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
