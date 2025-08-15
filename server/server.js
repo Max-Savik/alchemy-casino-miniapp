@@ -164,10 +164,20 @@ await fs.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
 
 // ─────────────────── JSON‑history helpers ──────────────────────
 let history = [];
-const palette = [
-  '#fee440','#d4af37','#8ac926','#1982c4',
-  '#ffca3a','#6a4c93','#d79a59','#218380'
-];
+// Стабильный цвет по пользователю (или имени), HSL → CSS.
+function stableHueFrom(str=""){
+  let h=0>>>0;
+  for (let i=0;i<str.length;i++) h = ((h<<5)-h + str.charCodeAt(i)) >>> 0; // x*31 + c
+  return h % 360;
+}
+function playerColor(userId, name, idx=0){
+  // добавим небольшую «декорреляцию» по индексу входа
+  const base = `${userId||''}|${name||''}|${idx}`;
+  const h = (stableHueFrom(base) + 37*(idx%5)) % 360; // golden-ish шаг
+  const s = 78;  // насыщенность
+  const l = 52;  // светлота — хорошо видна на тёмном фоне
+  return `hsl(${h} ${s}% ${l}%)`;
+}
 async function loadHistory() {
   try {
     const txt  = await fs.readFile(HISTORY_FILE, "utf8");
@@ -1000,9 +1010,12 @@ let game = {
   totalTON: 0,
   phase: "waiting",
   endsAt: null,
+  betsCloseAt: null,       // за сколько остановим приём ставок
   seed: null,           // крипто-сид
   commitHash: null      // sha256(seed)
 };
+const BETS_CLOSE_MS = 1000;   // окно закрытия ставок (1с до старта)
+
 
 // ───────────────────── Helper functions ────────────────────────
 // Дет. выбор на основе seed
@@ -1031,6 +1044,7 @@ function resetRound() {
     totalTON: 0,
     phase: "waiting",
     endsAt: null,
+    betsCloseAt: null,
     seed,
     commitHash: crypto.createHash("sha256").update(seed).digest("hex")
   };
@@ -1050,9 +1064,11 @@ function maybeStartCountdown() {
   if (game.phase !== "waiting" || game.players.length < 2) return;
   game.phase = "countdown";
   game.endsAt = Date.now() + 45_000;
+  game.betsCloseAt = game.endsAt - BETS_CLOSE_MS;
   io.emit("countdownStart", {
     endsAt: game.endsAt,
-    commitHash: game.commitHash      // публикуем хэш заранее
+    commitHash: game.commitHash,     // публикуем хэш заранее
+    betsCloseAt: game.betsCloseAt
   });
 
   const t = setInterval(() => {
@@ -1382,6 +1398,12 @@ io.on("connection", socket => {
 
 socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
   const userId = socket.userId;
+  const now = Date.now();
+  // Жёсткая серверная отсечка:
+  const closed =
+    game.phase === 'spinning' ||
+    (game.phase === 'countdown' && game.endsAt && now >= (game.endsAt - BETS_CLOSE_MS));
+  if (closed) { socket.emit('err', 'bets_closed'); return; }
   // 0) базовая валидация
   tonAmount = Number(tonAmount) || 0;
   if (tonAmount < 0) tonAmount = 0;          // защита от отрицательных
@@ -1440,7 +1462,7 @@ socket.on("placeBet", async ({ name, nfts = [], tonAmount = 0 }) => {
       userId,
       name,
       value: 0,
-      color: palette[game.players.length % palette.length],
+      color: playerColor(userId, name, game.players.length),
       nfts: []
     };
     game.players.push(player);
@@ -1667,6 +1689,7 @@ async function processWithdrawals() {
   pollDeposits().catch(console.error);
   httpServer.listen(PORT, () => console.log("Jackpot server on", PORT));
 })()
+
 
 
 
