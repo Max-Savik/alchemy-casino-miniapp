@@ -102,8 +102,12 @@ var cumulativeRotation = 0;
 // 1. Подключаемся к бекенду
 const API_ORIGIN = "https://alchemy-casino-miniapp.onrender.com";
 let socket;   
-// JWT, сохранённый локально, если кука не работает
-let jwtToken = localStorage.getItem("jwt") || null;
+// === JWT теперь храним ПОПОЛЬЗОВАТЕЛЬНО (привязка к Telegram user.id) ===
+const CURRENT_TG_UID = String(window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || "");
+// ключ для localStorage (персонифицированный)
+const JWT_LS_KEY = CURRENT_TG_UID ? `jwt:${CURRENT_TG_UID}` : "jwt";
+// читаем только user-scoped токен
+let jwtToken = localStorage.getItem(JWT_LS_KEY) || null;
 
 async function fetchJSON(url, opts={}, { _retry } = {}) {
   const res = await fetch(url, {
@@ -993,12 +997,27 @@ clearFiltersBtn.addEventListener('click', () => {
   renderPicker();
 });
 
+// Принудительно сверяемся с текущим Telegram-пользователем и перелогиниваемся при расхождении
 async function ensureJwt(forceRefresh = false) {
-  const hasSid = document.cookie.split("; ").some(c => c.startsWith("sid="));
-  if (hasSid && !forceRefresh) return;
-  if (!forceRefresh && jwtToken) return;
+  const currUid = CURRENT_TG_UID;
+  if (!currUid) throw new Error("No Telegram user id");
 
-  // Логинимся строго по подписанным данным Telegram
+  const storedUid = localStorage.getItem("authUid") || "";
+  const hasSidCookie = document.cookie.split("; ").some(c => c.startsWith("sid="));
+
+  // Нужен relogin, если:
+  //  • запрошен forceRefresh
+  //  • нет серверной cookie sid
+  //  • в localStorage сохранён uid другого пользователя
+  //  • нет актуального user-scoped jwtToken
+  const needLogin = !!(
+    forceRefresh ||
+    !hasSidCookie ||
+    storedUid !== currUid ||
+    !jwtToken
+  );
+  if (!needLogin) return;
+
   const initDataRaw = window?.Telegram?.WebApp?.initData;
   if (!initDataRaw) throw new Error("No Telegram initData");
 
@@ -1009,15 +1028,23 @@ async function ensureJwt(forceRefresh = false) {
     body        : JSON.stringify({ initData: initDataRaw })
   });
   if (!r.ok) {
-    // чистим локальный мусор и падаем
-    localStorage.removeItem("jwt");
+    // подчистим только наш user-scoped ключ и старый общий ключ (на всякий случай)
+    localStorage.removeItem(JWT_LS_KEY);
+    localStorage.removeItem("jwt"); // для обратной совместимости со старыми билдами
     jwtToken = null;
     throw new Error(`login failed ${r.status}`);
   }
   const j = await r.json();
   jwtToken = j.token || null;
-  if (jwtToken) localStorage.setItem("jwt", jwtToken);
-}                            
+  if (jwtToken) {
+    // сохраняем токен ПОД ТЕКУЩЕГО UID
+    localStorage.setItem(JWT_LS_KEY, jwtToken);
+  }
+  // помечаем, что сейчас авторизован именно этот Telegram-пользователь
+  localStorage.setItem("authUid", currUid);
+  // полностью отказываемся от старого общего ключа
+  localStorage.removeItem("jwt");
+}                          
 
 /* === Картинка подарка — ровно как в профиле === */
 function buildImgLink(g) {
@@ -1744,6 +1771,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
