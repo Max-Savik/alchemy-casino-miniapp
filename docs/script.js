@@ -791,7 +791,7 @@ function drawWheel() {
     let angle = mid + 90;
     if (angle > 90 && angle < 270) angle += 180;
 
-    const label = fitLabelText(p.name || "?", sweep, R_LABEL);
+    const label = fitLabelText(p.name || "Без имени", sweep, R_LABEL);
     svg.insertAdjacentHTML('beforeend', `
       <text x="${pos.x}" y="${pos.y}"
             transform="rotate(${angle} ${pos.x} ${pos.y})"
@@ -1809,6 +1809,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
