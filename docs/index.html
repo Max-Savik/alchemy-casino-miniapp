@@ -228,6 +228,28 @@
   font-size: 11px;
   padding: 4px 6px 6px;
 } 
+  /* ───────────────── Wheel labels (ника на колесе) ───────────────── */
+  #wheelSvg { overflow: visible; }
+  #wheelSvg .wheel-label{
+    font-family: 'Manrope', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    fill: #fff;
+    stroke: rgba(0,0,0,.72);          /* контрастная обводка для читаемости */
+    stroke-width: 3px;
+    paint-order: stroke fill;         /* сначала обводка, потом заливка */
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
+    user-select: none;
+    pointer-events: none;
+  }
+  #wheelSvg .wheel-label.tiny{
+    font-weight: 600;
+    opacity: .95;
+    stroke-width: 2.2px;
+  }
+  @media (-webkit-min-device-pixel-ratio:2), (min-resolution:192dpi){
+    #wheelSvg .wheel-label{ stroke-width: 2.2px; }
+  }
 </style>
 
 </head>
@@ -814,6 +836,7 @@
 })();
 </script>
 </html>
+
 
 
 
