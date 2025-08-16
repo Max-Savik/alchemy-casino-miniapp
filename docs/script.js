@@ -462,7 +462,43 @@ function arc(cx,cy,r,start,end,color){
         large = (end - start) <= 180 ? 0 : 1;
   return `<path d="M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y} Z" fill="${color}"/>`;
 }
+// Безопасный текст для SVG
+function escapeXml(s){
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
 
+// Красивое подгонянное имя под дугу сектора
+function fitLabelText(name, sweepDeg, radius){
+  const base = String(name || '?').replace(/\s+/g,' ').trim();
+  // длина дуги (px)
+  const arcLen = 2 * Math.PI * radius * (sweepDeg / 360);
+  // параметры шрифта
+  const FS_BASE = 16, FS_MIN = 11, FS_MAX = 18;
+  const AVG_CHAR = 0.58; // средняя ширина символа в em для жирного sans
+  const pad = 18;        // небольшой отступ по краям дуги
+
+  // первичная оценка
+  let fs = FS_BASE;
+  let width = base.length * fs * AVG_CHAR;
+  let scale = Math.min(1, (arcLen - pad) / Math.max(1, width));
+  fs = Math.max(FS_MIN, Math.min(FS_MAX, Math.floor(FS_BASE * scale)));
+
+  // максимальное число символов с учётом подобранного размера
+  const maxChars = Math.max(3, Math.floor((arcLen - pad) / (fs * AVG_CHAR)));
+  let text = base;
+  if (base.length > maxChars){
+    text = maxChars <= 3 ? base.slice(0,1).toUpperCase() : (base.slice(0, maxChars - 1) + '…');
+  }
+
+  // очень узкие сектора — сверхкомпактный режим
+  const tiny = sweepDeg < 10;
+  if (tiny && text.length > 4) text = text.slice(0,3) + '…';
+
+  return { text, fs, tiny };
+  }
 // ========================== РЕНДЕР-ХЕЛПЕРЫ ==========================
 // 0. Новая переменная для порядка сортировки
 let sortAsc = true;
@@ -722,7 +758,11 @@ function drawWheel() {
   svg.innerHTML = '';
   if (!totalTON) return;
 
+  // радиусы: внешний край сектора и «дорожка» для текста
+  const R_OUT   = 190;
+  const R_LABEL = 138;        // внутри круга, чтобы не вылезать визуально
   let start = -90;
+
   players.forEach(p => {
     // 🔒 На всякий случай: гарантируем корректный img у каждой ставки
     (p.nfts || []).forEach(ensureNftMedia);
@@ -734,34 +774,32 @@ function drawWheel() {
     if (players.length > 1) {
       svg.insertAdjacentHTML(
         'beforeend',
-        arc(200, 200, 190, start, end, p.color)
+        arc(200, 200, R_OUT, start, end, p.color)
           .replace('<path ', '<path data-player="' + p.name + '" ')
       );
     } else {
       svg.insertAdjacentHTML(
         'beforeend',
-        `<circle cx="200" cy="200" r="190" fill="${p.color}" data-player="${p.name}"></circle>`
+        `<circle cx="200" cy="200" r="${R_OUT}" fill="${p.color}" data-player="${p.name}"></circle>`
       );
     }
 
-    // позиция и ориентация текста
+    // аккуратная подпись внутри сектора (динамический размер, обводка, усечение)
     const mid = start + sweep / 2;
-    const pos = polar(200, 200, 120, mid);
+    const pos = polar(200, 200, R_LABEL, mid);
+    // держим текст «вверх ногами» под контролем: как раньше, но с классом/размером
     let angle = mid + 90;
-    // если текст окажется "вниз головой", переворачиваем на 180°
-    if (angle > 90 && angle < 270) {
-      angle += 180;
-    }
+    if (angle > 90 && angle < 270) angle += 180;
 
-    // добавляем подпись
+    const label = fitLabelText(p.name || "?", sweep, R_LABEL);
     svg.insertAdjacentHTML('beforeend', `
       <text x="${pos.x}" y="${pos.y}"
             transform="rotate(${angle} ${pos.x} ${pos.y})"
-            font-size="15"
-            fill="#fff"
+            class="wheel-label ${label.tiny ? 'tiny' : ''}"
+            font-size="${label.fs}"
             text-anchor="middle"
             dominant-baseline="middle">
-        ${(p.name || "?").length > 14 ? p.name.slice(0, 12) + "…" : p.name}
+        ${escapeXml(label.text)}
       </text>
     `);
 
@@ -1771,6 +1809,7 @@ if (copyBtn) {
       .catch(() => alert('Не удалось скопировать'));
   });
 }
+
 
 
 
